@@ -133,7 +133,11 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const isMouseDownRef = useRef(false);
+
   const handleTextSelection = useCallback(() => {
+    if (isMouseDownRef.current) return;
+
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed || !selection.toString().trim()) {
       return;
@@ -153,11 +157,18 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   }, []);
 
   useEffect(() => {
-    const onMouseUp = () => {
-      setTimeout(handleTextSelection, 150);
+    const onMouseDown = () => {
+      isMouseDownRef.current = true;
+      setSelectionPopup(null);
     };
+    const onMouseUp = () => {
+      isMouseDownRef.current = false;
+      setTimeout(handleTextSelection, 200);
+    };
+    document.addEventListener("mousedown", onMouseDown);
     document.addEventListener("mouseup", onMouseUp);
     return () => {
+      document.removeEventListener("mousedown", onMouseDown);
       document.removeEventListener("mouseup", onMouseUp);
     };
   }, [handleTextSelection]);
