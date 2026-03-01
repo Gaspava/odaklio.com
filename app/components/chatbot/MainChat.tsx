@@ -122,6 +122,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   const [selectionPopup, setSelectionPopup] = useState<{
     x: number;
     y: number;
+    bottom: number;
     text: string;
   } | null>(null);
   const [speedReadText, setSpeedReadText] = useState<string | null>(null);
@@ -133,7 +134,11 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const isMouseDownRef = useRef(false);
+
   const handleTextSelection = useCallback(() => {
+    if (isMouseDownRef.current) return;
+
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed || !selection.toString().trim()) {
       return;
@@ -148,17 +153,25 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
     setSelectionPopup({
       x: rect.left + rect.width / 2,
       y: rect.top,
+      bottom: rect.bottom,
       text: selectedText,
     });
   }, []);
 
   useEffect(() => {
-    document.addEventListener("mouseup", handleTextSelection);
-    document.addEventListener("selectionchange", () => {
-      setTimeout(handleTextSelection, 300);
-    });
+    const onMouseDown = () => {
+      isMouseDownRef.current = true;
+      setSelectionPopup(null);
+    };
+    const onMouseUp = () => {
+      isMouseDownRef.current = false;
+      setTimeout(handleTextSelection, 200);
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("mouseup", onMouseUp);
     return () => {
-      document.removeEventListener("mouseup", handleTextSelection);
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("mouseup", onMouseUp);
     };
   }, [handleTextSelection]);
 
@@ -505,6 +518,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
           <TextSelectionPopup
             x={selectionPopup.x}
             y={selectionPopup.y}
+            bottom={selectionPopup.bottom}
             selectedText={selectionPopup.text}
             onAction={handleSelectionAction}
             onClose={() => setSelectionPopup(null)}
