@@ -110,6 +110,27 @@ async function streamChat(
   onDone();
 }
 
+/* ===== MINDMAP AI AVATAR ===== */
+function MindmapAiAvatar({ isMain }: { isMain: boolean }) {
+  return (
+    <div
+      className="flex-shrink-0 flex h-6 w-6 items-center justify-center rounded-lg text-white text-[10px] font-bold relative"
+      style={{
+        background: isMain ? "var(--gradient-primary)" : "var(--gradient-accent)",
+      }}
+    >
+      O
+      <div
+        className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border-[1.5px]"
+        style={{
+          background: "var(--accent-success)",
+          borderColor: "var(--bg-card)",
+        }}
+      />
+    </div>
+  );
+}
+
 /* ===== CHAT NODE COMPONENT ===== */
 function ChatNodeComponent({
   node,
@@ -194,6 +215,9 @@ function ChatNodeComponent({
     setShowBranchButton(false);
   }, []);
 
+  const accentColor = isMain ? "var(--accent-primary)" : "var(--accent-purple)";
+  const accentLightColor = isMain ? "var(--accent-primary-light)" : "var(--accent-purple-light)";
+
   return (
     <div
       ref={nodeRef}
@@ -201,16 +225,12 @@ function ChatNodeComponent({
       style={{
         width: NODE_WIDTH,
         height: NODE_HEIGHT,
-        borderColor: isActive
-          ? isMain
-            ? "var(--accent-primary)"
-            : "var(--accent-purple)"
-          : "var(--border-primary)",
+        borderColor: isActive ? accentColor : "var(--border-primary)",
         boxShadow: isActive
           ? isMain
-            ? "var(--shadow-glow)"
-            : "0 0 20px rgba(139, 92, 246, 0.2)"
-          : "var(--shadow-card)",
+            ? "0 0 0 1px rgba(16, 185, 129, 0.15), 0 8px 32px rgba(16, 185, 129, 0.12), 0 2px 8px rgba(0,0,0,0.06)"
+            : "0 0 0 1px rgba(139, 92, 246, 0.15), 0 8px 32px rgba(139, 92, 246, 0.12), 0 2px 8px rgba(0,0,0,0.06)"
+          : "0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)",
       }}
       onClick={(e) => {
         e.stopPropagation();
@@ -221,30 +241,65 @@ function ChatNodeComponent({
     >
       {/* Node Header */}
       <div className="mindmap-node-header">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0">
           <div
-            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+            className="flex h-7 w-7 items-center justify-center rounded-lg flex-shrink-0"
             style={{
-              background: isMain
-                ? "var(--accent-primary)"
-                : "var(--accent-purple)",
+              background: accentLightColor,
+              color: accentColor,
             }}
-          />
-          <span
-            className="text-xs font-semibold truncate"
-            style={{ color: "var(--text-primary)" }}
           >
-            {isMain ? "Ana Sohbet" : node.label}
-          </span>
+            {isMain ? (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            ) : (
+              <IconGitBranch size={13} />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <span
+              className="text-[13px] font-semibold truncate block"
+              style={{ color: "var(--text-primary)" }}
+            >
+              {isMain ? "Ana Sohbet" : node.label}
+            </span>
+            {!isMain && (
+              <span
+                className="text-[10px] truncate block"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                Dal sohbeti
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          {node.isLoading && (
+            <div
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium"
+              style={{ background: accentLightColor, color: accentColor }}
+            >
+              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: accentColor }} />
+              Yazıyor
+            </div>
+          )}
+          <span
+            className="text-[10px] font-medium px-2 py-1 rounded-md"
+            style={{
+              background: "var(--bg-tertiary)",
+              color: "var(--text-tertiary)",
+            }}
+          >
+            {node.messages.filter(m => m.role === "user").length} mesaj
+          </span>
           {!isMain && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onClose();
               }}
-              className="flex h-6 w-6 items-center justify-center rounded-md transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-lg transition-all"
               style={{ color: "var(--text-tertiary)" }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "var(--accent-danger-light)";
@@ -255,68 +310,92 @@ function ChatNodeComponent({
                 e.currentTarget.style.color = "var(--text-tertiary)";
               }}
             >
-              <IconX size={12} />
+              <IconX size={13} />
             </button>
           )}
         </div>
       </div>
 
-      {/* Messages Area - scrolls ONLY inside this container */}
+      {/* Messages Area */}
       <div
         ref={scrollContainerRef}
         className="mindmap-node-messages"
         onWheel={(e) => e.stopPropagation()}
       >
         {node.messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full gap-3 py-12">
-            <IconGitBranch
-              size={32}
-              style={{ color: "var(--text-tertiary)", opacity: 0.4 }}
-            />
-            <p
-              className="text-xs text-center"
-              style={{ color: "var(--text-tertiary)" }}
+          <div className="flex flex-col items-center justify-center h-full gap-4 py-8">
+            <div
+              className="flex h-14 w-14 items-center justify-center rounded-2xl"
+              style={{
+                background: accentLightColor,
+                boxShadow: `0 4px 12px ${isMain ? "rgba(16,185,129,0.1)" : "rgba(139,92,246,0.1)"}`,
+              }}
             >
-              {isMain
-                ? "Bir soru sorarak başla"
-                : "Bu dalda sohbete başla"}
-            </p>
+              {isMain ? (
+                <span className="text-2xl">🎓</span>
+              ) : (
+                <IconGitBranch size={24} style={{ color: accentColor, opacity: 0.7 }} />
+              )}
+            </div>
+            <div className="text-center">
+              <p
+                className="text-[13px] font-semibold mb-1"
+                style={{ color: "var(--text-primary)" }}
+              >
+                {isMain ? "Ne öğrenmek istiyorsun?" : "Yeni dal başlat"}
+              </p>
+              <p
+                className="text-[11px]"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                {isMain
+                  ? "Bir soru yazarak sohbete başla"
+                  : "Bu konuda sorular sorabilirsin"}
+              </p>
+            </div>
           </div>
         )}
         {node.messages.map((msg) => (
           <div
             id={`mindmap-msg-${node.id}-${msg.id}`}
             key={msg.id}
-            className={`mindmap-msg ${
-              msg.role === "user" ? "mindmap-msg-user" : "mindmap-msg-ai"
-            }`}
+            className={`mindmap-msg-row ${msg.role === "user" ? "mindmap-msg-row-user" : "mindmap-msg-row-ai"}`}
           >
-            {msg.role === "assistant" ? (
-              msg.content ? (
-                <div className="msg-ai-content">
-                  <ChatMessageRenderer content={msg.content} />
-                </div>
-              ) : (
-                node.isLoading && (
-                  <div className="flex items-center gap-1.5 px-1 py-2">
-                    <div
-                      className="typing-dot w-2 h-2 rounded-full"
-                      style={{ background: "var(--accent-primary)" }}
-                    />
-                    <div
-                      className="typing-dot w-2 h-2 rounded-full"
-                      style={{ background: "var(--accent-primary)" }}
-                    />
-                    <div
-                      className="typing-dot w-2 h-2 rounded-full"
-                      style={{ background: "var(--accent-primary)" }}
-                    />
-                  </div>
-                )
-              )
-            ) : (
-              <p className="text-[13px] leading-relaxed">{msg.content}</p>
+            {msg.role === "assistant" && (
+              <MindmapAiAvatar isMain={isMain} />
             )}
+            <div
+              className={`mindmap-msg ${
+                msg.role === "user" ? "mindmap-msg-user" : "mindmap-msg-ai"
+              }`}
+            >
+              {msg.role === "assistant" ? (
+                msg.content ? (
+                  <div className="msg-ai-content">
+                    <ChatMessageRenderer content={msg.content} />
+                  </div>
+                ) : (
+                  node.isLoading && (
+                    <div className="flex items-center gap-1.5 px-1 py-1.5">
+                      <div
+                        className="typing-dot w-1.5 h-1.5 rounded-full"
+                        style={{ background: accentColor }}
+                      />
+                      <div
+                        className="typing-dot w-1.5 h-1.5 rounded-full"
+                        style={{ background: accentColor }}
+                      />
+                      <div
+                        className="typing-dot w-1.5 h-1.5 rounded-full"
+                        style={{ background: accentColor }}
+                      />
+                    </div>
+                  )
+                )
+              ) : (
+                <p className="text-[13px] leading-relaxed">{msg.content}</p>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -327,16 +406,16 @@ function ChatNodeComponent({
           className="absolute z-50 animate-fade-in-scale"
           style={{
             left: branchBtnPos.x,
-            top: branchBtnPos.y - 40,
+            top: branchBtnPos.y - 44,
             transform: "translateX(-50%)",
           }}
         >
           <button
-            className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition-all shadow-lg"
+            className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all"
             style={{
               background: "var(--accent-purple)",
               color: "white",
-              boxShadow: "0 4px 16px rgba(139, 92, 246, 0.35)",
+              boxShadow: "0 4px 20px rgba(139, 92, 246, 0.35), 0 0 0 1px rgba(139, 92, 246, 0.1)",
             }}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => {
@@ -354,42 +433,64 @@ function ChatNodeComponent({
 
       {/* Input */}
       <div className="mindmap-node-input">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            e.stopPropagation();
-            if (e.key === "Enter") handleSend();
-          }}
-          onClick={(e) => e.stopPropagation()}
-          placeholder={node.isLoading ? "Yanıt bekleniyor..." : "Mesaj yaz..."}
-          disabled={node.isLoading}
-          className="flex-1 bg-transparent text-[13px] outline-none disabled:opacity-50"
-          style={{ color: "var(--text-primary)" }}
-        />
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleSend();
-          }}
-          disabled={!input.trim() || node.isLoading}
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
+        <div
+          className="mindmap-node-input-inner"
           style={{
-            background:
-              input.trim() && !node.isLoading
-                ? isMain
-                  ? "var(--gradient-primary)"
-                  : "var(--gradient-accent)"
-                : "var(--bg-tertiary)",
-            color:
-              input.trim() && !node.isLoading
-                ? "white"
-                : "var(--text-tertiary)",
+            borderColor: input.trim()
+              ? isMain
+                ? "rgba(16, 185, 129, 0.25)"
+                : "rgba(139, 92, 246, 0.25)"
+              : "var(--border-primary)",
+            boxShadow: input.trim()
+              ? isMain
+                ? "0 0 0 3px rgba(16, 185, 129, 0.06)"
+                : "0 0 0 3px rgba(139, 92, 246, 0.06)"
+              : "none",
           }}
         >
-          <IconSend size={14} />
-        </button>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === "Enter") handleSend();
+            }}
+            onClick={(e) => e.stopPropagation()}
+            placeholder={node.isLoading ? "Yanıt bekleniyor..." : "Mesajını yaz..."}
+            disabled={node.isLoading}
+            className="flex-1 bg-transparent text-[13px] outline-none disabled:opacity-50 placeholder:font-medium"
+            style={{ color: "var(--text-primary)" }}
+          />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSend();
+            }}
+            disabled={!input.trim() || node.isLoading}
+            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
+            style={{
+              background:
+                input.trim() && !node.isLoading
+                  ? isMain
+                    ? "var(--gradient-primary)"
+                    : "var(--gradient-accent)"
+                  : "var(--bg-tertiary)",
+              color:
+                input.trim() && !node.isLoading
+                  ? "white"
+                  : "var(--text-tertiary)",
+              boxShadow:
+                input.trim() && !node.isLoading
+                  ? isMain
+                    ? "0 2px 8px rgba(16,185,129,0.3)"
+                    : "0 2px 8px rgba(139,92,246,0.3)"
+                  : "none",
+            }}
+          >
+            <IconSend size={14} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -752,17 +853,32 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
       const toX = to.x;
       const toY = to.y + NODE_HEIGHT / 2;
       const midX = (fromX + toX) / 2;
+      const gradId = `conn-grad-${conn.fromId}-${conn.toId}`;
 
       return (
-        <path
-          key={`${conn.fromId}-${conn.toId}`}
-          d={`M ${fromX} ${fromY} C ${midX} ${fromY}, ${midX} ${toY}, ${toX} ${toY}`}
-          fill="none"
-          stroke="var(--accent-purple)"
-          strokeWidth={2}
-          strokeDasharray="8 4"
-          opacity={0.5}
-        />
+        <g key={`${conn.fromId}-${conn.toId}`}>
+          <defs>
+            <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="var(--accent-primary)" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="var(--accent-purple)" stopOpacity="0.6" />
+            </linearGradient>
+          </defs>
+          <path
+            d={`M ${fromX} ${fromY} C ${midX} ${fromY}, ${midX} ${toY}, ${toX} ${toY}`}
+            fill="none"
+            stroke={`url(#${gradId})`}
+            strokeWidth={2.5}
+            strokeLinecap="round"
+          />
+          {/* Arrow dot at destination */}
+          <circle
+            cx={toX}
+            cy={toY}
+            r={4}
+            fill="var(--accent-purple)"
+            opacity={0.5}
+          />
+        </g>
       );
     });
   };
@@ -773,76 +889,75 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
     <div className="flex flex-col h-full relative overflow-hidden">
       {/* Top Bar */}
       <div
-        className="flex items-center justify-between px-4 py-2.5 flex-shrink-0 z-10"
+        className="flex items-center justify-between px-4 py-3 flex-shrink-0 z-10"
         style={{
-          background: "var(--bg-secondary)",
+          background: "var(--bg-card)",
           borderBottom: "1px solid var(--border-primary)",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
         }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <div
-            className="flex h-6 w-6 items-center justify-center rounded-lg"
+            className="flex h-8 w-8 items-center justify-center rounded-xl"
             style={{
               background: "var(--accent-purple-light)",
               color: "var(--accent-purple)",
             }}
           >
-            <IconGitBranch size={12} />
+            <IconGitBranch size={14} />
           </div>
-          <span
-            className="text-xs font-semibold"
-            style={{ color: "var(--text-primary)" }}
-          >
-            MindmapChat
-          </span>
-          {branchCount > 0 && (
+          <div>
             <span
-              className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-              style={{
-                background: "var(--accent-purple-light)",
-                color: "var(--accent-purple)",
-              }}
+              className="text-[13px] font-semibold block"
+              style={{ color: "var(--text-primary)" }}
             >
-              {branchCount} dal
+              MindmapChat
             </span>
-          )}
+            <span
+              className="text-[10px] block"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              {branchCount > 0 ? `${branchCount} aktif dal` : "Metin seçerek dal oluştur"}
+            </span>
+          </div>
         </div>
 
         {/* Zoom Controls */}
-        <div className="flex items-center gap-1">
+        <div
+          className="flex items-center gap-1 rounded-xl px-1.5 py-1"
+          style={{
+            background: "var(--bg-secondary)",
+            border: "1px solid var(--border-primary)",
+          }}
+        >
           <button
             onClick={zoomOut}
-            className="flex h-7 w-7 items-center justify-center rounded-lg transition-all"
-            style={{
-              background: "var(--bg-tertiary)",
-              color: "var(--text-tertiary)",
-            }}
+            className="flex h-7 w-7 items-center justify-center rounded-lg transition-all hover:bg-[var(--bg-tertiary)]"
+            style={{ color: "var(--text-tertiary)" }}
           >
             <IconZoomOut size={13} />
           </button>
           <span
-            className="text-[10px] font-mono w-10 text-center"
-            style={{ color: "var(--text-tertiary)" }}
+            className="text-[10px] font-mono w-10 text-center font-medium"
+            style={{ color: "var(--text-secondary)" }}
           >
             {Math.round(scale * 100)}%
           </span>
           <button
             onClick={zoomIn}
-            className="flex h-7 w-7 items-center justify-center rounded-lg transition-all"
-            style={{
-              background: "var(--bg-tertiary)",
-              color: "var(--text-tertiary)",
-            }}
+            className="flex h-7 w-7 items-center justify-center rounded-lg transition-all hover:bg-[var(--bg-tertiary)]"
+            style={{ color: "var(--text-tertiary)" }}
           >
             <IconZoomIn size={13} />
           </button>
+          <div
+            className="w-px h-4 mx-0.5"
+            style={{ background: "var(--border-primary)" }}
+          />
           <button
             onClick={resetView}
-            className="flex h-7 w-7 items-center justify-center rounded-lg transition-all ml-1"
-            style={{
-              background: "var(--bg-tertiary)",
-              color: "var(--text-tertiary)",
-            }}
+            className="flex h-7 w-7 items-center justify-center rounded-lg transition-all hover:bg-[var(--bg-tertiary)]"
+            style={{ color: "var(--text-tertiary)" }}
             title="Görünümü sıfırla"
           >
             <IconMaximize size={13} />
@@ -926,20 +1041,21 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
 
         {/* Help Hint */}
         <div
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full pointer-events-none"
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 px-5 py-2.5 rounded-2xl pointer-events-none"
           style={{
-            background: "var(--bg-glass-heavy)",
+            background: "var(--bg-card)",
             border: "1px solid var(--border-primary)",
-            boxShadow: "var(--shadow-md)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)",
           }}
         >
           <span
-            className="text-[10px] font-medium"
+            className="text-[10px] font-medium flex items-center gap-2"
             style={{ color: "var(--text-tertiary)" }}
           >
-            Metin seç &rarr; &quot;Yeni Yol Oluştur&quot; ile paralel sohbet
-            oluştur &bull; Boş alana tıkla ve sürükle &bull; Scroll ile
-            yakınlaştır
+            <span style={{ color: "var(--accent-purple)", opacity: 0.7 }}>
+              <IconGitBranch size={11} />
+            </span>
+            Metin seç &rarr; Yeni dal &nbsp;&bull;&nbsp; Sürükle &rarr; Kaydır &nbsp;&bull;&nbsp; Scroll &rarr; Yakınlaştır
           </span>
         </div>
       </div>
