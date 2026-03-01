@@ -1,13 +1,16 @@
 "use client";
 
 import { useTheme } from "@/app/providers/ThemeProvider";
-import { IconSun, IconMoon, IconHeadphones } from "../icons/Icons";
+import { IconSun, IconMoon, IconHeadphones, IconPlus } from "../icons/Icons";
+import type { ChatStyle } from "../chatbot/ChatStyleSelector";
 
 interface HeaderProps {
   onToggleLeft: () => void;
   onToggleRight: () => void;
   leftOpen: boolean;
   rightOpen: boolean;
+  onNewChat: () => void;
+  chatStyle: ChatStyle;
 }
 
 export default function Header({
@@ -15,6 +18,8 @@ export default function Header({
   onToggleRight,
   leftOpen,
   rightOpen,
+  onNewChat,
+  chatStyle,
 }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
 
@@ -91,6 +96,20 @@ export default function Header({
 
       {/* Right */}
       <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* New Chat Button */}
+        <button
+          onClick={onNewChat}
+          className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 transition-all active:scale-95"
+          style={{
+            background: chatStyle === "mindmap" ? "var(--accent-purple-light)" : "var(--accent-primary-light)",
+            color: chatStyle === "mindmap" ? "var(--accent-purple)" : "var(--accent-primary)",
+            border: `1px solid ${chatStyle === "mindmap" ? "rgba(139, 92, 246, 0.2)" : "rgba(16, 185, 129, 0.2)"}`,
+          }}
+        >
+          <IconPlus size={14} />
+          <span className="hidden sm:inline text-[11px] font-semibold">Yeni Sohbet</span>
+        </button>
+
         <button
           className="hidden sm:flex h-8 items-center gap-1.5 rounded-lg px-2.5 transition-all hover:bg-[var(--bg-card-hover)]"
           style={{
