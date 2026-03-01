@@ -166,7 +166,7 @@ export default function Home() {
 
         {/* Main Chat Area */}
         <div
-          className={`flex-1 min-w-0 overflow-hidden ${isMobile ? "safe-area-bottom" : ""}`}
+          className="flex-1 min-w-0 overflow-hidden"
           style={{ background: "var(--bg-primary)" }}
         >
           {chatStyle === "standard" ? (
