@@ -115,6 +115,7 @@ export default function Home() {
       <Header
         onToggleLeft={toggleLeft}
         onToggleRight={toggleRight}
+        onChat={() => { setLeftOpen(false); setRightOpen(false); }}
         leftOpen={leftOpen}
         rightOpen={rightOpen}
       />

@@ -1,11 +1,21 @@
 "use client";
 
 import { useTheme } from "@/app/providers/ThemeProvider";
-import { IconSun, IconMoon, IconHeadphones } from "../icons/Icons";
+import {
+  IconSun,
+  IconMoon,
+  IconHeadphones,
+  IconChat,
+  IconPomodoro,
+  IconFocus,
+  IconMentor,
+  IconBarChart,
+} from "../icons/Icons";
 
 interface HeaderProps {
   onToggleLeft: () => void;
   onToggleRight: () => void;
+  onChat: () => void;
   leftOpen: boolean;
   rightOpen: boolean;
 }
@@ -13,6 +23,7 @@ interface HeaderProps {
 export default function Header({
   onToggleLeft,
   onToggleRight,
+  onChat,
   leftOpen,
   rightOpen,
 }: HeaderProps) {
@@ -72,22 +83,70 @@ export default function Header({
         </div>
       </div>
 
-      {/* Center status indicator */}
-      <div
-        className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full"
-        style={{
-          background: "var(--accent-primary-muted)",
-          border: "1px solid rgba(16, 185, 129, 0.08)",
-        }}
-      >
-        <div
-          className="w-1.5 h-1.5 rounded-full animate-pulse"
-          style={{ background: "var(--accent-success)" }}
-        />
-        <span className="text-[11px] font-medium" style={{ color: "var(--text-tertiary)" }}>
-          Akıllı Öğrenme Aktif
-        </span>
-      </div>
+      {/* Center Navigation */}
+      <nav className="hidden sm:flex items-end gap-0.5">
+        <button
+          onClick={onChat}
+          className="flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all"
+          style={{
+            color: !leftOpen && !rightOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
+            background: !leftOpen && !rightOpen ? "var(--accent-primary-muted)" : "transparent",
+          }}
+        >
+          <IconChat size={16} />
+          <span className="text-[9px] font-semibold tracking-wide" style={{ color: "inherit" }}>Sohbetlerim</span>
+        </button>
+
+        <button
+          onClick={onToggleLeft}
+          className="flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all"
+          style={{
+            color: leftOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
+            background: leftOpen ? "var(--accent-primary-muted)" : "transparent",
+          }}
+        >
+          <IconPomodoro size={16} />
+          <span className="text-[9px] font-semibold tracking-wide" style={{ color: "inherit" }}>Araçlar</span>
+        </button>
+
+        <button
+          onClick={onChat}
+          className="flex flex-col items-center justify-center gap-0.5 px-2 mx-1 transition-all"
+        >
+          <div
+            className="flex items-center justify-center w-9 h-9 rounded-full"
+            style={{
+              background: "var(--gradient-primary)",
+              boxShadow: "0 0 16px rgba(16, 185, 129, 0.35)",
+            }}
+          >
+            <IconFocus size={16} className="text-white" />
+          </div>
+          <span className="text-[9px] font-semibold tracking-wide" style={{ color: "var(--accent-primary)" }}>Odaklan</span>
+        </button>
+
+        <button
+          onClick={onToggleRight}
+          className="flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all"
+          style={{
+            color: rightOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
+            background: rightOpen ? "var(--accent-primary-muted)" : "transparent",
+          }}
+        >
+          <IconMentor size={16} />
+          <span className="text-[9px] font-semibold tracking-wide" style={{ color: "inherit" }}>Mentor</span>
+        </button>
+
+        <button
+          className="flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all"
+          style={{
+            color: "var(--text-tertiary)",
+          }}
+        >
+          <IconBarChart size={16} />
+          <span className="text-[9px] font-semibold tracking-wide" style={{ color: "inherit" }}>Analiz</span>
+        </button>
+      </nav>
 
       {/* Right */}
       <div className="flex items-center gap-1.5 sm:gap-2">
