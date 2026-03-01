@@ -14,7 +14,6 @@ import {
   IconVolume,
   IconChevronRight,
   IconTrendingUp,
-  IconX,
 } from "../icons/Icons";
 import Link from "next/link";
 
@@ -360,21 +359,35 @@ function BackgroundSoundsCompact() {
 /* ===== LEFT PANEL ===== */
 export default function LeftPanel({ onClose }: LeftPanelProps) {
   return (
-    <div className="h-full overflow-y-auto p-3 space-y-3 stagger-children">
+    <div className="h-full overflow-y-auto p-3 space-y-3 stagger-children relative">
+      {/* Notch close button - top right */}
       {onClose && (
-        <div className="flex items-center justify-between pb-1">
-          <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-            Araçlar
-          </h2>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg transition-all active:scale-95"
-            style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
-          >
-            <IconX size={16} />
-          </button>
-        </div>
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-0 z-10 flex items-center justify-center transition-all active:scale-95 hover:opacity-100"
+          style={{
+            width: 20,
+            height: 36,
+            background: "var(--bg-tertiary)",
+            borderRadius: "8px 0 0 8px",
+            color: "var(--text-tertiary)",
+            border: "1px solid var(--border-primary)",
+            borderRight: "none",
+            opacity: 0.7,
+          }}
+          title="Paneli kapat"
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
       )}
+
+      <div className="pb-0.5">
+        <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+          Araçlar
+        </h2>
+      </div>
       <PomodoroMini />
       <FocusModesCompact />
       <BackgroundSoundsCompact />

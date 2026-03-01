@@ -991,14 +991,15 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
-    padding: 6px 16px;
-    border-radius: 14px;
+    gap: 2px;
+    padding: 4px 8px;
+    border-radius: 12px;
     border: none;
     background: transparent;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-width: 60px;
+    min-width: 44px;
+    flex: 1;
   }
 
   .mobile-bottom-nav button span {
@@ -1063,12 +1064,16 @@ body {
 @media (max-width: 380px) {
   .mobile-bottom-nav {
     height: 54px;
-    padding: 0 4px;
+    padding: 0 2px;
   }
 
   .mobile-bottom-nav button {
-    min-width: 50px;
-    padding: 4px 10px;
+    min-width: 36px;
+    padding: 3px 4px;
+  }
+
+  .mobile-bottom-nav button span {
+    font-size: 8px;
   }
 }
 

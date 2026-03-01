@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Header from "./components/layout/Header";
+import Header, { type PageType } from "./components/layout/Header";
 import LeftPanel from "./components/layout/LeftPanel";
 import RightPanel from "./components/layout/RightPanel";
 import MainChat from "./components/chatbot/MainChat";
@@ -9,6 +9,10 @@ import MindmapChat from "./components/chatbot/MindmapChat";
 import ChatStyleSelector, {
   type ChatStyle,
 } from "./components/chatbot/ChatStyleSelector";
+import ChatHistoryPage from "./components/pages/ChatHistoryPage";
+import ToolsPage from "./components/pages/ToolsPage";
+import MentorPage from "./components/pages/MentorPage";
+import AnalysisPage from "./components/pages/AnalysisPage";
 import {
   IconChat,
   IconPomodoro,
@@ -33,7 +37,8 @@ export default function Home() {
   const [rightOpen, setRightOpen] = useState(false);
   const [chatStyle, setChatStyle] = useState<ChatStyle>("standard");
   const [showStyleSelector, setShowStyleSelector] = useState(false);
-  const [chatKey, setChatKey] = useState(0); // to force re-mount on new chat
+  const [chatKey, setChatKey] = useState(0);
+  const [activePage, setActivePage] = useState<PageType>("focus");
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -120,12 +125,43 @@ export default function Home() {
 
   const handleSelectStyle = (style: ChatStyle) => {
     setChatStyle(style);
-    setChatKey((k) => k + 1); // force re-mount to reset chat state
+    setChatKey((k) => k + 1);
     setShowStyleSelector(false);
   };
 
-  // Hide side panels when mindmap mode is active (it needs full width)
-  const showSidePanels = chatStyle === "standard";
+  const handlePageChange = (page: PageType) => {
+    setActivePage(page);
+    // Close mobile panels when switching pages
+    if (isMobile) {
+      setLeftOpen(false);
+      setRightOpen(false);
+    }
+  };
+
+  // Side panels only show on the Focus (Odak) page in standard mode
+  const showSidePanels = activePage === "focus" && chatStyle === "standard";
+
+  // Render the active page content
+  const renderPageContent = () => {
+    switch (activePage) {
+      case "history":
+        return <ChatHistoryPage />;
+      case "tools":
+        return <ToolsPage />;
+      case "focus":
+        return chatStyle === "standard" ? (
+          <MainChat key={chatKey} isMobile={isMobile} />
+        ) : (
+          <MindmapChat key={chatKey} isMobile={isMobile} />
+        );
+      case "mentor":
+        return <MentorPage />;
+      case "analysis":
+        return <AnalysisPage />;
+      default:
+        return <MainChat key={chatKey} isMobile={isMobile} />;
+    }
+  };
 
   return (
     <div
@@ -133,12 +169,8 @@ export default function Home() {
       style={{ background: "var(--bg-primary)", height: "100dvh" }}
     >
       <Header
-        onToggleLeft={toggleLeft}
-        onToggleRight={toggleRight}
-        leftOpen={leftOpen}
-        rightOpen={rightOpen}
-        onNewChat={handleNewChat}
-        chatStyle={chatStyle}
+        activePage={activePage}
+        onPageChange={handlePageChange}
       />
 
       <div className="flex flex-1 overflow-hidden relative">
@@ -160,21 +192,65 @@ export default function Home() {
               background: "var(--bg-secondary)",
             }}
           >
-            <LeftPanel onClose={isMobile ? () => setLeftOpen(false) : undefined} />
+            <LeftPanel onClose={() => setLeftOpen(false)} />
           </div>
         )}
 
-        {/* Main Chat Area */}
+        {/* Left panel open notch - visible when left panel is closed on desktop */}
+        {showSidePanels && !isMobile && !leftOpen && (
+          <button
+            onClick={toggleLeft}
+            className="flex-shrink-0 flex items-center justify-center transition-all hover:opacity-100 self-start mt-4"
+            style={{
+              width: 16,
+              height: 40,
+              background: "var(--bg-tertiary)",
+              borderRadius: "0 6px 6px 0",
+              color: "var(--text-tertiary)",
+              border: "1px solid var(--border-primary)",
+              borderLeft: "none",
+              opacity: 0.5,
+              cursor: "pointer",
+            }}
+            title="Araçlar panelini aç"
+          >
+            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        )}
+
+        {/* Main Content Area */}
         <div
           className="flex-1 min-w-0 overflow-hidden"
           style={{ background: "var(--bg-primary)" }}
         >
-          {chatStyle === "standard" ? (
-            <MainChat key={chatKey} isMobile={isMobile} />
-          ) : (
-            <MindmapChat key={chatKey} isMobile={isMobile} />
-          )}
+          {renderPageContent()}
         </div>
+
+        {/* Right panel open notch - visible when right panel is closed on desktop */}
+        {showSidePanels && !isMobile && !rightOpen && (
+          <button
+            onClick={toggleRight}
+            className="flex-shrink-0 flex items-center justify-center transition-all hover:opacity-100 self-start mt-4"
+            style={{
+              width: 16,
+              height: 40,
+              background: "var(--bg-tertiary)",
+              borderRadius: "6px 0 0 6px",
+              color: "var(--text-tertiary)",
+              border: "1px solid var(--border-primary)",
+              borderRight: "none",
+              opacity: 0.5,
+              cursor: "pointer",
+            }}
+            title="Mentor panelini aç"
+          >
+            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+        )}
 
         {/* Right Panel */}
         {showSidePanels && (!isMobile || rightOpen) && (
@@ -189,7 +265,11 @@ export default function Home() {
               background: "var(--bg-secondary)",
             }}
           >
-            <RightPanel onClose={isMobile ? () => setRightOpen(false) : undefined} />
+            <RightPanel
+              onClose={() => setRightOpen(false)}
+              onNewChat={handleNewChat}
+              chatStyle={chatStyle}
+            />
           </div>
         )}
       </div>
@@ -198,36 +278,64 @@ export default function Home() {
       {isMobile && (
         <nav className="mobile-bottom-nav">
           <button
-            onClick={toggleLeft}
+            onClick={() => handlePageChange("history")}
             style={{
-              color: leftOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: leftOpen ? "var(--accent-primary-light)" : "transparent",
+              color: activePage === "history" ? "var(--accent-primary)" : "var(--text-tertiary)",
+              background: activePage === "history" ? "var(--accent-primary-light)" : "transparent",
+            }}
+          >
+            <svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span style={{ color: "inherit" }}>Geçmiş</span>
+          </button>
+
+          <button
+            onClick={() => handlePageChange("tools")}
+            style={{
+              color: activePage === "tools" ? "var(--accent-primary)" : "var(--text-tertiary)",
+              background: activePage === "tools" ? "var(--accent-primary-light)" : "transparent",
             }}
           >
             <IconPomodoro size={19} />
-            <span style={{ color: "inherit" }}>Araclar</span>
+            <span style={{ color: "inherit" }}>Araçlar</span>
           </button>
 
           <button
-            onClick={() => { setLeftOpen(false); setRightOpen(false); }}
+            onClick={() => { handlePageChange("focus"); setLeftOpen(false); setRightOpen(false); }}
             style={{
-              color: !leftOpen && !rightOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: !leftOpen && !rightOpen ? "var(--accent-primary-light)" : "transparent",
+              color: activePage === "focus" ? "var(--accent-primary)" : "var(--text-tertiary)",
+              background: activePage === "focus" ? "var(--accent-primary-light)" : "transparent",
             }}
           >
             <IconChat size={19} />
-            <span style={{ color: "inherit" }}>Sohbet</span>
+            <span style={{ color: "inherit" }}>Odak</span>
           </button>
 
           <button
-            onClick={toggleRight}
+            onClick={() => handlePageChange("mentor")}
             style={{
-              color: rightOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: rightOpen ? "var(--accent-primary-light)" : "transparent",
+              color: activePage === "mentor" ? "var(--accent-primary)" : "var(--text-tertiary)",
+              background: activePage === "mentor" ? "var(--accent-primary-light)" : "transparent",
             }}
           >
             <IconMentor size={19} />
             <span style={{ color: "inherit" }}>Mentor</span>
+          </button>
+
+          <button
+            onClick={() => handlePageChange("analysis")}
+            style={{
+              color: activePage === "analysis" ? "var(--accent-primary)" : "var(--text-tertiary)",
+              background: activePage === "analysis" ? "var(--accent-primary-light)" : "transparent",
+            }}
+          >
+            <svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+              <polyline points="17 6 23 6 23 12" />
+            </svg>
+            <span style={{ color: "inherit" }}>Analiz</span>
           </button>
         </nav>
       )}
