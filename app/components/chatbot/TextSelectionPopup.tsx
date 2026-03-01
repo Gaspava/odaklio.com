@@ -1,23 +1,57 @@
 "use client";
 
+import { useRef, useLayoutEffect, useState } from "react";
 import { IconHelp, IconSearch, IconLightning } from "../icons/Icons";
 
 interface TextSelectionPopupProps {
   x: number;
   y: number;
+  bottom: number;
   selectedText: string;
   onAction: (action: "didnt-understand" | "what-is-this" | "speed-read") => void;
   onClose: () => void;
   isMobile?: boolean;
 }
 
+const ARROW_SIZE = 6;
+const GAP = 6;
+
 export default function TextSelectionPopup({
   x,
   y,
+  bottom,
   onAction,
   isMobile = false,
 }: TextSelectionPopupProps) {
-  // On mobile, position at bottom center; on desktop, follow selection
+  const popupRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number; openBelow: boolean } | null>(null);
+
+  useLayoutEffect(() => {
+    const el = popupRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const popupH = rect.height;
+    const popupW = rect.width;
+
+    const spaceAbove = y;
+    const openBelow = spaceAbove < popupH + ARROW_SIZE + GAP;
+
+    let top: number;
+    if (openBelow) {
+      top = bottom + ARROW_SIZE + GAP;
+    } else {
+      top = y - popupH - ARROW_SIZE - GAP;
+    }
+
+    let left = x - popupW / 2;
+    const pad = 8;
+    if (left < pad) left = pad;
+    if (left + popupW > window.innerWidth - pad) left = window.innerWidth - pad - popupW;
+
+    setPos({ left, top, openBelow });
+  }, [x, y, bottom]);
+
+  // Mobile layout
   if (isMobile) {
     return (
       <div
@@ -67,15 +101,49 @@ export default function TextSelectionPopup({
     );
   }
 
+  // Compute arrow horizontal position relative to popup
+  const arrowLeft = pos ? x - pos.left : 0;
+
   return (
     <div
-      className="fixed z-[100] animate-fade-in"
+      ref={popupRef}
+      className="fixed z-[100]"
       style={{
-        left: x,
-        top: y - 8,
-        transform: "translate(-50%, -100%)",
+        left: pos ? pos.left : x,
+        top: pos ? pos.top : y - 50,
+        opacity: pos ? 1 : 0,
+        transition: "opacity 0.15s ease",
       }}
     >
+      {/* Arrow on top (when popup opens below) */}
+      {pos?.openBelow && (
+        <div
+          style={{
+            position: "absolute",
+            top: -ARROW_SIZE,
+            left: arrowLeft - ARROW_SIZE,
+            width: 0,
+            height: 0,
+            borderLeft: `${ARROW_SIZE}px solid transparent`,
+            borderRight: `${ARROW_SIZE}px solid transparent`,
+            borderBottom: `${ARROW_SIZE}px solid var(--border-primary)`,
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              top: 1.5,
+              left: -ARROW_SIZE + 1,
+              width: 0,
+              height: 0,
+              borderLeft: `${ARROW_SIZE - 1}px solid transparent`,
+              borderRight: `${ARROW_SIZE - 1}px solid transparent`,
+              borderBottom: `${ARROW_SIZE - 1}px solid var(--bg-card)`,
+            }}
+          />
+        </div>
+      )}
+
       <div
         className="flex items-center gap-1 rounded-xl p-1 shadow-lg"
         style={{
@@ -134,16 +202,34 @@ export default function TextSelectionPopup({
         </button>
       </div>
 
-      {/* Arrow */}
-      <div
-        className="mx-auto w-3 h-3 rotate-45"
-        style={{
-          background: "var(--bg-card)",
-          borderRight: "1px solid var(--border-primary)",
-          borderBottom: "1px solid var(--border-primary)",
-          marginTop: -2,
-        }}
-      />
+      {/* Arrow on bottom (when popup opens above) */}
+      {pos && !pos.openBelow && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: -ARROW_SIZE,
+            left: arrowLeft - ARROW_SIZE,
+            width: 0,
+            height: 0,
+            borderLeft: `${ARROW_SIZE}px solid transparent`,
+            borderRight: `${ARROW_SIZE}px solid transparent`,
+            borderTop: `${ARROW_SIZE}px solid var(--border-primary)`,
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              bottom: 1.5,
+              left: -ARROW_SIZE + 1,
+              width: 0,
+              height: 0,
+              borderLeft: `${ARROW_SIZE - 1}px solid transparent`,
+              borderRight: `${ARROW_SIZE - 1}px solid transparent`,
+              borderTop: `${ARROW_SIZE - 1}px solid var(--bg-card)`,
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

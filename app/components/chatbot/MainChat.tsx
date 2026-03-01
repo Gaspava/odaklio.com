@@ -122,6 +122,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   const [selectionPopup, setSelectionPopup] = useState<{
     x: number;
     y: number;
+    bottom: number;
     text: string;
   } | null>(null);
   const [speedReadText, setSpeedReadText] = useState<string | null>(null);
@@ -152,6 +153,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
     setSelectionPopup({
       x: rect.left + rect.width / 2,
       y: rect.top,
+      bottom: rect.bottom,
       text: selectedText,
     });
   }, []);
@@ -516,6 +518,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
           <TextSelectionPopup
             x={selectionPopup.x}
             y={selectionPopup.y}
+            bottom={selectionPopup.bottom}
             selectedText={selectionPopup.text}
             onAction={handleSelectionAction}
             onClose={() => setSelectionPopup(null)}
