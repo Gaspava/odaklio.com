@@ -1,29 +1,28 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
-import type { NavItem } from "@/types/navigation";
+import type { NavItem, FeatureId } from "@/types/navigation";
 
 interface SidebarItemProps {
   item: NavItem;
   collapsed: boolean;
+  activeId: FeatureId;
+  onSelect: (id: FeatureId) => void;
 }
 
-export function SidebarItem({ item, collapsed }: SidebarItemProps) {
-  const pathname = usePathname();
+export function SidebarItem({ item, collapsed, activeId, onSelect }: SidebarItemProps) {
   const { locale } = useI18n();
-  const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+  const isActive = activeId === item.id;
   const Icon = item.icon;
 
   return (
-    <Link
-      href={item.href}
+    <button
+      onClick={() => onSelect(item.id)}
       title={collapsed ? item.label[locale] : undefined}
       className={cn(
-        "flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-sm font-medium transition-colors",
+        "flex items-center gap-3 w-full rounded-[var(--radius-md)] px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer",
         isActive
           ? "bg-sidebar-item-active text-sidebar-item-active-text"
           : "text-muted hover:bg-sidebar-item-hover hover:text-foreground"
@@ -40,6 +39,6 @@ export function SidebarItem({ item, collapsed }: SidebarItemProps) {
           )}
         </>
       )}
-    </Link>
+    </button>
   );
 }

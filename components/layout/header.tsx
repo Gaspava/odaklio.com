@@ -5,8 +5,14 @@ import { Menu, Search, Globe } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { ThemeToggle } from "./theme-toggle";
 import { MobileNav } from "./mobile-nav";
+import type { FeatureId } from "@/types/navigation";
 
-export function Header() {
+interface HeaderProps {
+  activeId: FeatureId;
+  onSelect: (id: FeatureId) => void;
+}
+
+export function Header({ activeId, onSelect }: HeaderProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { locale, setLocale, t } = useI18n();
 
@@ -42,7 +48,12 @@ export function Header() {
         </div>
       </header>
 
-      <MobileNav open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+      <MobileNav
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        activeId={activeId}
+        onSelect={onSelect}
+      />
     </>
   );
 }

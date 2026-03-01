@@ -4,7 +4,7 @@ import { useTheme } from "next-themes";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui";
 
-export default function SettingsPage() {
+export function SettingsPanel() {
   const { theme, setTheme } = useTheme();
   const { locale, setLocale, t } = useI18n();
 
@@ -13,9 +13,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">{t("settings")}</h1>
         <p className="mt-1 text-muted">
-          {locale === "tr"
-            ? "Platform tercihlerinizi yönetin"
-            : "Manage your platform preferences"}
+          {locale === "tr" ? "Platform tercihlerinizi yönetin" : "Manage your platform preferences"}
         </p>
       </div>
 

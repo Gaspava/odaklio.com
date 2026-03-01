@@ -1,4 +1,4 @@
-export type { NavItem } from "./navigation";
+export type { NavItem, FeatureId } from "./navigation";
 export type { FlashcardDeck, Flashcard } from "./flashcard";
 export type { MessageRole, ChatMessage, ChatSession } from "./chat";
 export type { MindMapNode, MindMapEdge, MindMap } from "./mind-map";
