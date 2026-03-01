@@ -153,12 +153,12 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   }, []);
 
   useEffect(() => {
-    document.addEventListener("mouseup", handleTextSelection);
-    document.addEventListener("selectionchange", () => {
-      setTimeout(handleTextSelection, 300);
-    });
+    const onMouseUp = () => {
+      setTimeout(handleTextSelection, 150);
+    };
+    document.addEventListener("mouseup", onMouseUp);
     return () => {
-      document.removeEventListener("mouseup", handleTextSelection);
+      document.removeEventListener("mouseup", onMouseUp);
     };
   }, [handleTextSelection]);
 
