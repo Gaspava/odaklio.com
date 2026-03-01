@@ -21,46 +21,69 @@ const welcomeMessage: Message = {
   timestamp: new Date(),
 };
 
-const sampleResponses: Record<string, string> = {
-  default:
-    "Bu ilginç bir soru! Detaylı bir şekilde açıklayayım. İlgili kaynakları inceliyorum ve en uygun açıklamayı hazırlıyorum...",
-  kuantum: `Kuantum mekaniği, atomaltı parçacıkların davranışlarını inceleyen fizik dalıdır. Klasik fizikten temel farkları şunlardır:
+async function streamChat(
+  messages: { role: string; content: string }[],
+  onChunk: (text: string) => void,
+  onError: (error: string) => void,
+  onDone: () => void
+) {
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages }),
+  });
 
-Süperpozisyon: Bir parçacık aynı anda birden fazla durumda bulunabilir. Schrödinger'in kedisi düşünce deneyinde olduğu gibi, gözlem yapılana kadar parçacık tüm olası durumların bir süperpozisyonundadır.
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.error || `API hatası: ${res.status}`);
+  }
 
-Dalga-Parçacık İkiliği: Işık ve madde hem dalga hem de parçacık özelliği gösterir. Bu, Young'ın çift yarık deneyiyle kanıtlanmıştır. Fotonlar yarıktan geçerken girişim deseni oluşturur.
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error("Stream okunamadı");
 
-Heisenberg Belirsizlik İlkesi: Bir parçacığın hem konumunu hem de momentumunu aynı anda kesin olarak ölçmek imkansızdır. Bu, ölçüm cihazının yetersizliğinden değil, doğanın temel bir özelliğinden kaynaklanır.
+  const decoder = new TextDecoder();
+  let buffer = "";
 
-Kuantum Dolanıklık: İki parçacık, aralarındaki mesafeden bağımsız olarak birbirleriyle bağlantılı kalabilir. Einstein bunu "uzaktaki ürkütücü eylem" olarak nitelendirmiştir. Ancak bu bağlantı, bilgi transferi için kullanılamaz.
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
 
-E = hf formülü ile enerji kuantize edilir, burada h Planck sabiti (6.626 × 10⁻³⁴ J·s) ve f frekans değeridir.`,
-  matematik: `İntegral, bir fonksiyonun belirli bir aralıktaki alanını hesaplamak için kullanılan matematiksel bir işlemdir.
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
 
-Temel İntegral Kuralları:
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data: ")) continue;
 
-Kuvvet Kuralı: ∫ xⁿ dx = xⁿ⁺¹/(n+1) + C, burada n ≠ -1
+      const data = trimmed.slice(6);
+      if (data === "[DONE]") {
+        onDone();
+        return;
+      }
 
-Trigonometrik İntegraller:
-∫ sin(x) dx = -cos(x) + C
-∫ cos(x) dx = sin(x) + C
-∫ tan(x) dx = -ln|cos(x)| + C
+      try {
+        const parsed = JSON.parse(data);
+        if (parsed.error) {
+          onError(parsed.error);
+          return;
+        }
+        if (parsed.text) {
+          onChunk(parsed.text);
+        }
+      } catch {
+        // skip malformed chunks
+      }
+    }
+  }
 
-Üstel Fonksiyonlar:
-∫ eˣ dx = eˣ + C
-∫ aˣ dx = aˣ/ln(a) + C
-
-Belirli İntegral ile alan hesaplanırken, Newton-Leibniz teoremi kullanılır:
-∫ₐᵇ f(x)dx = F(b) - F(a)
-
-Örnek: ∫₀² x² dx = [x³/3]₀² = 8/3 - 0 = 8/3 ≈ 2.667
-
-İntegrasyon teknikleri arasında kısmi integrasyon, trigonometrik yerine koyma ve kısmi kesirlere ayırma bulunur.`,
-};
+  onDone();
+}
 
 export default function MainChat() {
   const [messages, setMessages] = useState<Message[]>([welcomeMessage]);
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [selectionPopup, setSelectionPopup] = useState<{
     x: number;
@@ -113,8 +136,71 @@ export default function MainChat() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const sendToAI = useCallback(
+    async (userContent: string, allMessages: Message[]) => {
+      setIsLoading(true);
+
+      // Create placeholder for AI response
+      const aiMsgId = (Date.now() + 1).toString();
+      const aiMsg: Message = {
+        id: aiMsgId,
+        role: "assistant",
+        content: "",
+        timestamp: new Date(),
+        isRichContent: true,
+      };
+      setMessages((prev) => [...prev, aiMsg]);
+
+      // Build conversation history for the API
+      const apiMessages = allMessages
+        .filter((m) => m.id !== "welcome")
+        .map((m) => ({ role: m.role, content: m.content }));
+      apiMessages.push({ role: "user", content: userContent });
+
+      try {
+        await streamChat(
+          apiMessages,
+          (text) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === aiMsgId ? { ...m, content: m.content + text } : m
+              )
+            );
+          },
+          (error) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === aiMsgId
+                  ? { ...m, content: `Hata oluştu: ${error}` }
+                  : m
+              )
+            );
+          },
+          () => {
+            setIsLoading(false);
+          }
+        );
+      } catch (error) {
+        const errorMsg =
+          error instanceof Error ? error.message : "Bilinmeyen hata";
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === aiMsgId
+              ? {
+                  ...m,
+                  content: `Bağlantı hatası: ${errorMsg}. Lütfen tekrar dene.`,
+                }
+              : m
+          )
+        );
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  const handleSend = useCallback(() => {
+    if (!input.trim() || isLoading) return;
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -122,30 +208,15 @@ export default function MainChat() {
       content: input,
       timestamp: new Date(),
     };
-    setMessages((prev) => [...prev, userMsg]);
 
-    const query = input.toLowerCase();
+    setMessages((prev) => {
+      const updated = [...prev, userMsg];
+      sendToAI(input, prev);
+      return updated;
+    });
+
     setInput("");
-
-    // Simulated response
-    setTimeout(() => {
-      let responseContent = sampleResponses.default;
-      if (query.includes("kuantum") || query.includes("fizik")) {
-        responseContent = sampleResponses.kuantum;
-      } else if (query.includes("integral") || query.includes("matematik")) {
-        responseContent = sampleResponses.matematik;
-      }
-
-      const aiMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: responseContent,
-        timestamp: new Date(),
-        isRichContent: true,
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-    }, 600);
-  };
+  }, [input, isLoading, sendToAI]);
 
   const handleSelectionAction = (
     action: "didnt-understand" | "what-is-this" | "speed-read"
@@ -159,34 +230,24 @@ export default function MainChat() {
       return;
     }
 
-    // For "anlamadım" and "bu nedir", send as chat message
     const prompts = {
       "didnt-understand": `"${selectedText}" kısmını anlamadım. Daha basit ve adım adım açıklar mısın?`,
       "what-is-this": `"${selectedText}" nedir? Kısaca tanımla ve örnekle açıkla.`,
     };
 
+    const userContent = prompts[action];
     const userMsg: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: prompts[action],
+      content: userContent,
       timestamp: new Date(),
     };
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => {
+      const updated = [...prev, userMsg];
+      sendToAI(userContent, prev);
+      return updated;
+    });
     setSelectionPopup(null);
-
-    setTimeout(() => {
-      const aiMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content:
-          action === "didnt-understand"
-            ? `Tabii! "${selectedText}" konusunu daha basit bir şekilde açıklayalım:\n\nBunu günlük hayattan bir örnekle düşünebilirsin. Tıpkı bir top fırlattığında hem konumunu hem hızını aynı anda takip etmeye çalışmak gibi - biri netleşirken diğeri belirsizleşir.\n\nAdım adım:\n1. Önce temel kavramı anla\n2. Sonra formüle bak\n3. Son olarak örnekler üzerinden pekiştir\n\nDaha detaylı bir açıklama ister misin?`
-            : `"${selectedText}" kısaca:\n\nTanım: Bu kavram, fizikte/matematikte temel bir ilkeyi ifade eder.\n\nGünlük hayatta: Düşün ki iki telefon Bluetooth ile eşleşmiş - biri kapatılınca diğeri de hemen fark eder.\n\nÖnemli noktalar:\n• İlk kez 20. yüzyılda keşfedildi\n• Modern teknolojinin temelini oluşturur\n• Pratik uygulamaları: GPS, MRI, lazer\n\nDaha derine inmek ister misin?`,
-        timestamp: new Date(),
-        isRichContent: true,
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-    }, 600);
   };
 
   const quickPrompts = [
@@ -242,6 +303,13 @@ export default function MainChat() {
                     {msg.role === "assistant" ? (
                       <div className="prose-content text-sm leading-relaxed whitespace-pre-line select-text">
                         {msg.content}
+                        {isLoading && msg.id === messages[messages.length - 1]?.id && !msg.content && (
+                          <span className="inline-flex gap-1">
+                            <span className="animate-pulse">●</span>
+                            <span className="animate-pulse" style={{ animationDelay: "0.2s" }}>●</span>
+                            <span className="animate-pulse" style={{ animationDelay: "0.4s" }}>●</span>
+                          </span>
+                        )}
                       </div>
                     ) : (
                       <p className="text-sm leading-relaxed">{msg.content}</p>
@@ -249,16 +317,22 @@ export default function MainChat() {
                   </div>
 
                   {/* Hover "Anlamadım" for entire AI message */}
-                  {msg.role === "assistant" && msg.isRichContent && (
+                  {msg.role === "assistant" && msg.isRichContent && msg.content && (
                     <button
                       onClick={() => {
+                        const userContent =
+                          "Bu açıklamayı anlamadım, daha basit anlatır mısın?";
                         const userMsg: Message = {
                           id: Date.now().toString(),
                           role: "user",
-                          content: "Bu açıklamayı anlamadım, daha basit anlatır mısın?",
+                          content: userContent,
                           timestamp: new Date(),
                         };
-                        setMessages((prev) => [...prev, userMsg]);
+                        setMessages((prev) => {
+                          const updated = [...prev, userMsg];
+                          sendToAI(userContent, prev);
+                          return updated;
+                        });
                       }}
                       className="absolute -bottom-2 right-4 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity"
                       style={{
@@ -310,9 +384,7 @@ export default function MainChat() {
         </div>
 
         {/* Input Bar */}
-        <div
-          className="flex-shrink-0 px-4 pb-4"
-        >
+        <div className="flex-shrink-0 px-4 pb-4">
           <div
             className="max-w-2xl mx-auto flex items-center gap-2 rounded-2xl px-4 py-2"
             style={{
@@ -325,7 +397,9 @@ export default function MainChat() {
               onClick={() => setIsListening(!isListening)}
               className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl transition-all"
               style={{
-                background: isListening ? "var(--accent-danger)" : "var(--bg-tertiary)",
+                background: isListening
+                  ? "var(--accent-danger)"
+                  : "var(--bg-tertiary)",
                 color: isListening ? "white" : "var(--text-tertiary)",
               }}
             >
@@ -337,18 +411,29 @@ export default function MainChat() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder="Mesajını yaz veya sesli konuş..."
-              className="flex-1 bg-transparent text-sm outline-none"
+              placeholder={
+                isLoading
+                  ? "Yanıt bekleniyor..."
+                  : "Mesajını yaz veya sesli konuş..."
+              }
+              disabled={isLoading}
+              className="flex-1 bg-transparent text-sm outline-none disabled:opacity-50"
               style={{ color: "var(--text-primary)" }}
             />
 
             <button
               onClick={handleSend}
-              disabled={!input.trim()}
+              disabled={!input.trim() || isLoading}
               className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30"
               style={{
-                background: input.trim() ? "var(--gradient-primary)" : "var(--bg-tertiary)",
-                color: input.trim() ? "white" : "var(--text-tertiary)",
+                background:
+                  input.trim() && !isLoading
+                    ? "var(--gradient-primary)"
+                    : "var(--bg-tertiary)",
+                color:
+                  input.trim() && !isLoading
+                    ? "white"
+                    : "var(--text-tertiary)",
               }}
             >
               <IconSend size={14} />
