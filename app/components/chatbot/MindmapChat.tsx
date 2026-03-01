@@ -5,7 +5,9 @@ import {
   useRef,
   useEffect,
   useCallback,
+  useMemo,
   type MouseEvent as ReactMouseEvent,
+  type TouchEvent as ReactTouchEvent,
 } from "react";
 import {
   IconSend,
@@ -45,10 +47,14 @@ interface MindmapChatProps {
 }
 
 /* ===== CONSTANTS ===== */
-const NODE_WIDTH = 680;
-const NODE_HEIGHT = 520;
-const NODE_GAP_X = 120;
-const NODE_GAP_Y = 80;
+const NODE_WIDTH_DESKTOP = 680;
+const NODE_HEIGHT_DESKTOP = 520;
+const NODE_WIDTH_MOBILE = 320;
+const NODE_HEIGHT_MOBILE = 420;
+const NODE_GAP_X_DESKTOP = 120;
+const NODE_GAP_Y_DESKTOP = 80;
+const NODE_GAP_X_MOBILE = 40;
+const NODE_GAP_Y_MOBILE = 40;
 
 /* ===== STREAMING HELPER ===== */
 async function streamChat(
@@ -120,6 +126,9 @@ function ChatNodeComponent({
   onClose,
   isMain,
   scale,
+  isMobile,
+  nodeWidth,
+  nodeHeight,
 }: {
   node: ChatNode;
   isActive: boolean;
@@ -129,6 +138,9 @@ function ChatNodeComponent({
   onClose: () => void;
   isMain: boolean;
   scale: number;
+  isMobile: boolean;
+  nodeWidth: number;
+  nodeHeight: number;
 }) {
   const [input, setInput] = useState("");
   const [selectedText, setSelectedText] = useState("");
@@ -161,7 +173,7 @@ function ChatNodeComponent({
     setInput("");
   };
 
-  const handleMouseUp = useCallback(() => {
+  const handleTextSelection = useCallback(() => {
     setTimeout(() => {
       const selection = window.getSelection();
       if (!selection || selection.isCollapsed || !selection.toString().trim()) {
@@ -187,20 +199,20 @@ function ChatNodeComponent({
         y: (rect.top - nodeRect.top) / scale,
       });
       setShowBranchButton(true);
-    }, 100);
-  }, [scale]);
+    }, isMobile ? 300 : 100);
+  }, [scale, isMobile]);
 
-  const handleMouseDown = useCallback(() => {
+  const handleSelectionStart = useCallback(() => {
     setShowBranchButton(false);
   }, []);
 
   return (
     <div
       ref={nodeRef}
-      className="mindmap-node"
+      className={`mindmap-node ${isMobile ? "mindmap-node-mobile" : ""}`}
       style={{
-        width: NODE_WIDTH,
-        height: NODE_HEIGHT,
+        width: nodeWidth,
+        height: nodeHeight,
         borderColor: isActive
           ? isMain
             ? "var(--accent-primary)"
@@ -216,8 +228,10 @@ function ChatNodeComponent({
         e.stopPropagation();
         onActivate();
       }}
-      onMouseUp={handleMouseUp}
-      onMouseDown={handleMouseDown}
+      onMouseUp={!isMobile ? handleTextSelection : undefined}
+      onMouseDown={!isMobile ? handleSelectionStart : undefined}
+      onTouchEnd={isMobile ? handleTextSelection : undefined}
+      onTouchStart={isMobile ? handleSelectionStart : undefined}
     >
       {/* Node Header */}
       <div className="mindmap-node-header">
@@ -231,7 +245,7 @@ function ChatNodeComponent({
             }}
           />
           <span
-            className="text-xs font-semibold truncate"
+            className={`font-semibold truncate ${isMobile ? "text-[11px]" : "text-xs"}`}
             style={{ color: "var(--text-primary)" }}
           >
             {isMain ? "Ana Sohbet" : node.label}
@@ -244,18 +258,20 @@ function ChatNodeComponent({
                 e.stopPropagation();
                 onClose();
               }}
-              className="flex h-6 w-6 items-center justify-center rounded-md transition-colors"
+              className={`flex items-center justify-center rounded-md transition-colors ${
+                isMobile ? "h-8 w-8" : "h-6 w-6"
+              }`}
               style={{ color: "var(--text-tertiary)" }}
-              onMouseEnter={(e) => {
+              onMouseEnter={!isMobile ? (e) => {
                 e.currentTarget.style.background = "var(--accent-danger-light)";
                 e.currentTarget.style.color = "var(--accent-danger)";
-              }}
-              onMouseLeave={(e) => {
+              } : undefined}
+              onMouseLeave={!isMobile ? (e) => {
                 e.currentTarget.style.background = "transparent";
                 e.currentTarget.style.color = "var(--text-tertiary)";
-              }}
+              } : undefined}
             >
-              <IconX size={12} />
+              <IconX size={isMobile ? 14 : 12} />
             </button>
           )}
         </div>
@@ -264,17 +280,17 @@ function ChatNodeComponent({
       {/* Messages Area - scrolls ONLY inside this container */}
       <div
         ref={scrollContainerRef}
-        className="mindmap-node-messages"
+        className={`mindmap-node-messages ${isMobile ? "mindmap-node-messages-mobile" : ""}`}
         onWheel={(e) => e.stopPropagation()}
       >
         {node.messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-3 py-12">
             <IconGitBranch
-              size={32}
+              size={isMobile ? 28 : 32}
               style={{ color: "var(--text-tertiary)", opacity: 0.4 }}
             />
             <p
-              className="text-xs text-center"
+              className={`text-center ${isMobile ? "text-[11px]" : "text-xs"}`}
               style={{ color: "var(--text-tertiary)" }}
             >
               {isMain
@@ -289,7 +305,7 @@ function ChatNodeComponent({
             key={msg.id}
             className={`mindmap-msg ${
               msg.role === "user" ? "mindmap-msg-user" : "mindmap-msg-ai"
-            }`}
+            } ${isMobile ? "mindmap-msg-mobile" : ""}`}
           >
             {msg.role === "assistant" ? (
               msg.content ? (
@@ -315,7 +331,7 @@ function ChatNodeComponent({
                 )
               )
             ) : (
-              <p className="text-[13px] leading-relaxed">{msg.content}</p>
+              <p className={`leading-relaxed ${isMobile ? "text-[12px]" : "text-[13px]"}`}>{msg.content}</p>
             )}
           </div>
         ))}
@@ -327,18 +343,21 @@ function ChatNodeComponent({
           className="absolute z-50 animate-fade-in-scale"
           style={{
             left: branchBtnPos.x,
-            top: branchBtnPos.y - 40,
+            top: branchBtnPos.y - (isMobile ? 48 : 40),
             transform: "translateX(-50%)",
           }}
         >
           <button
-            className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition-all shadow-lg"
+            className={`flex items-center gap-1.5 rounded-lg font-semibold transition-all shadow-lg ${
+              isMobile ? "px-4 py-2.5 text-[11px]" : "px-3.5 py-2 text-xs"
+            }`}
             style={{
               background: "var(--accent-purple)",
               color: "white",
               boxShadow: "0 4px 16px rgba(139, 92, 246, 0.35)",
             }}
             onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               onCreateBranch(selectedText);
@@ -346,14 +365,14 @@ function ChatNodeComponent({
               window.getSelection()?.removeAllRanges();
             }}
           >
-            <IconGitBranch size={12} />
+            <IconGitBranch size={isMobile ? 14 : 12} />
             Yeni Yol Oluştur
           </button>
         </div>
       )}
 
       {/* Input */}
-      <div className="mindmap-node-input">
+      <div className={`mindmap-node-input ${isMobile ? "mindmap-node-input-mobile" : ""}`}>
         <input
           type="text"
           value={input}
@@ -363,9 +382,12 @@ function ChatNodeComponent({
             if (e.key === "Enter") handleSend();
           }}
           onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
           placeholder={node.isLoading ? "Yanıt bekleniyor..." : "Mesaj yaz..."}
           disabled={node.isLoading}
-          className="flex-1 bg-transparent text-[13px] outline-none disabled:opacity-50"
+          className={`flex-1 bg-transparent outline-none disabled:opacity-50 ${
+            isMobile ? "text-[14px]" : "text-[13px]"
+          }`}
           style={{ color: "var(--text-primary)" }}
         />
         <button
@@ -373,8 +395,11 @@ function ChatNodeComponent({
             e.stopPropagation();
             handleSend();
           }}
+          onTouchStart={(e) => e.stopPropagation()}
           disabled={!input.trim() || node.isLoading}
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
+          className={`flex flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95 ${
+            isMobile ? "h-10 w-10" : "h-8 w-8"
+          }`}
           style={{
             background:
               input.trim() && !node.isLoading
@@ -388,7 +413,7 @@ function ChatNodeComponent({
                 : "var(--text-tertiary)",
           }}
         >
-          <IconSend size={14} />
+          <IconSend size={isMobile ? 16 : 14} />
         </button>
       </div>
     </div>
@@ -397,6 +422,12 @@ function ChatNodeComponent({
 
 /* ===== MAIN MINDMAP CHAT ===== */
 export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
+  // Responsive dimensions
+  const nodeWidth = isMobile ? NODE_WIDTH_MOBILE : NODE_WIDTH_DESKTOP;
+  const nodeHeight = isMobile ? NODE_HEIGHT_MOBILE : NODE_HEIGHT_DESKTOP;
+  const nodeGapX = isMobile ? NODE_GAP_X_MOBILE : NODE_GAP_X_DESKTOP;
+  const nodeGapY = isMobile ? NODE_GAP_Y_MOBILE : NODE_GAP_Y_DESKTOP;
+
   // Canvas state
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
@@ -406,6 +437,12 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const scaleRef = useRef(scale);
   const offsetRef = useRef(offset);
+
+  // Touch state for pinch-to-zoom
+  const lastPinchDist = useRef<number | null>(null);
+  const lastPinchCenter = useRef<{ x: number; y: number } | null>(null);
+  const isTouchPanning = useRef(false);
+  const touchStartedOnNode = useRef(false);
 
   // Keep refs in sync
   useEffect(() => {
@@ -435,15 +472,15 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
     if (canvasRef.current) {
       const rect = canvasRef.current.getBoundingClientRect();
       const newOffset = {
-        x: rect.width / 2 - NODE_WIDTH / 2,
-        y: rect.height / 2 - NODE_HEIGHT / 2,
+        x: rect.width / 2 - nodeWidth / 2,
+        y: rect.height / 2 - nodeHeight / 2,
       };
       setOffset(newOffset);
       offsetRef.current = newOffset;
     }
-  }, []);
+  }, [nodeWidth, nodeHeight]);
 
-  /* ===== PAN HANDLERS ===== */
+  /* ===== MOUSE PAN HANDLERS ===== */
   const handleCanvasMouseDown = (e: ReactMouseEvent) => {
     if ((e.target as HTMLElement).closest(".mindmap-node")) return;
     setIsPanning(true);
@@ -479,7 +516,110 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
     };
   }, [handleCanvasMouseMove, handleCanvasMouseUp]);
 
-  /* ===== ZOOM TO CURSOR ===== */
+  /* ===== TOUCH PAN & PINCH-TO-ZOOM HANDLERS ===== */
+  const handleCanvasTouchStart = useCallback((e: globalThis.TouchEvent) => {
+    // Don't intercept touches on nodes (inputs, buttons, scrolling)
+    if ((e.target as HTMLElement).closest(".mindmap-node")) {
+      touchStartedOnNode.current = true;
+      return;
+    }
+    touchStartedOnNode.current = false;
+
+    if (e.touches.length === 2) {
+      // Pinch start
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastPinchDist.current = Math.sqrt(dx * dx + dy * dy);
+      lastPinchCenter.current = {
+        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+      };
+      isTouchPanning.current = false;
+    } else if (e.touches.length === 1) {
+      // Single finger pan start
+      isTouchPanning.current = true;
+      panStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      panOffsetStart.current = { ...offsetRef.current };
+    }
+  }, []);
+
+  const handleCanvasTouchMove = useCallback((e: globalThis.TouchEvent) => {
+    if (touchStartedOnNode.current) return;
+
+    if (e.touches.length === 2) {
+      // Pinch zoom
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+      if (lastPinchDist.current !== null && lastPinchCenter.current !== null) {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+
+        const pinchScale = dist / lastPinchDist.current;
+        const oldScale = scaleRef.current;
+        const newScale = Math.min(Math.max(oldScale * pinchScale, 0.2), 3);
+
+        const mouseX = centerX - rect.left;
+        const mouseY = centerY - rect.top;
+
+        const oldOff = offsetRef.current;
+        const newOffset = {
+          x: mouseX - (mouseX - oldOff.x) * (newScale / oldScale),
+          y: mouseY - (mouseY - oldOff.y) * (newScale / oldScale),
+        };
+
+        scaleRef.current = newScale;
+        offsetRef.current = newOffset;
+        setScale(newScale);
+        setOffset(newOffset);
+      }
+
+      lastPinchDist.current = dist;
+      lastPinchCenter.current = { x: centerX, y: centerY };
+      isTouchPanning.current = false;
+    } else if (e.touches.length === 1 && isTouchPanning.current) {
+      // Single finger pan
+      e.preventDefault();
+      const dx = e.touches[0].clientX - panStart.current.x;
+      const dy = e.touches[0].clientY - panStart.current.y;
+      const newOffset = {
+        x: panOffsetStart.current.x + dx,
+        y: panOffsetStart.current.y + dy,
+      };
+      setOffset(newOffset);
+      offsetRef.current = newOffset;
+    }
+  }, []);
+
+  const handleCanvasTouchEnd = useCallback(() => {
+    lastPinchDist.current = null;
+    lastPinchCenter.current = null;
+    isTouchPanning.current = false;
+    touchStartedOnNode.current = false;
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvas.addEventListener("touchstart", handleCanvasTouchStart, { passive: false });
+    canvas.addEventListener("touchmove", handleCanvasTouchMove, { passive: false });
+    canvas.addEventListener("touchend", handleCanvasTouchEnd, { passive: true });
+
+    return () => {
+      canvas.removeEventListener("touchstart", handleCanvasTouchStart);
+      canvas.removeEventListener("touchmove", handleCanvasTouchMove);
+      canvas.removeEventListener("touchend", handleCanvasTouchEnd);
+    };
+  }, [handleCanvasTouchStart, handleCanvasTouchMove, handleCanvasTouchEnd]);
+
+  /* ===== ZOOM TO CURSOR (WHEEL) ===== */
   const handleWheel = useCallback((e: WheelEvent) => {
     // Don't zoom if scrolling inside a chat node's message area
     if ((e.target as HTMLElement).closest(".mindmap-node-messages")) return;
@@ -547,13 +687,26 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
     if (canvasRef.current) {
       const rect = canvasRef.current.getBoundingClientRect();
       const newOffset = {
-        x: rect.width / 2 - NODE_WIDTH / 2,
-        y: rect.height / 2 - NODE_HEIGHT / 2,
+        x: rect.width / 2 - nodeWidth / 2,
+        y: rect.height / 2 - nodeHeight / 2,
       };
       offsetRef.current = newOffset;
       setOffset(newOffset);
     }
   };
+
+  /* ===== Navigate to node ===== */
+  const navigateToNode = useCallback((targetNode: ChatNode) => {
+    if (!canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const s = scaleRef.current;
+    const newOffset = {
+      x: rect.width / 2 - (targetNode.x + nodeWidth / 2) * s,
+      y: rect.height / 2 - (targetNode.y + nodeHeight / 2) * s,
+    };
+    offsetRef.current = newOffset;
+    setOffset(newOffset);
+  }, [nodeWidth, nodeHeight]);
 
   /* ===== SEND MESSAGE ===== */
   const handleSendMessage = useCallback(
@@ -675,8 +828,8 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
       const newId = `node-${Date.now()}`;
       const newNode: ChatNode = {
         id: newId,
-        x: parentNode.x + NODE_WIDTH + NODE_GAP_X,
-        y: parentNode.y + childCount * (NODE_HEIGHT + NODE_GAP_Y),
+        x: parentNode.x + nodeWidth + nodeGapX,
+        y: parentNode.y + childCount * (nodeHeight + nodeGapY),
         parentId: parentNodeId,
         label:
           selectedText.length > 40
@@ -694,16 +847,7 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
       setActiveNodeId(newId);
 
       // Pan to new node
-      if (canvasRef.current) {
-        const rect = canvasRef.current.getBoundingClientRect();
-        const s = scaleRef.current;
-        const newOffset = {
-          x: rect.width / 2 - (newNode.x + NODE_WIDTH / 2) * s,
-          y: rect.height / 2 - (newNode.y + NODE_HEIGHT / 2) * s,
-        };
-        offsetRef.current = newOffset;
-        setOffset(newOffset);
-      }
+      navigateToNode(newNode);
 
       // Auto-send the selected text as first message
       setTimeout(() => {
@@ -711,7 +855,7 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
         handleSendMessage(newId, question);
       }, 100);
     },
-    [nodes, handleSendMessage]
+    [nodes, handleSendMessage, nodeWidth, nodeHeight, nodeGapX, nodeGapY, navigateToNode]
   );
 
   /* ===== CLOSE NODE ===== */
@@ -747,10 +891,10 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
       const to = nodes.find((n) => n.id === conn.toId);
       if (!from || !to) return null;
 
-      const fromX = from.x + NODE_WIDTH;
-      const fromY = from.y + NODE_HEIGHT / 2;
+      const fromX = from.x + nodeWidth;
+      const fromY = from.y + nodeHeight / 2;
       const toX = to.x;
-      const toY = to.y + NODE_HEIGHT / 2;
+      const toY = to.y + nodeHeight / 2;
       const midX = (fromX + toX) / 2;
 
       return (
@@ -759,7 +903,7 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
           d={`M ${fromX} ${fromY} C ${midX} ${fromY}, ${midX} ${toY}, ${toX} ${toY}`}
           fill="none"
           stroke="var(--accent-purple)"
-          strokeWidth={2}
+          strokeWidth={isMobile ? 1.5 : 2}
           strokeDasharray="8 4"
           opacity={0.5}
         />
@@ -773,7 +917,9 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
     <div className="flex flex-col h-full relative overflow-hidden">
       {/* Top Bar */}
       <div
-        className="flex items-center justify-between px-4 py-2.5 flex-shrink-0 z-10"
+        className={`flex items-center justify-between flex-shrink-0 z-10 ${
+          isMobile ? "px-3 py-2" : "px-4 py-2.5"
+        }`}
         style={{
           background: "var(--bg-secondary)",
           borderBottom: "1px solid var(--border-primary)",
@@ -781,16 +927,18 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
       >
         <div className="flex items-center gap-2">
           <div
-            className="flex h-6 w-6 items-center justify-center rounded-lg"
+            className={`flex items-center justify-center rounded-lg ${
+              isMobile ? "h-7 w-7" : "h-6 w-6"
+            }`}
             style={{
               background: "var(--accent-purple-light)",
               color: "var(--accent-purple)",
             }}
           >
-            <IconGitBranch size={12} />
+            <IconGitBranch size={isMobile ? 14 : 12} />
           </div>
           <span
-            className="text-xs font-semibold"
+            className={`font-semibold ${isMobile ? "text-[11px]" : "text-xs"}`}
             style={{ color: "var(--text-primary)" }}
           >
             MindmapChat
@@ -812,40 +960,48 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
         <div className="flex items-center gap-1">
           <button
             onClick={zoomOut}
-            className="flex h-7 w-7 items-center justify-center rounded-lg transition-all"
+            className={`flex items-center justify-center rounded-lg transition-all ${
+              isMobile ? "h-9 w-9" : "h-7 w-7"
+            }`}
             style={{
               background: "var(--bg-tertiary)",
               color: "var(--text-tertiary)",
             }}
           >
-            <IconZoomOut size={13} />
+            <IconZoomOut size={isMobile ? 16 : 13} />
           </button>
           <span
-            className="text-[10px] font-mono w-10 text-center"
+            className={`font-mono text-center ${
+              isMobile ? "text-[11px] w-11" : "text-[10px] w-10"
+            }`}
             style={{ color: "var(--text-tertiary)" }}
           >
             {Math.round(scale * 100)}%
           </span>
           <button
             onClick={zoomIn}
-            className="flex h-7 w-7 items-center justify-center rounded-lg transition-all"
+            className={`flex items-center justify-center rounded-lg transition-all ${
+              isMobile ? "h-9 w-9" : "h-7 w-7"
+            }`}
             style={{
               background: "var(--bg-tertiary)",
               color: "var(--text-tertiary)",
             }}
           >
-            <IconZoomIn size={13} />
+            <IconZoomIn size={isMobile ? 16 : 13} />
           </button>
           <button
             onClick={resetView}
-            className="flex h-7 w-7 items-center justify-center rounded-lg transition-all ml-1"
+            className={`flex items-center justify-center rounded-lg transition-all ml-1 ${
+              isMobile ? "h-9 w-9" : "h-7 w-7"
+            }`}
             style={{
               background: "var(--bg-tertiary)",
               color: "var(--text-tertiary)",
             }}
             title="Görünümü sıfırla"
           >
-            <IconMaximize size={13} />
+            <IconMaximize size={isMobile ? 16 : 13} />
           </button>
         </div>
       </div>
@@ -857,8 +1013,9 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
         style={{
           background: "var(--bg-primary)",
           cursor: isPanning ? "grabbing" : "grab",
+          touchAction: "none",
         }}
-        onMouseDown={handleCanvasMouseDown}
+        onMouseDown={!isMobile ? handleCanvasMouseDown : undefined}
       >
         {/* Grid Background */}
         <div
@@ -919,6 +1076,9 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
                 onClose={() => handleCloseNode(node.id)}
                 isMain={node.id === "main"}
                 scale={scale}
+                isMobile={isMobile}
+                nodeWidth={nodeWidth}
+                nodeHeight={nodeHeight}
               />
             </div>
           ))}
@@ -926,20 +1086,25 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
 
         {/* Help Hint */}
         <div
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full pointer-events-none"
+          className={`absolute left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full pointer-events-none ${
+            isMobile ? "bottom-3 px-3 py-1.5" : "bottom-4 px-4 py-2"
+          }`}
           style={{
             background: "var(--bg-glass-heavy)",
             border: "1px solid var(--border-primary)",
             boxShadow: "var(--shadow-md)",
+            maxWidth: isMobile ? "calc(100vw - 24px)" : undefined,
           }}
         >
           <span
-            className="text-[10px] font-medium"
+            className={`font-medium text-center ${
+              isMobile ? "text-[9px] leading-tight" : "text-[10px]"
+            }`}
             style={{ color: "var(--text-tertiary)" }}
           >
-            Metin seç &rarr; &quot;Yeni Yol Oluştur&quot; ile paralel sohbet
-            oluştur &bull; Boş alana tıkla ve sürükle &bull; Scroll ile
-            yakınlaştır
+            {isMobile
+              ? "Metin seç \u2192 dal olu\u015Ftur \u2022 Parmakla kayd\u0131r \u2022 K\u0131st\u0131rarak yak\u0131nla\u015Ft\u0131r"
+              : "Metin se\u00E7 \u2192 \"Yeni Yol Olu\u015Ftur\" ile paralel sohbet olu\u015Ftur \u2022 Bo\u015F alana t\u0131kla ve s\u00FCr\u00FCkle \u2022 Scroll ile yak\u0131nla\u015Ft\u0131r"}
           </span>
         </div>
       </div>
