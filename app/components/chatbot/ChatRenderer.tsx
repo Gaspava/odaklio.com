@@ -34,12 +34,126 @@ interface ParsedBlock {
 }
 
 // ============================================================
+// LATEX → UNICODE CONVERTER (fallback safety net)
+// ============================================================
+
+const LATEX_COMMANDS: Record<string, string> = {
+  // Arrows
+  "\\rightarrow": "→", "\\leftarrow": "←", "\\leftrightarrow": "↔",
+  "\\Rightarrow": "⇒", "\\Leftarrow": "⇐", "\\Leftrightarrow": "⇔",
+  "\\uparrow": "↑", "\\downarrow": "↓", "\\mapsto": "↦",
+  "\\to": "→", "\\gets": "←",
+  // Greek letters
+  "\\alpha": "α", "\\beta": "β", "\\gamma": "γ", "\\delta": "δ",
+  "\\epsilon": "ε", "\\varepsilon": "ε", "\\zeta": "ζ", "\\eta": "η",
+  "\\theta": "θ", "\\vartheta": "ϑ", "\\iota": "ι", "\\kappa": "κ",
+  "\\lambda": "λ", "\\mu": "μ", "\\nu": "ν", "\\xi": "ξ",
+  "\\pi": "π", "\\rho": "ρ", "\\sigma": "σ", "\\tau": "τ",
+  "\\upsilon": "υ", "\\phi": "φ", "\\varphi": "φ", "\\chi": "χ",
+  "\\psi": "ψ", "\\omega": "ω",
+  "\\Gamma": "Γ", "\\Delta": "Δ", "\\Theta": "Θ", "\\Lambda": "Λ",
+  "\\Xi": "Ξ", "\\Pi": "Π", "\\Sigma": "Σ", "\\Phi": "Φ",
+  "\\Psi": "Ψ", "\\Omega": "Ω",
+  // Operators & symbols
+  "\\times": "×", "\\div": "÷", "\\cdot": "·", "\\pm": "±",
+  "\\mp": "∓", "\\leq": "≤", "\\geq": "≥", "\\neq": "≠",
+  "\\approx": "≈", "\\equiv": "≡", "\\sim": "∼", "\\propto": "∝",
+  "\\infty": "∞", "\\partial": "∂", "\\nabla": "∇",
+  "\\sum": "∑", "\\prod": "∏", "\\int": "∫", "\\iint": "∬",
+  "\\iiint": "∭", "\\oint": "∮",
+  "\\sqrt": "√", "\\cbrt": "∛",
+  "\\forall": "∀", "\\exists": "∃", "\\nexists": "∄",
+  "\\in": "∈", "\\notin": "∉", "\\subset": "⊂", "\\supset": "⊃",
+  "\\subseteq": "⊆", "\\supseteq": "⊇",
+  "\\cup": "∪", "\\cap": "∩", "\\emptyset": "∅", "\\varnothing": "∅",
+  "\\land": "∧", "\\lor": "∨", "\\neg": "¬", "\\lnot": "¬",
+  "\\angle": "∠", "\\triangle": "△", "\\perp": "⊥", "\\parallel": "∥",
+  "\\circ": "°", "\\degree": "°",
+  "\\ldots": "…", "\\cdots": "⋯", "\\vdots": "⋮", "\\ddots": "⋱",
+  "\\star": "⋆", "\\ast": "∗",
+  "\\hbar": "ℏ", "\\ell": "ℓ",
+  "\\prime": "′", "\\dprime": "″",
+  // Spacing/formatting (strip these)
+  "\\,": " ", "\\;": " ", "\\:": " ", "\\!": "", "\\quad": " ", "\\qquad": "  ",
+  "\\text": "", "\\mathrm": "", "\\mathbf": "", "\\mathit": "",
+  "\\left": "", "\\right": "", "\\big": "", "\\Big": "", "\\bigg": "", "\\Bigg": "",
+};
+
+const SUPERSCRIPTS: Record<string, string> = {
+  "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴",
+  "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹",
+  "+": "⁺", "-": "⁻", "=": "⁼", "(": "⁽", ")": "⁾",
+  "n": "ⁿ", "i": "ⁱ", "x": "ˣ",
+};
+
+const SUBSCRIPTS: Record<string, string> = {
+  "0": "₀", "1": "₁", "2": "₂", "3": "₃", "4": "₄",
+  "5": "₅", "6": "₆", "7": "₇", "8": "₈", "9": "₉",
+  "+": "₊", "-": "₋", "=": "₌", "(": "₍", ")": "₎",
+  "a": "ₐ", "e": "ₑ", "i": "ᵢ", "n": "ₙ", "o": "ₒ",
+  "r": "ᵣ", "s": "ₛ", "t": "ₜ", "u": "ᵤ", "x": "ₓ",
+};
+
+function convertSuperSub(text: string, map: Record<string, string>): string {
+  return text.split("").map((c) => map[c] || c).join("");
+}
+
+function stripLatex(raw: string): string {
+  let text = raw;
+
+  // Remove $...$ and $$...$$ wrappers (keep inner content)
+  text = text.replace(/\$\$([\s\S]*?)\$\$/g, "$1");
+  text = text.replace(/\$([^$]+?)\$/g, "$1");
+
+  // \frac{a}{b} → a/b
+  text = text.replace(/\\frac\{([^}]*)}\{([^}]*)}/g, "($1/$2)");
+
+  // \sqrt{x} → √x   and  \sqrt[n]{x} → ⁿ√x
+  text = text.replace(/\\sqrt\[([^\]]+)]\{([^}]*)}/g, (_, n, x) => `${convertSuperSub(n, SUPERSCRIPTS)}√${x}`);
+  text = text.replace(/\\sqrt\{([^}]*)}/g, "√$1");
+
+  // ^{...} → superscript
+  text = text.replace(/\^\{([^}]*)}/g, (_, inner) => convertSuperSub(inner, SUPERSCRIPTS));
+  // ^x (single char)
+  text = text.replace(/\^([0-9a-zA-Z])/g, (_, c) => SUPERSCRIPTS[c] || `^${c}`);
+
+  // _{...} → subscript
+  text = text.replace(/_\{([^}]*)}/g, (_, inner) => convertSuperSub(inner, SUBSCRIPTS));
+  // _x (single char)
+  text = text.replace(/_([0-9a-zA-Z])/g, (_, c) => SUBSCRIPTS[c] || `_${c}`);
+
+  // Replace all known LaTeX commands (sort by length desc so longer matches first)
+  const sortedCmds = Object.keys(LATEX_COMMANDS).sort((a, b) => b.length - a.length);
+  for (const cmd of sortedCmds) {
+    // Escape backslash for regex, match command followed by word boundary or non-letter
+    const escaped = cmd.replace(/\\/g, "\\\\");
+    text = text.replace(new RegExp(escaped + "(?![a-zA-Z])", "g"), LATEX_COMMANDS[cmd]);
+  }
+
+  // \text{...} or \mathrm{...} etc. → just the inner text
+  text = text.replace(/\\(?:text|mathrm|mathbf|mathit|textbf|textit)\{([^}]*)}/g, "$1");
+
+  // Clean up remaining braces that were just grouping: {x} → x
+  text = text.replace(/\{([^{}]*)\}/g, "$1");
+
+  // Clean up any remaining stray backslashes before known words
+  text = text.replace(/\\([a-zA-Z]+)/g, "$1");
+
+  // Collapse multiple spaces
+  text = text.replace(/ {2,}/g, " ");
+
+  return text.trim();
+}
+
+// ============================================================
 // PARSER — converts raw AI text into structured blocks
 // ============================================================
 
 export function parseContent(raw: string): ParsedBlock[] {
+  // First pass: convert any LaTeX notation to Unicode
+  const cleaned = stripLatex(raw);
   const blocks: ParsedBlock[] = [];
-  const lines = raw.split("\n");
+  const lines = cleaned.split("\n");
   let i = 0;
 
   while (i < lines.length) {
