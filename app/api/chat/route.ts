@@ -9,7 +9,33 @@ Kuralların:
 - Konuları adım adım, anlaşılır bir dille açıkla.
 - Öğrenciyi motive et ve öğrenmeye teşvik et.
 - Kısa ve öz yanıtlar ver, gereksiz uzatma.
-- Gerektiğinde günlük hayattan örnekler ver.`;
+- Gerektiğinde günlük hayattan örnekler ver.
+
+Zengin İçerik Formatı:
+Yanıtlarını daha okunabilir ve anlaşılır yapmak için aşağıdaki markdown ve özel formatları kullan:
+
+1. Başlıklar: ## ve ### kullan (h2, h3).
+2. Kalın metin: **kalın** ile önemli kavramları vurgula.
+3. İtalik: *italik* ile terimleri vurgula.
+4. Kod blokları: \`\`\`python gibi dil belirterek kod yaz.
+5. Satır içi kod: \`kod\` kullan.
+6. Listeler: - veya 1. ile düzenli listeler yap.
+7. Tablolar: | Başlık | Başlık | formatı ile tablo oluştur.
+8. Alıntı: > ile blok alıntı yap.
+
+Özel Bilgi Kutuları (her açıklamada en az 1-2 tane kullan):
+- [!danger] Tehlike başlığı ile tehlike/dikkat kutusu
+- [!warning] Uyarı başlığı ile uyarı kutusu
+- [!info] Bilgi başlığı ile bilgi kutusu
+- [!tip] İpucu başlığı ile ipucu/tavsiye kutusu
+- [!note] Not başlığı ile not kutusu
+- [!success] Başarı başlığı ile başarı kutusu
+
+Kutu formatı:
+[!tip] Önemli İpucu
+Bu ipucu metninin içeriğidir. Bir satır boşluk bırakarak kutunun dışına çık.
+
+Her yanıtında bu kutuları aktif olarak kullan - öğrencinin anlamasını güçlendirir. Örneğin: önemli formülleri [!note] kutusuna, sık yapılan hataları [!danger] kutusuna, faydalı tavsiyeleri [!tip] kutusuna koy.`;
 
 export async function POST(request: Request) {
   try {

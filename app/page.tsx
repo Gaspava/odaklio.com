@@ -6,11 +6,9 @@ import LeftPanel from "./components/layout/LeftPanel";
 import RightPanel from "./components/layout/RightPanel";
 import MainChat from "./components/chatbot/MainChat";
 import {
-  IconFocus,
-  IconMentor,
   IconChat,
   IconPomodoro,
-  IconHeadphones,
+  IconMentor,
 } from "./components/icons/Icons";
 
 function useIsMobile(breakpoint = 768) {
@@ -31,7 +29,6 @@ export default function Home() {
   const [rightOpen, setRightOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  // On desktop, panels start open
   useEffect(() => {
     if (!isMobile) {
       setLeftOpen(true);
@@ -42,7 +39,6 @@ export default function Home() {
     }
   }, [isMobile]);
 
-  // Close panels when switching to mobile
   const closeAllPanels = useCallback(() => {
     if (isMobile) {
       setLeftOpen(false);
@@ -50,7 +46,6 @@ export default function Home() {
     }
   }, [isMobile]);
 
-  // Handle swipe gestures on mobile
   useEffect(() => {
     if (!isMobile) return;
 
@@ -66,21 +61,17 @@ export default function Home() {
       touchEndX = e.changedTouches[0].screenX;
       const distance = touchEndX - touchStartX;
 
-      // Swipe right from left edge → open left panel
       if (distance > minSwipeDistance && touchStartX < 30) {
         setLeftOpen(true);
         setRightOpen(false);
       }
-      // Swipe left from right edge → open right panel
       if (distance < -minSwipeDistance && touchStartX > window.innerWidth - 30) {
         setRightOpen(true);
         setLeftOpen(false);
       }
-      // Swipe left while left panel open → close
       if (distance < -minSwipeDistance && leftOpen) {
         setLeftOpen(false);
       }
-      // Swipe right while right panel open → close
       if (distance > minSwipeDistance && rightOpen) {
         setRightOpen(false);
       }
@@ -95,7 +86,6 @@ export default function Home() {
     };
   }, [isMobile, leftOpen, rightOpen]);
 
-  // Prevent body scroll when mobile panel is open
   useEffect(() => {
     if (isMobile && (leftOpen || rightOpen)) {
       document.body.style.overflow = "hidden";
@@ -108,21 +98,20 @@ export default function Home() {
   }, [isMobile, leftOpen, rightOpen]);
 
   const toggleLeft = () => {
-    if (isMobile) {
-      setRightOpen(false);
-    }
+    if (isMobile) setRightOpen(false);
     setLeftOpen(!leftOpen);
   };
 
   const toggleRight = () => {
-    if (isMobile) {
-      setLeftOpen(false);
-    }
+    if (isMobile) setLeftOpen(false);
     setRightOpen(!rightOpen);
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden" style={{ background: "var(--bg-primary)" }}>
+    <div
+      className="flex flex-col h-screen overflow-hidden"
+      style={{ background: "var(--bg-primary)" }}
+    >
       <Header
         onToggleLeft={toggleLeft}
         onToggleRight={toggleRight}
@@ -133,10 +122,7 @@ export default function Home() {
       <div className="flex flex-1 overflow-hidden relative">
         {/* Mobile Overlay Backdrop */}
         {isMobile && (leftOpen || rightOpen) && (
-          <div
-            className="mobile-overlay"
-            onClick={closeAllPanels}
-          />
+          <div className="mobile-overlay" onClick={closeAllPanels} />
         )}
 
         {/* Left Panel */}
@@ -157,7 +143,10 @@ export default function Home() {
         )}
 
         {/* Main Chat Area */}
-        <div className={`flex-1 min-w-0 overflow-hidden ${isMobile ? "safe-area-bottom" : ""}`}>
+        <div
+          className={`flex-1 min-w-0 overflow-hidden ${isMobile ? "safe-area-bottom" : ""}`}
+          style={{ background: "var(--bg-primary)" }}
+        >
           <MainChat isMobile={isMobile} />
         </div>
 
@@ -189,8 +178,8 @@ export default function Home() {
               background: leftOpen ? "var(--accent-primary-light)" : "transparent",
             }}
           >
-            <IconPomodoro size={18} />
-            <span>Araçlar</span>
+            <IconPomodoro size={19} />
+            <span style={{ color: "inherit" }}>Araçlar</span>
           </button>
 
           <button
@@ -200,8 +189,8 @@ export default function Home() {
               background: !leftOpen && !rightOpen ? "var(--accent-primary-light)" : "transparent",
             }}
           >
-            <IconChat size={18} />
-            <span>Sohbet</span>
+            <IconChat size={19} />
+            <span style={{ color: "inherit" }}>Sohbet</span>
           </button>
 
           <button
@@ -211,8 +200,8 @@ export default function Home() {
               background: rightOpen ? "var(--accent-primary-light)" : "transparent",
             }}
           >
-            <IconMentor size={18} />
-            <span>Mentor</span>
+            <IconMentor size={19} />
+            <span style={{ color: "inherit" }}>Mentor</span>
           </button>
         </nav>
       )}

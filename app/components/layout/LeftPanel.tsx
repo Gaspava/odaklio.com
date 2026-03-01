@@ -29,8 +29,7 @@ function PomodoroMini() {
   const [seconds, setSeconds] = useState(0);
   const [mode, setMode] = useState<"work" | "break">("work");
 
-  // Daily goal
-  const dailyGoal = 4; // 4 pomodoros
+  const dailyGoal = 4;
   const completed = 2;
   const goalProgress = (completed / dailyGoal) * 100;
 
@@ -40,26 +39,37 @@ function PomodoroMini() {
   const progress = (elapsed / totalSeconds) * 100;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
-  const modeColor = mode === "work" ? "var(--accent-primary)" : "var(--accent-success)";
+  const modeColor = mode === "work" ? "var(--accent-primary)" : "var(--accent-cyan)";
 
   return (
     <div
-      className="rounded-xl p-4"
+      className="rounded-xl p-4 transition-all"
       style={{
         background: "var(--bg-card)",
         border: "1px solid var(--border-primary)",
       }}
     >
       <div className="flex items-center justify-between mb-3">
-        <h3
-          className="text-xs font-semibold uppercase tracking-wider"
-          style={{ color: "var(--text-tertiary)" }}
-        >
-          Pomodoro
-        </h3>
+        <div className="flex items-center gap-2">
+          <div
+            className="flex h-5 w-5 items-center justify-center rounded-md"
+            style={{ background: "var(--accent-primary-light)", color: "var(--accent-primary)" }}
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="13" r="8" />
+              <path d="M12 9v4l2 2" />
+            </svg>
+          </div>
+          <h3
+            className="text-[11px] font-bold uppercase tracking-wider"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            Pomodoro
+          </h3>
+        </div>
         <Link
           href="/pomodoro"
-          className="flex items-center gap-0.5 text-[10px] font-medium"
+          className="flex items-center gap-0.5 text-[10px] font-semibold hover-underline"
           style={{ color: "var(--accent-primary)" }}
         >
           İstatistikler
@@ -85,7 +95,7 @@ function PomodoroMini() {
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
-              style={{ transition: "stroke-dashoffset 1s linear" }}
+              style={{ transition: "stroke-dashoffset 1s linear", filter: `drop-shadow(0 0 4px ${modeColor})` }}
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -95,19 +105,18 @@ function PomodoroMini() {
             >
               {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
             </span>
-            <span className="text-[9px] font-medium" style={{ color: modeColor }}>
+            <span className="text-[9px] font-semibold" style={{ color: modeColor }}>
               {mode === "work" ? "Odak" : "Mola"}
             </span>
           </div>
         </div>
 
         <div className="flex-1 space-y-2">
-          {/* Controls */}
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setIsRunning(!isRunning)}
-              className="flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-lg text-white"
-              style={{ background: modeColor }}
+              className="flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-lg text-white transition-all active:scale-95"
+              style={{ background: modeColor, boxShadow: `0 0 8px ${modeColor}40` }}
             >
               {isRunning ? <IconPause size={12} /> : <IconPlay size={12} />}
             </button>
@@ -118,7 +127,7 @@ function PomodoroMini() {
                 setSeconds(0);
                 setMode("work");
               }}
-              className="flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-lg"
+              className="flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-lg transition-all active:scale-95"
               style={{
                 background: "var(--bg-tertiary)",
                 color: "var(--text-tertiary)",
@@ -128,9 +137,8 @@ function PomodoroMini() {
             </button>
           </div>
 
-          {/* Mode Toggle */}
           <div
-            className="flex rounded-md p-0.5"
+            className="flex rounded-lg p-0.5"
             style={{ background: "var(--bg-tertiary)" }}
           >
             {(["work", "break"] as const).map((m) => (
@@ -142,10 +150,11 @@ function PomodoroMini() {
                   setSeconds(0);
                   setIsRunning(false);
                 }}
-                className="flex-1 rounded-md py-1.5 sm:py-1 text-[10px] font-medium transition-all"
+                className="flex-1 rounded-md py-1.5 sm:py-1 text-[10px] font-semibold transition-all"
                 style={{
                   background: mode === m ? "var(--bg-card)" : "transparent",
                   color: mode === m ? modeColor : "var(--text-tertiary)",
+                  boxShadow: mode === m ? "var(--shadow-sm)" : "none",
                 }}
               >
                 {m === "work" ? "Çalış" : "Mola"}
@@ -161,7 +170,7 @@ function PomodoroMini() {
           <span className="text-[10px] font-medium" style={{ color: "var(--text-tertiary)" }}>
             Günlük Hedef
           </span>
-          <span className="flex items-center gap-1 text-[10px] font-medium" style={{ color: "var(--accent-success)" }}>
+          <span className="flex items-center gap-1 text-[10px] font-semibold" style={{ color: "var(--accent-success)" }}>
             <IconTrendingUp size={10} />
             {completed}/{dailyGoal}
           </span>
@@ -171,10 +180,11 @@ function PomodoroMini() {
           style={{ background: "var(--bg-tertiary)" }}
         >
           <div
-            className="h-full rounded-full transition-all duration-500"
+            className="h-full rounded-full transition-all duration-700 ease-out"
             style={{
               width: `${goalProgress}%`,
               background: "var(--gradient-primary)",
+              boxShadow: "var(--shadow-glow-sm)",
             }}
           />
         </div>
@@ -188,45 +198,58 @@ function FocusModesCompact() {
   const [activeMode, setActiveMode] = useState<string | null>(null);
 
   const modes = [
-    { id: "deep", name: "Derin Odak", icon: <IconBrain size={14} />, color: "#8B5CF6" },
-    { id: "reading", name: "Okuma", icon: <IconEye size={14} />, color: "#3B82F6" },
-    { id: "creative", name: "Yaratıcı", icon: <IconLightning size={14} />, color: "#F59E0B" },
-    { id: "night", name: "Gece", icon: <IconMoon size={14} />, color: "#6366F1" },
-    { id: "zen", name: "Zen", icon: <IconFocus size={14} />, color: "#64748B" },
+    { id: "deep", name: "Derin Odak", icon: <IconBrain size={14} />, color: "#10b981", desc: "Derin konsantrasyon" },
+    { id: "reading", name: "Okuma", icon: <IconEye size={14} />, color: "#3b82f6", desc: "Hızlı okuma modu" },
+    { id: "creative", name: "Yaratıcı", icon: <IconLightning size={14} />, color: "#f59e0b", desc: "Beyin fırtınası" },
+    { id: "night", name: "Gece", icon: <IconMoon size={14} />, color: "#8b5cf6", desc: "Göz koruma" },
+    { id: "zen", name: "Zen", icon: <IconFocus size={14} />, color: "#64748b", desc: "Minimal dikkat" },
   ];
 
   return (
     <div
-      className="rounded-xl p-4"
+      className="rounded-xl p-4 transition-all"
       style={{
         background: "var(--bg-card)",
         border: "1px solid var(--border-primary)",
       }}
     >
-      <h3
-        className="text-xs font-semibold uppercase tracking-wider mb-3"
-        style={{ color: "var(--text-tertiary)" }}
-      >
-        Focus Modu
-      </h3>
+      <div className="flex items-center gap-2 mb-3">
+        <div
+          className="flex h-5 w-5 items-center justify-center rounded-md"
+          style={{ background: "var(--accent-secondary-light)", color: "var(--accent-secondary)" }}
+        >
+          <IconFocus size={10} />
+        </div>
+        <h3
+          className="text-[11px] font-bold uppercase tracking-wider"
+          style={{ color: "var(--text-tertiary)" }}
+        >
+          Focus Modu
+        </h3>
+      </div>
 
       <div className="space-y-1">
         {modes.map((mode) => (
           <button
             key={mode.id}
             onClick={() => setActiveMode(activeMode === mode.id ? null : mode.id)}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 sm:py-2 transition-all"
+            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 sm:py-2 transition-all active:scale-[0.98]"
             style={{
-              background: activeMode === mode.id ? `${mode.color}15` : "transparent",
+              background: activeMode === mode.id ? `${mode.color}12` : "transparent",
               color: activeMode === mode.id ? mode.color : "var(--text-secondary)",
             }}
           >
-            {mode.icon}
-            <span className="text-xs font-medium">{mode.name}</span>
+            <span style={{ opacity: activeMode === mode.id ? 1 : 0.7 }}>{mode.icon}</span>
+            <div className="flex-1 text-left">
+              <span className="text-xs font-semibold block">{mode.name}</span>
+              {activeMode === mode.id && (
+                <span className="text-[9px] block" style={{ color: "var(--text-tertiary)" }}>{mode.desc}</span>
+              )}
+            </div>
             {activeMode === mode.id && (
               <div
-                className="ml-auto h-2 w-2 rounded-full"
-                style={{ background: mode.color, boxShadow: `0 0 6px ${mode.color}` }}
+                className="h-2 w-2 rounded-full animate-pulse"
+                style={{ background: mode.color, boxShadow: `0 0 8px ${mode.color}` }}
               />
             )}
           </button>
@@ -254,25 +277,34 @@ function BackgroundSoundsCompact() {
 
   return (
     <div
-      className="rounded-xl p-4"
+      className="rounded-xl p-4 transition-all"
       style={{
         background: "var(--bg-card)",
         border: "1px solid var(--border-primary)",
       }}
     >
       <div className="flex items-center justify-between mb-3">
-        <h3
-          className="text-xs font-semibold uppercase tracking-wider"
-          style={{ color: "var(--text-tertiary)" }}
-        >
-          Arka Plan Sesi
-        </h3>
+        <div className="flex items-center gap-2">
+          <div
+            className="flex h-5 w-5 items-center justify-center rounded-md"
+            style={{ background: "var(--accent-purple-light)", color: "var(--accent-purple)" }}
+          >
+            <IconHeadphones size={10} />
+          </div>
+          <h3
+            className="text-[11px] font-bold uppercase tracking-wider"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            Arka Plan Sesi
+          </h3>
+        </div>
         {activeSound && (
-          <span className="flex items-center gap-1">
-            <IconHeadphones size={10} className="text-[var(--accent-primary)]" />
-            <span className="text-[10px] font-medium" style={{ color: "var(--accent-primary)" }}>
-              Aktif
-            </span>
+          <span
+            className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold"
+            style={{ background: "var(--accent-primary-light)", color: "var(--accent-primary)" }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--accent-primary)" }} />
+            Aktif
           </span>
         )}
       </div>
@@ -282,15 +314,16 @@ function BackgroundSoundsCompact() {
           <button
             key={sound.id}
             onClick={() => setActiveSound(activeSound === sound.id ? null : sound.id)}
-            className="flex flex-col items-center gap-1 rounded-lg py-2.5 sm:py-2 transition-all"
+            className="flex flex-col items-center gap-1 rounded-xl py-2.5 sm:py-2 transition-all active:scale-95"
             style={{
               background: activeSound === sound.id ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
-              border: activeSound === sound.id ? "1px solid var(--accent-primary)" : "1px solid transparent",
+              border: activeSound === sound.id ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid transparent",
+              boxShadow: activeSound === sound.id ? "var(--shadow-glow-sm)" : "none",
             }}
           >
             <span className="text-base">{sound.emoji}</span>
             <span
-              className="text-[9px] font-medium"
+              className="text-[9px] font-semibold"
               style={{
                 color: activeSound === sound.id ? "var(--accent-primary)" : "var(--text-tertiary)",
               }}
@@ -315,7 +348,7 @@ function BackgroundSoundsCompact() {
             className="h-1 flex-1 cursor-pointer appearance-none rounded-full"
             style={{ accentColor: "var(--accent-primary)" }}
           />
-          <span className="text-[10px] min-w-[28px] text-right" style={{ color: "var(--text-tertiary)" }}>
+          <span className="text-[10px] font-semibold min-w-[28px] text-right" style={{ color: "var(--text-tertiary)" }}>
             {volume}%
           </span>
         </div>
@@ -327,8 +360,7 @@ function BackgroundSoundsCompact() {
 /* ===== LEFT PANEL ===== */
 export default function LeftPanel({ onClose }: LeftPanelProps) {
   return (
-    <div className="h-full overflow-y-auto p-3 space-y-3">
-      {/* Mobile close header */}
+    <div className="h-full overflow-y-auto p-3 space-y-3 stagger-children">
       {onClose && (
         <div className="flex items-center justify-between pb-1">
           <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
@@ -336,7 +368,7 @@ export default function LeftPanel({ onClose }: LeftPanelProps) {
           </h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-lg transition-all active:scale-95"
             style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
           >
             <IconX size={16} />
