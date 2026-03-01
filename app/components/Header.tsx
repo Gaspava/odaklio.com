@@ -74,7 +74,7 @@ export default function Header() {
       style={{
         backgroundColor:
           theme === "dark"
-            ? "rgba(15, 15, 26, 0.8)"
+            ? "rgba(0, 0, 0, 0.8)"
             : "rgba(255, 255, 255, 0.8)",
         borderBottom: "1px solid var(--border-color)",
       }}

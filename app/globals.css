@@ -38,37 +38,37 @@
 
 /* ── Dark theme ── */
 .dark {
-  --bg-primary: #0f0f1a;
-  --bg-secondary: #1a1a2e;
-  --bg-tertiary: #252540;
-  --bg-chat: #0f0f1a;
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #171717;
+  --bg-chat: #000000;
   --bg-message-user: #6c5ce7;
-  --bg-message-bot: #1a1a2e;
-  --bg-input: #1a1a2e;
-  --bg-sidebar: #141425;
-  --bg-hover: #252540;
-  --bg-card: #1a1a2e;
+  --bg-message-bot: #0a0a0a;
+  --bg-input: #0a0a0a;
+  --bg-sidebar: #050505;
+  --bg-hover: #171717;
+  --bg-card: #0a0a0a;
 
-  --text-primary: #e8e8f0;
-  --text-secondary: #94a3b8;
-  --text-tertiary: #64748b;
+  --text-primary: #e5e5e5;
+  --text-secondary: #a0a0a0;
+  --text-tertiary: #5a5a5a;
   --text-on-accent: #ffffff;
-  --text-inverse: #1a1a2e;
+  --text-inverse: #000000;
 
-  --border-color: #252540;
-  --border-light: #1e1e35;
+  --border-color: #1f1f1f;
+  --border-light: #141414;
 
   --accent: #7c6cf0;
   --accent-hover: #9b8ff5;
   --accent-light: rgba(124, 108, 240, 0.15);
   --accent-gradient: linear-gradient(135deg, #7c6cf0 0%, #b47aff 100%);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.7);
 
-  --foreground: #e8e8f0;
-  --background: #0f0f1a;
+  --foreground: #e5e5e5;
+  --background: #000000;
 }
 
 @theme inline {
