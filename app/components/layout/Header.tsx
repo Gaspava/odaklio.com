@@ -1,20 +1,32 @@
 "use client";
 
 import { useTheme } from "@/app/providers/ThemeProvider";
-import { IconSun, IconMoon, IconHeadphones } from "../icons/Icons";
+import { IconSun, IconMoon, IconHeadphones, IconBook, IconRepeat, IconBarChart } from "../icons/Icons";
+
+export type ActiveTab = "ogren" | "tekrar" | "degerlendirme";
 
 interface HeaderProps {
   onToggleLeft: () => void;
   onToggleRight: () => void;
   leftOpen: boolean;
   rightOpen: boolean;
+  activeTab: ActiveTab;
+  onTabChange: (tab: ActiveTab) => void;
 }
+
+const tabs: { id: ActiveTab; label: string; icon: typeof IconBook }[] = [
+  { id: "ogren", label: "Öğren", icon: IconBook },
+  { id: "tekrar", label: "Tekrar Et", icon: IconRepeat },
+  { id: "degerlendirme", label: "Değerlendirme", icon: IconBarChart },
+];
 
 export default function Header({
   onToggleLeft,
   onToggleRight,
   leftOpen,
   rightOpen,
+  activeTab,
+  onTabChange,
 }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
 
@@ -61,12 +73,30 @@ export default function Header({
         </div>
       </div>
 
-      {/* Center */}
+      {/* Center - Tab Switch */}
       <div
-        className="text-xs font-medium"
-        style={{ color: "var(--text-tertiary)" }}
+        className="flex items-center rounded-xl p-1 gap-0.5"
+        style={{ background: "var(--bg-tertiary)" }}
       >
-        Akıllı Öğrenme Platformu
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              className="flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all"
+              style={{
+                background: isActive ? "var(--bg-card)" : "transparent",
+                color: isActive ? "var(--accent-primary)" : "var(--text-tertiary)",
+                boxShadow: isActive ? "var(--shadow-sm)" : "none",
+              }}
+            >
+              <Icon size={13} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Right */}

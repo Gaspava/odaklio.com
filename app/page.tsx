@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import Header from "./components/layout/Header";
+import Header, { type ActiveTab } from "./components/layout/Header";
 import LeftPanel from "./components/layout/LeftPanel";
 import RightPanel from "./components/layout/RightPanel";
 import MainChat from "./components/chatbot/MainChat";
+import TekrarEt from "./components/pages/TekrarEt";
+import Degerlendirme from "./components/pages/Degerlendirme";
 
 export default function Home() {
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("ogren");
 
   return (
     <div className="flex flex-col h-screen overflow-hidden" style={{ background: "var(--bg-primary)" }}>
@@ -17,6 +20,8 @@ export default function Home() {
         onToggleRight={() => setRightOpen(!rightOpen)}
         leftOpen={leftOpen}
         rightOpen={rightOpen}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -32,9 +37,11 @@ export default function Home() {
           {leftOpen && <LeftPanel />}
         </div>
 
-        {/* Main Chat Area */}
+        {/* Main Content Area */}
         <div className="flex-1 min-w-0 overflow-hidden">
-          <MainChat />
+          {activeTab === "ogren" && <MainChat />}
+          {activeTab === "tekrar" && <TekrarEt />}
+          {activeTab === "degerlendirme" && <Degerlendirme />}
         </div>
 
         {/* Right Panel */}
