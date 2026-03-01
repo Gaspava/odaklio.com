@@ -12,70 +12,92 @@ Kuralların:
 - Gerektiğinde günlük hayattan örnekler ver.`;
 
 export async function POST(request: Request) {
-  const apiKey = process.env.GEMINI_API_KEY;
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
 
-  if (!apiKey) {
-    return Response.json(
-      { error: "GEMINI_API_KEY ortam değişkeni ayarlanmamış." },
-      { status: 500 }
-    );
-  }
+    if (!apiKey) {
+      return Response.json(
+        { error: "GEMINI_API_KEY ortam değişkeni ayarlanmamış." },
+        { status: 500 }
+      );
+    }
 
-  const { messages } = await request.json();
+    const body = await request.json();
+    const { messages } = body;
 
-  if (!messages || !Array.isArray(messages)) {
-    return Response.json(
-      { error: "Geçersiz mesaj formatı." },
-      { status: 400 }
-    );
-  }
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return Response.json(
+        { error: "Geçersiz mesaj formatı." },
+        { status: 400 }
+      );
+    }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash",
-    systemInstruction: SYSTEM_INSTRUCTION,
-  });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      systemInstruction: SYSTEM_INSTRUCTION,
+    });
 
-  // Convert messages to Gemini format
-  const history = messages.slice(0, -1).map((msg: { role: string; content: string }) => ({
-    role: msg.role === "assistant" ? "model" : "user",
-    parts: [{ text: msg.content }],
-  }));
+    const lastMessage = messages[messages.length - 1];
 
-  const lastMessage = messages[messages.length - 1];
+    // Build history from previous messages (exclude the last one)
+    const history = messages
+      .slice(0, -1)
+      .filter((msg: { role: string; content: string }) => msg.content?.trim())
+      .map((msg: { role: string; content: string }) => ({
+        role: msg.role === "assistant" ? "model" : "user",
+        parts: [{ text: msg.content }],
+      }));
 
-  const chat = model.startChat({ history });
+    // Ensure history starts with a user message (Gemini requirement)
+    if (history.length > 0 && history[0].role === "model") {
+      history.shift();
+    }
 
-  const result = await chat.sendMessageStream(lastMessage.content);
+    const chat = model.startChat({ history });
+    const result = await chat.sendMessageStream(lastMessage.content);
 
-  // Stream the response
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    async start(controller) {
-      try {
-        for await (const chunk of result.stream) {
-          const text = chunk.text();
-          if (text) {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
+    // Stream the response
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of result.stream) {
+            const text = chunk.text();
+            if (text) {
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ text })}\n\n`)
+              );
+            }
           }
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+        } catch (streamError) {
+          const errorMessage =
+            streamError instanceof Error
+              ? streamError.message
+              : "Stream hatası";
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ error: errorMessage })}\n\n`
+            )
+          );
+          controller.close();
         }
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-        controller.close();
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Bilinmeyen hata";
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ error: errorMessage })}\n\n`)
-        );
-        controller.close();
-      }
-    },
-  });
+      },
+    });
 
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-    },
-  });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Bilinmeyen sunucu hatası";
+    console.error("[Gemini API Error]", message);
+    return Response.json({ error: message }, { status: 500 });
+  }
 }
