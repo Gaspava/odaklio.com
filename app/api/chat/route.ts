@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { messages } = body;
+    const { messages, model: modelId } = body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return Response.json(
@@ -58,9 +58,17 @@ export async function POST(request: Request) {
       );
     }
 
+    const ALLOWED_MODELS = [
+      "gemini-3-flash-preview",
+      "gemini-3-flash-thinking-preview",
+    ];
+    const selectedModel = ALLOWED_MODELS.includes(modelId)
+      ? modelId
+      : "gemini-3-flash-preview";
+
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-3-flash-preview",
+      model: selectedModel,
       systemInstruction: SYSTEM_INSTRUCTION,
     });
 

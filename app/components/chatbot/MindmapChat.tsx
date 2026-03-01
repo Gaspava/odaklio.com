@@ -14,6 +14,7 @@ import {
   IconMaximize,
   IconX,
   IconGitBranch,
+  IconChevronDown,
 } from "../icons/Icons";
 import ChatMessageRenderer from "./ChatMessageRenderer";
 
@@ -44,6 +45,28 @@ interface MindmapChatProps {
   isMobile?: boolean;
 }
 
+interface ModelOption {
+  id: string;
+  label: string;
+  description: string;
+  icon: string;
+}
+
+const MODEL_OPTIONS: ModelOption[] = [
+  {
+    id: "gemini-3-flash-preview",
+    label: "Gemini 3 Flash",
+    description: "Hizli ve verimli",
+    icon: "⚡",
+  },
+  {
+    id: "gemini-3-flash-thinking-preview",
+    label: "Gemini 3 Flash Thinking",
+    description: "Derin dusunme yetenegi",
+    icon: "🧠",
+  },
+];
+
 /* ===== CONSTANTS ===== */
 const NODE_WIDTH = 680;
 const NODE_HEIGHT = 520;
@@ -55,12 +78,13 @@ async function streamChat(
   messages: { role: string; content: string }[],
   onChunk: (text: string) => void,
   onError: (error: string) => void,
-  onDone: () => void
+  onDone: () => void,
+  model?: string
 ) {
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({ messages, model }),
   });
 
   if (!res.ok) {
@@ -397,6 +421,22 @@ function ChatNodeComponent({
 
 /* ===== MAIN MINDMAP CHAT ===== */
 export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
+  // Model selection
+  const [selectedModel, setSelectedModel] = useState(MODEL_OPTIONS[0].id);
+  const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const modelDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close model dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target as Node)) {
+        setShowModelDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   // Canvas state
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
@@ -634,7 +674,8 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
                 n.id === nodeId ? { ...n, isLoading: false } : n
               )
             );
-          }
+          },
+          selectedModel
         );
       } catch (error) {
         const errorMsg =
@@ -659,7 +700,7 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
         );
       }
     },
-    [nodes]
+    [nodes, selectedModel]
   );
 
   /* ===== CREATE BRANCH ===== */
@@ -806,6 +847,72 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
               {branchCount} dal
             </span>
           )}
+
+          {/* Model Selector */}
+          <div className="relative ml-2" ref={modelDropdownRef}>
+            <button
+              onClick={() => setShowModelDropdown((v) => !v)}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all hover:opacity-80"
+              style={{
+                background: "var(--bg-tertiary)",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-primary)",
+              }}
+            >
+              <span>{MODEL_OPTIONS.find((m) => m.id === selectedModel)?.icon}</span>
+              <span>{MODEL_OPTIONS.find((m) => m.id === selectedModel)?.label}</span>
+              <IconChevronDown
+                size={12}
+                className={`transition-transform ${showModelDropdown ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {showModelDropdown && (
+              <div
+                className="absolute top-full left-0 mt-1.5 rounded-xl py-1.5 min-w-[240px] z-50 animate-fade-in"
+                style={{
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border-primary)",
+                  boxShadow: "var(--shadow-lg)",
+                }}
+              >
+                {MODEL_OPTIONS.map((model) => (
+                  <button
+                    key={model.id}
+                    onClick={() => {
+                      setSelectedModel(model.id);
+                      setShowModelDropdown(false);
+                    }}
+                    className="flex items-center gap-3 w-full px-3.5 py-2.5 text-left transition-all hover:opacity-80"
+                    style={{
+                      background:
+                        selectedModel === model.id
+                          ? "var(--accent-primary-light)"
+                          : "transparent",
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    <span className="text-base">{model.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold">{model.label}</div>
+                      <div
+                        className="text-[10px] mt-0.5"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        {model.description}
+                      </div>
+                    </div>
+                    {selectedModel === model.id && (
+                      <div
+                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                        style={{ background: "var(--accent-primary)" }}
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Zoom Controls */}

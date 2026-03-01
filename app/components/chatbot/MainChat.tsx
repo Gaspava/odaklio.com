@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { IconSend, IconMic, IconHelp } from "../icons/Icons";
+import { IconSend, IconMic, IconHelp, IconChevronDown } from "../icons/Icons";
 import TextSelectionPopup from "./TextSelectionPopup";
 import SpeedReadingOverlay from "../speed-reading/SpeedReadingOverlay";
 import QuickLearnOverlay from "./QuickLearnOverlay";
@@ -26,16 +26,39 @@ const welcomeMessage: Message = {
   timestamp: new Date(),
 };
 
+interface ModelOption {
+  id: string;
+  label: string;
+  description: string;
+  icon: string;
+}
+
+const MODEL_OPTIONS: ModelOption[] = [
+  {
+    id: "gemini-3-flash-preview",
+    label: "Gemini 3 Flash",
+    description: "Hizli ve verimli",
+    icon: "⚡",
+  },
+  {
+    id: "gemini-3-flash-thinking-preview",
+    label: "Gemini 3 Flash Thinking",
+    description: "Derin dusunme yetenegi",
+    icon: "🧠",
+  },
+];
+
 async function streamChat(
   messages: { role: string; content: string }[],
   onChunk: (text: string) => void,
   onError: (error: string) => void,
-  onDone: () => void
+  onDone: () => void,
+  model?: string
 ) {
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({ messages, model }),
   });
 
   if (!res.ok) {
@@ -120,6 +143,9 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(MODEL_OPTIONS[0].id);
+  const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const modelDropdownRef = useRef<HTMLDivElement>(null);
   const [selectionPopup, setSelectionPopup] = useState<{
     x: number;
     y: number;
@@ -132,6 +158,17 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastAiMsgIdRef = useRef<string | null>(null);
+
+  // Close model dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target as Node)) {
+        setShowModelDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Scroll to the START of the last AI message (not the bottom)
   useEffect(() => {
@@ -234,7 +271,8 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
           },
           () => {
             setIsLoading(false);
-          }
+          },
+          selectedModel
         );
       } catch (error) {
         const errorMsg =
@@ -252,7 +290,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
         setIsLoading(false);
       }
     },
-    []
+    [selectedModel]
   );
 
   const handleSend = useCallback(() => {
@@ -441,6 +479,74 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
 
         {/* Input Bar */}
         <div className={`flex-shrink-0 px-3 sm:px-4 ${isMobile ? "pb-2" : "pb-4"}`}>
+          {/* Model Selector */}
+          <div className="max-w-[720px] mx-auto mb-1.5" ref={modelDropdownRef}>
+            <div className="relative inline-block">
+              <button
+                onClick={() => setShowModelDropdown((v) => !v)}
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all hover:opacity-80"
+                style={{
+                  background: "var(--bg-tertiary)",
+                  color: "var(--text-secondary)",
+                  border: "1px solid var(--border-primary)",
+                }}
+              >
+                <span>{MODEL_OPTIONS.find((m) => m.id === selectedModel)?.icon}</span>
+                <span>{MODEL_OPTIONS.find((m) => m.id === selectedModel)?.label}</span>
+                <IconChevronDown
+                  size={12}
+                  className={`transition-transform ${showModelDropdown ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {showModelDropdown && (
+                <div
+                  className="absolute bottom-full left-0 mb-1.5 rounded-xl py-1.5 min-w-[240px] z-50 animate-fade-in"
+                  style={{
+                    background: "var(--bg-card)",
+                    border: "1px solid var(--border-primary)",
+                    boxShadow: "var(--shadow-lg)",
+                  }}
+                >
+                  {MODEL_OPTIONS.map((model) => (
+                    <button
+                      key={model.id}
+                      onClick={() => {
+                        setSelectedModel(model.id);
+                        setShowModelDropdown(false);
+                      }}
+                      className="flex items-center gap-3 w-full px-3.5 py-2.5 text-left transition-all hover:opacity-80"
+                      style={{
+                        background:
+                          selectedModel === model.id
+                            ? "var(--accent-primary-light)"
+                            : "transparent",
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      <span className="text-base">{model.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold">{model.label}</div>
+                        <div
+                          className="text-[10px] mt-0.5"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
+                          {model.description}
+                        </div>
+                      </div>
+                      {selectedModel === model.id && (
+                        <div
+                          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                          style={{ background: "var(--accent-primary)" }}
+                        />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           <div
             className="max-w-[720px] mx-auto flex items-center gap-2 rounded-2xl px-3 py-2.5 sm:px-4 transition-all"
             style={{
