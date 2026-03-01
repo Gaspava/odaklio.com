@@ -1100,6 +1100,84 @@ body {
   }
 }
 
+/* ===== MINDMAP CHAT ===== */
+.mindmap-node {
+  background: var(--bg-card);
+  border: 2px solid var(--border-primary);
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  user-select: text;
+  cursor: default;
+}
+
+.mindmap-node:hover {
+  border-color: var(--accent-purple) !important;
+}
+
+.mindmap-node-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  flex-shrink: 0;
+}
+
+.mindmap-node-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mindmap-node-messages::-webkit-scrollbar {
+  width: 4px;
+}
+
+.mindmap-node-messages::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 2px;
+}
+
+.mindmap-msg {
+  max-width: 90%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  word-break: break-word;
+}
+
+.mindmap-msg-user {
+  align-self: flex-end;
+  background: var(--gradient-primary);
+  color: white;
+  border-radius: 16px 16px 4px 16px;
+  box-shadow: var(--shadow-glow-sm);
+}
+
+.mindmap-msg-ai {
+  align-self: flex-start;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-radius: 4px 16px 16px 16px;
+  border: 1px solid var(--border-primary);
+}
+
+.mindmap-node-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+}
+
 /* ===== REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

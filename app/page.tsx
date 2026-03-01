@@ -5,6 +5,10 @@ import Header from "./components/layout/Header";
 import LeftPanel from "./components/layout/LeftPanel";
 import RightPanel from "./components/layout/RightPanel";
 import MainChat from "./components/chatbot/MainChat";
+import MindmapChat from "./components/chatbot/MindmapChat";
+import ChatStyleSelector, {
+  type ChatStyle,
+} from "./components/chatbot/ChatStyleSelector";
 import {
   IconChat,
   IconPomodoro,
@@ -27,6 +31,9 @@ function useIsMobile(breakpoint = 768) {
 export default function Home() {
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
+  const [chatStyle, setChatStyle] = useState<ChatStyle>("standard");
+  const [showStyleSelector, setShowStyleSelector] = useState(false);
+  const [chatKey, setChatKey] = useState(0); // to force re-mount on new chat
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -107,6 +114,19 @@ export default function Home() {
     setRightOpen(!rightOpen);
   };
 
+  const handleNewChat = () => {
+    setShowStyleSelector(true);
+  };
+
+  const handleSelectStyle = (style: ChatStyle) => {
+    setChatStyle(style);
+    setChatKey((k) => k + 1); // force re-mount to reset chat state
+    setShowStyleSelector(false);
+  };
+
+  // Hide side panels when mindmap mode is active (it needs full width)
+  const showSidePanels = chatStyle === "standard";
+
   return (
     <div
       className="flex flex-col h-screen overflow-hidden"
@@ -117,6 +137,8 @@ export default function Home() {
         onToggleRight={toggleRight}
         leftOpen={leftOpen}
         rightOpen={rightOpen}
+        onNewChat={handleNewChat}
+        chatStyle={chatStyle}
       />
 
       <div className="flex flex-1 overflow-hidden relative">
@@ -126,7 +148,7 @@ export default function Home() {
         )}
 
         {/* Left Panel */}
-        {(!isMobile || leftOpen) && (
+        {showSidePanels && (!isMobile || leftOpen) && (
           <div
             className={`flex-shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
               isMobile ? "panel-mobile-overlay panel-left" : ""
@@ -147,11 +169,15 @@ export default function Home() {
           className={`flex-1 min-w-0 overflow-hidden ${isMobile ? "safe-area-bottom" : ""}`}
           style={{ background: "var(--bg-primary)" }}
         >
-          <MainChat isMobile={isMobile} />
+          {chatStyle === "standard" ? (
+            <MainChat key={chatKey} isMobile={isMobile} />
+          ) : (
+            <MindmapChat key={chatKey} isMobile={isMobile} />
+          )}
         </div>
 
         {/* Right Panel */}
-        {(!isMobile || rightOpen) && (
+        {showSidePanels && (!isMobile || rightOpen) && (
           <div
             className={`flex-shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
               isMobile ? "panel-mobile-overlay panel-right" : ""
@@ -179,7 +205,7 @@ export default function Home() {
             }}
           >
             <IconPomodoro size={19} />
-            <span style={{ color: "inherit" }}>Araçlar</span>
+            <span style={{ color: "inherit" }}>Araclar</span>
           </button>
 
           <button
@@ -204,6 +230,14 @@ export default function Home() {
             <span style={{ color: "inherit" }}>Mentor</span>
           </button>
         </nav>
+      )}
+
+      {/* Chat Style Selector Modal */}
+      {showStyleSelector && (
+        <ChatStyleSelector
+          onSelect={handleSelectStyle}
+          onClose={() => setShowStyleSelector(false)}
+        />
       )}
     </div>
   );
