@@ -351,6 +351,29 @@ export function IconZoomOut({ size = 22, className }: IconProps) {
   );
 }
 
+export function IconPin({ size = 22, className, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+      <path d="M12 17v5" />
+      <path d="M9 11V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v7" />
+      <path d="M5 17h14" />
+      <path d="M7 11l-1.5 6h13L17 11" />
+    </svg>
+  );
+}
+
+export function IconPinOff({ size = 22, className, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+      <path d="M12 17v5" />
+      <path d="M9 11V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v7" />
+      <path d="M5 17h14" />
+      <path d="M7 11l-1.5 6h13L17 11" />
+      <line x1="2" y1="2" x2="22" y2="22" />
+    </svg>
+  );
+}
+
 export function IconMaximize({ size = 22, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>

@@ -1,16 +1,18 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { IconX, IconBrain } from "../icons/Icons";
+import { IconX, IconBrain, IconPin } from "../icons/Icons";
 
 interface QuickLearnOverlayProps {
   text: string;
   onClose: () => void;
+  onPin?: (data: { text: string; summary: string }) => void;
 }
 
 export default function QuickLearnOverlay({
   text,
   onClose,
+  onPin,
 }: QuickLearnOverlayProps) {
   const [summary, setSummary] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,6 +54,12 @@ export default function QuickLearnOverlay({
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
+
+  const handlePin = () => {
+    if (summary && onPin) {
+      onPin({ text, summary });
+    }
+  };
 
   // Truncate display text
   const displayText =
@@ -103,16 +111,32 @@ export default function QuickLearnOverlay({
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
-            style={{
-              background: "var(--bg-tertiary)",
-              color: "var(--text-tertiary)",
-            }}
-          >
-            <IconX size={16} />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* Pin Button */}
+            <button
+              onClick={handlePin}
+              disabled={!summary || isLoading}
+              className="flex h-8 w-8 items-center justify-center rounded-lg transition-all disabled:opacity-30"
+              style={{
+                background: summary && !isLoading ? "var(--accent-warning-light)" : "var(--bg-tertiary)",
+                color: summary && !isLoading ? "var(--accent-warning)" : "var(--text-tertiary)",
+              }}
+              title="Sabitle"
+            >
+              <IconPin size={15} />
+            </button>
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+              style={{
+                background: "var(--bg-tertiary)",
+                color: "var(--text-tertiary)",
+              }}
+            >
+              <IconX size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Selected Text */}

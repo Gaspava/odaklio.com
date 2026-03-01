@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { IconSend, IconMic, IconHelp } from "../icons/Icons";
+import { IconSend, IconMic, IconHelp, IconPin, IconX, IconBrain } from "../icons/Icons";
 import TextSelectionPopup from "./TextSelectionPopup";
 import SpeedReadingOverlay from "../speed-reading/SpeedReadingOverlay";
 import QuickLearnOverlay from "./QuickLearnOverlay";
@@ -12,6 +12,13 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+}
+
+interface PinnedItem {
+  id: string;
+  text: string;
+  summary: string;
+  isFixed: boolean;
 }
 
 interface MainChatProps {
@@ -128,6 +135,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   } | null>(null);
   const [speedReadText, setSpeedReadText] = useState<string | null>(null);
   const [quickLearnText, setQuickLearnText] = useState<string | null>(null);
+  const [pinnedItems, setPinnedItems] = useState<PinnedItem[]>([]);
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -305,6 +313,32 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
     sendToAI(userContent, messages);
     setSelectionPopup(null);
   };
+
+  const handlePinQuickLearn = useCallback(
+    (data: { text: string; summary: string }) => {
+      const newItem: PinnedItem = {
+        id: Date.now().toString(),
+        text: data.text,
+        summary: data.summary,
+        isFixed: false,
+      };
+      setPinnedItems((prev) => [...prev, newItem]);
+      setQuickLearnText(null);
+    },
+    []
+  );
+
+  const handleUnpin = useCallback((id: string) => {
+    setPinnedItems((prev) => prev.filter((item) => item.id !== id));
+  }, []);
+
+  const handleToggleFixed = useCallback((id: string) => {
+    setPinnedItems((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, isFixed: !item.isFixed } : item
+      )
+    );
+  }, []);
 
   const quickPrompts = isMobile
     ? [
@@ -546,8 +580,123 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
         <QuickLearnOverlay
           text={quickLearnText}
           onClose={() => setQuickLearnText(null)}
+          onPin={handlePinQuickLearn}
         />
       )}
+
+      {/* Pinned Quick Learn Cards */}
+      {pinnedItems.map((item, idx) => (
+        <div
+          key={item.id}
+          className="fixed z-[90] animate-slide-right"
+          style={{
+            right: isMobile ? 8 : 16,
+            top: isMobile ? 70 + idx * 170 : 72 + idx * 220,
+            width: isMobile ? "calc(100vw - 16px)" : 280,
+            maxWidth: isMobile ? 320 : 280,
+          }}
+        >
+          <div
+            className="rounded-xl overflow-hidden"
+            style={{
+              background: "var(--bg-card)",
+              border: item.isFixed
+                ? "1.5px solid var(--accent-warning)"
+                : "1px solid var(--border-primary)",
+              boxShadow: item.isFixed
+                ? "0 8px 32px rgba(245, 158, 11, 0.15), var(--shadow-xl)"
+                : "var(--shadow-xl)",
+            }}
+          >
+            {/* Header */}
+            <div
+              className="flex items-center justify-between px-3 py-2"
+              style={{ borderBottom: "1px solid var(--border-primary)" }}
+            >
+              <div className="flex items-center gap-2">
+                <div
+                  className="flex h-6 w-6 items-center justify-center rounded-md"
+                  style={{
+                    background: "var(--accent-warning-light)",
+                    color: "var(--accent-warning)",
+                  }}
+                >
+                  <IconBrain size={12} />
+                </div>
+                <span
+                  className="text-[11px] font-semibold"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  Hızlı Öğren
+                </span>
+                {item.isFixed && (
+                  <span
+                    className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{
+                      background: "var(--accent-warning-light)",
+                      color: "var(--accent-warning)",
+                    }}
+                  >
+                    SABİT
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                {/* Toggle Fixed Button */}
+                <button
+                  onClick={() => handleToggleFixed(item.id)}
+                  className="flex h-6 w-6 items-center justify-center rounded-md transition-all"
+                  style={{
+                    background: item.isFixed
+                      ? "var(--accent-warning)"
+                      : "var(--bg-tertiary)",
+                    color: item.isFixed ? "white" : "var(--text-tertiary)",
+                  }}
+                  title={item.isFixed ? "Sabitlemeyi kaldır" : "Ekrana sabitle"}
+                >
+                  <IconPin size={12} />
+                </button>
+                {/* Close/Unpin Button */}
+                <button
+                  onClick={() => handleUnpin(item.id)}
+                  className="flex h-6 w-6 items-center justify-center rounded-md transition-colors"
+                  style={{
+                    background: "var(--bg-tertiary)",
+                    color: "var(--text-tertiary)",
+                  }}
+                  title="Kaldır"
+                >
+                  <IconX size={12} />
+                </button>
+              </div>
+            </div>
+
+            {/* Selected Text */}
+            <div className="px-3 pt-2">
+              <div
+                className="rounded-md px-2 py-1.5 text-[10px] leading-relaxed"
+                style={{
+                  background: "var(--bg-tertiary)",
+                  color: "var(--text-secondary)",
+                  borderLeft: "2px solid var(--accent-warning)",
+                }}
+              >
+                &ldquo;{item.text.length > 50 ? item.text.slice(0, 50) + "..." : item.text}&rdquo;
+              </div>
+            </div>
+
+            {/* Summary */}
+            <div className="px-3 py-2.5">
+              <p
+                className="text-[11px] leading-relaxed"
+                style={{ color: "var(--text-primary)" }}
+              >
+                {item.summary.length > 200 ? item.summary.slice(0, 200) + "..." : item.summary}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
     </>
   );
 }
