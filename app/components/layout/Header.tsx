@@ -2,20 +2,21 @@
 
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { IconSun, IconMoon, IconHeadphones } from "../icons/Icons";
+import type { LearningTab } from "./LearningMenu";
 
 interface HeaderProps {
-  onToggleLeft: () => void;
-  onToggleRight: () => void;
-  leftOpen: boolean;
-  rightOpen: boolean;
+  activeTab: LearningTab;
 }
 
-export default function Header({
-  onToggleLeft,
-  onToggleRight,
-  leftOpen,
-  rightOpen,
-}: HeaderProps) {
+const tabLabels: Record<LearningTab, string> = {
+  gecmis: "Gecmis Sohbetlerim",
+  araclar: "Araclar",
+  odaklan: "Odaklan",
+  mentor: "Mentor",
+  analiz: "Kendini Analiz Et",
+};
+
+export default function Header({ activeTab }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -28,23 +29,6 @@ export default function Header({
     >
       {/* Left */}
       <div className="flex items-center gap-2.5 sm:gap-3">
-        <button
-          onClick={onToggleLeft}
-          className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg transition-all"
-          style={{
-            background: leftOpen ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
-            color: leftOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
-          }}
-          title="Araçlar"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1.5" />
-            <rect x="14" y="3" width="7" height="7" rx="1.5" />
-            <rect x="3" y="14" width="7" height="7" rx="1.5" />
-            <rect x="14" y="14" width="7" height="7" rx="1.5" />
-          </svg>
-        </button>
-
         <div className="flex items-center gap-2.5">
           <div
             className="flex h-8 w-8 items-center justify-center rounded-xl text-white text-xs font-bold relative"
@@ -85,7 +69,7 @@ export default function Header({
           style={{ background: "var(--accent-success)" }}
         />
         <span className="text-[11px] font-medium" style={{ color: "var(--text-tertiary)" }}>
-          Akıllı Öğrenme Aktif
+          Akilli Ogrenme Aktif
         </span>
       </div>
 
@@ -111,23 +95,6 @@ export default function Header({
           }}
         >
           {theme === "dark" ? <IconSun size={15} /> : <IconMoon size={15} />}
-        </button>
-
-        <button
-          onClick={onToggleRight}
-          className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg transition-all"
-          style={{
-            background: rightOpen ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
-            color: rightOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
-          }}
-          title="Mentor & Araçlar"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
         </button>
 
         <div
