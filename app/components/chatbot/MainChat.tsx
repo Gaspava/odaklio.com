@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { IconSend, IconMic, IconHelp } from "../icons/Icons";
 import TextSelectionPopup from "./TextSelectionPopup";
 import SpeedReadingOverlay from "../speed-reading/SpeedReadingOverlay";
+import ChatRenderer from "./ChatRenderer";
 
 interface Message {
   id: string;
@@ -319,14 +320,20 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                     }}
                   >
                     {msg.role === "assistant" ? (
-                      <div className="prose-content text-[13px] sm:text-sm leading-relaxed whitespace-pre-line select-text">
-                        {msg.content}
-                        {isLoading && msg.id === messages[messages.length - 1]?.id && !msg.content && (
-                          <span className="inline-flex gap-1">
-                            <span className="animate-pulse">●</span>
-                            <span className="animate-pulse" style={{ animationDelay: "0.2s" }}>●</span>
-                            <span className="animate-pulse" style={{ animationDelay: "0.4s" }}>●</span>
-                          </span>
+                      <div className="prose-content text-[13px] sm:text-sm leading-relaxed select-text">
+                        {msg.content ? (
+                          <ChatRenderer
+                            content={msg.content}
+                            isStreaming={isLoading && msg.id === messages[messages.length - 1]?.id}
+                          />
+                        ) : (
+                          isLoading && msg.id === messages[messages.length - 1]?.id && (
+                            <span className="inline-flex gap-1">
+                              <span className="animate-pulse">●</span>
+                              <span className="animate-pulse" style={{ animationDelay: "0.2s" }}>●</span>
+                              <span className="animate-pulse" style={{ animationDelay: "0.4s" }}>●</span>
+                            </span>
+                          )
                         )}
                       </div>
                     ) : (
