@@ -1221,6 +1221,17 @@ body {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Mobile mindmap tabs */
+.mobile-mindmap-tabs {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.mobile-mindmap-tabs::-webkit-scrollbar {
+  display: none;
+}
+
 /* ===== REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
