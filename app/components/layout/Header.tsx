@@ -1,81 +1,117 @@
 "use client";
 
-import { useState } from "react";
 import { useTheme } from "@/app/providers/ThemeProvider";
-import { IconSearch, IconSun, IconMoon, IconHeadphones } from "../icons/Icons";
+import { IconSun, IconMoon, IconHeadphones } from "../icons/Icons";
 
-export default function Header() {
+interface HeaderProps {
+  onToggleLeft: () => void;
+  onToggleRight: () => void;
+  leftOpen: boolean;
+  rightOpen: boolean;
+}
+
+export default function Header({
+  onToggleLeft,
+  onToggleRight,
+  leftOpen,
+  rightOpen,
+}: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
-  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <header
-      className="fixed top-0 right-0 z-30 flex items-center justify-between border-b px-6"
+      className="flex items-center justify-between px-4 h-12 flex-shrink-0"
       style={{
-        left: "var(--sidebar-width)",
-        height: "var(--header-height)",
-        background: "var(--bg-glass-heavy)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        borderColor: "var(--border-primary)",
+        background: "var(--bg-secondary)",
+        borderBottom: "1px solid var(--border-primary)",
       }}
     >
-      {/* Search Bar */}
-      <div className="relative max-w-md flex-1">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-tertiary)" }}>
-          <IconSearch size={16} />
-        </span>
-        <input
-          type="text"
-          placeholder="Konu, kavram veya kaynak ara..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="input pl-10"
+      {/* Left */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onToggleLeft}
+          className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
           style={{
-            maxWidth: 400,
-            height: 38,
-            fontSize: 13,
-            background: "var(--bg-tertiary)",
+            background: leftOpen ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
+            color: leftOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
           }}
-        />
-        <div
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md px-1.5 py-0.5 text-[10px] font-medium"
-          style={{
-            background: "var(--border-primary)",
-            color: "var(--text-tertiary)",
-          }}
+          title="Araçlar"
         >
-          ⌘K
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>
+        </button>
+
+        <div className="flex items-center gap-2">
+          <div
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-white text-xs font-bold"
+            style={{ background: "var(--gradient-primary)" }}
+          >
+            O
+          </div>
+          <span
+            className="text-sm font-bold tracking-tight"
+            style={{ color: "var(--text-primary)" }}
+          >
+            Odaklio
+          </span>
         </div>
       </div>
 
-      {/* Actions */}
+      {/* Center */}
+      <div
+        className="text-xs font-medium"
+        style={{ color: "var(--text-tertiary)" }}
+      >
+        Akıllı Öğrenme Platformu
+      </div>
+
+      {/* Right */}
       <div className="flex items-center gap-2">
-        {/* Background Sound Toggle */}
         <button
-          className="btn-ghost flex items-center gap-2 rounded-lg"
-          style={{ padding: "6px 10px" }}
+          className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 transition-colors"
+          style={{
+            background: "var(--bg-tertiary)",
+            color: "var(--text-tertiary)",
+          }}
         >
-          <IconHeadphones size={16} />
-          <span className="text-xs font-medium hidden sm:inline">Ses</span>
+          <IconHeadphones size={14} />
+          <span className="text-[11px] font-medium">Ses</span>
         </button>
 
-        {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
-          className="relative flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-300"
+          className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
           style={{
             background: "var(--bg-tertiary)",
             color: "var(--text-secondary)",
           }}
-          aria-label="Tema değiştir"
         >
-          {theme === "dark" ? <IconSun size={16} /> : <IconMoon size={16} />}
+          {theme === "dark" ? <IconSun size={15} /> : <IconMoon size={15} />}
         </button>
 
-        {/* User Avatar */}
+        <button
+          onClick={onToggleRight}
+          className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+          style={{
+            background: rightOpen ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
+            color: rightOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
+          }}
+          title="Mentor & Araçlar"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        </button>
+
         <div
-          className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
+          className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white"
           style={{ background: "var(--gradient-primary)" }}
         >
           U
