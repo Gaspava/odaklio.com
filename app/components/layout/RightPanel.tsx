@@ -10,7 +10,12 @@ import {
   IconHelp,
   IconSend,
   IconMentor,
+  IconX,
 } from "../icons/Icons";
+
+interface RightPanelProps {
+  onClose?: () => void;
+}
 
 /* ===== MENTOR TIPS ===== */
 function MentorTips() {
@@ -91,10 +96,10 @@ function MentorTips() {
           onChange={(e) => setMentorInput(e.target.value)}
           placeholder="Mentora sor..."
           className="input"
-          style={{ height: 30, fontSize: 11, padding: "0 10px" }}
+          style={{ height: 36, fontSize: 12, padding: "0 10px" }}
         />
         <button
-          className="flex h-[30px] w-[30px] flex-shrink-0 items-center justify-center rounded-lg text-white"
+          className="flex h-9 w-9 sm:h-[30px] sm:w-[30px] flex-shrink-0 items-center justify-center rounded-lg text-white"
           style={{ background: "var(--accent-success)" }}
         >
           <IconSend size={11} />
@@ -133,7 +138,7 @@ function FlashcardMini() {
       </h3>
 
       <div
-        className="cursor-pointer rounded-lg p-4 text-center transition-all"
+        className="cursor-pointer rounded-lg p-4 text-center transition-all active:scale-[0.98]"
         onClick={() => setFlipped(!flipped)}
         style={{
           background: flipped ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
@@ -170,7 +175,7 @@ function FlashcardMini() {
             setFlipped(false);
             setCardIndex((cardIndex - 1 + cards.length) % cards.length);
           }}
-          className="flex h-6 w-6 items-center justify-center rounded-md"
+          className="flex h-8 w-8 sm:h-6 sm:w-6 items-center justify-center rounded-md"
           style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
         >
           <IconChevronLeft size={12} />
@@ -183,7 +188,7 @@ function FlashcardMini() {
             setFlipped(false);
             setCardIndex((cardIndex + 1) % cards.length);
           }}
-          className="flex h-6 w-6 items-center justify-center rounded-md"
+          className="flex h-8 w-8 sm:h-6 sm:w-6 items-center justify-center rounded-md"
           style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
         >
           <IconChevronRight size={12} />
@@ -220,7 +225,7 @@ function RecommendationsCompact() {
         {items.map((item, i) => (
           <button
             key={i}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors"
+            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 sm:py-2 transition-colors active:scale-[0.98]"
             style={{ color: "var(--text-secondary)" }}
           >
             <span
@@ -297,7 +302,7 @@ function MindMapPreview() {
       </div>
 
       <button
-        className="mt-2 w-full rounded-lg py-1.5 text-[11px] font-medium text-center transition-colors"
+        className="mt-2 w-full rounded-lg py-2 sm:py-1.5 text-[11px] font-medium text-center transition-colors active:scale-[0.98]"
         style={{
           background: "var(--accent-primary-light)",
           color: "var(--accent-primary)",
@@ -310,9 +315,24 @@ function MindMapPreview() {
 }
 
 /* ===== RIGHT PANEL ===== */
-export default function RightPanel() {
+export default function RightPanel({ onClose }: RightPanelProps) {
   return (
     <div className="h-full overflow-y-auto p-3 space-y-3">
+      {/* Mobile close header */}
+      {onClose && (
+        <div className="flex items-center justify-between pb-1">
+          <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+            Mentor & Araçlar
+          </h2>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+            style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+          >
+            <IconX size={16} />
+          </button>
+        </div>
+      )}
       <MentorTips />
       <FlashcardMini />
       <RecommendationsCompact />

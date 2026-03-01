@@ -29,7 +29,7 @@ export default function PomodoroStatsPage() {
     >
       {/* Header */}
       <div
-        className="flex items-center gap-4 px-6 h-14"
+        className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 h-14"
         style={{
           background: "var(--bg-secondary)",
           borderBottom: "1px solid var(--border-primary)",
@@ -37,23 +37,24 @@ export default function PomodoroStatsPage() {
       >
         <Link
           href="/"
-          className="flex items-center gap-2 text-sm font-medium transition-colors"
+          className="flex items-center gap-1.5 sm:gap-2 text-sm font-medium transition-colors"
           style={{ color: "var(--text-secondary)" }}
         >
           <IconChevronLeft size={16} />
-          Ana Sayfa
+          <span className="hidden sm:inline">Ana Sayfa</span>
+          <span className="sm:hidden">Geri</span>
         </Link>
         <h1
-          className="text-lg font-bold"
+          className="text-base sm:text-lg font-bold truncate"
           style={{ color: "var(--text-primary)" }}
         >
           Pomodoro İstatistikleri
         </h1>
       </div>
 
-      <div className="p-6 max-w-4xl mx-auto animate-fade-in">
+      <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-fade-in">
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           {[
             {
               icon: IconClock,
@@ -86,16 +87,16 @@ export default function PomodoroStatsPage() {
           ].map((stat) => {
             const Icon = stat.icon;
             return (
-              <div key={stat.label} className="card-static p-5">
-                <div className="flex items-center justify-between mb-3">
+              <div key={stat.label} className="card-static p-3.5 sm:p-5">
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
                   <div
-                    className="flex h-10 w-10 items-center justify-center rounded-xl"
+                    className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl"
                     style={{ background: `${stat.color}15`, color: stat.color }}
                   >
-                    <Icon size={18} />
+                    <Icon size={16} />
                   </div>
                   <span
-                    className="flex items-center gap-1 text-xs font-medium"
+                    className="flex items-center gap-1 text-[10px] sm:text-xs font-medium"
                     style={{ color: "var(--accent-success)" }}
                   >
                     <IconTrendingUp size={10} />
@@ -103,13 +104,13 @@ export default function PomodoroStatsPage() {
                   </span>
                 </div>
                 <div
-                  className="text-xl font-bold"
+                  className="text-lg sm:text-xl font-bold"
                   style={{ color: "var(--text-primary)" }}
                 >
                   {stat.value}
                 </div>
                 <div
-                  className="text-xs mt-0.5"
+                  className="text-[10px] sm:text-xs mt-0.5"
                   style={{ color: "var(--text-tertiary)" }}
                 >
                   {stat.label}
@@ -120,30 +121,30 @@ export default function PomodoroStatsPage() {
         </div>
 
         {/* Weekly Chart */}
-        <div className="card-static p-6 mb-8">
+        <div className="card-static p-4 sm:p-6 mb-6 sm:mb-8">
           <h2
-            className="text-base font-semibold mb-6"
+            className="text-sm sm:text-base font-semibold mb-4 sm:mb-6"
             style={{ color: "var(--text-primary)" }}
           >
             Haftalık Pomodoro
           </h2>
 
-          <div className="flex items-end justify-between gap-3" style={{ height: 180 }}>
+          <div className="flex items-end justify-between gap-2 sm:gap-3" style={{ height: 150 }}>
             {weeklyData.map((day) => {
               const height = (day.pomodoros / maxPomodoros) * 100;
               return (
                 <div
                   key={day.day}
-                  className="flex-1 flex flex-col items-center gap-2"
+                  className="flex-1 flex flex-col items-center gap-1.5 sm:gap-2"
                 >
                   <span
-                    className="text-[11px] font-bold"
+                    className="text-[10px] sm:text-[11px] font-bold"
                     style={{ color: "var(--text-primary)" }}
                   >
                     {day.pomodoros}
                   </span>
                   <div
-                    className="w-full rounded-lg transition-all"
+                    className="w-full rounded-md sm:rounded-lg transition-all"
                     style={{
                       height: `${height}%`,
                       minHeight: 8,
@@ -152,7 +153,7 @@ export default function PomodoroStatsPage() {
                     }}
                   />
                   <span
-                    className="text-[10px] font-medium"
+                    className="text-[9px] sm:text-[10px] font-medium"
                     style={{ color: "var(--text-tertiary)" }}
                   >
                     {day.day}
@@ -166,11 +167,11 @@ export default function PomodoroStatsPage() {
         {/* Recent Sessions */}
         <div className="card-static">
           <div
-            className="px-5 py-4"
+            className="px-4 py-3 sm:px-5 sm:py-4"
             style={{ borderBottom: "1px solid var(--border-primary)" }}
           >
             <h2
-              className="text-base font-semibold"
+              className="text-sm sm:text-base font-semibold"
               style={{ color: "var(--text-primary)" }}
             >
               Son Oturumlar
@@ -205,15 +206,15 @@ export default function PomodoroStatsPage() {
           ].map((session, i) => (
             <div
               key={i}
-              className="flex items-center justify-between px-5 py-3.5 transition-colors"
+              className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 transition-colors"
               style={{
                 borderBottom:
                   i < 3 ? "1px solid var(--border-secondary)" : "none",
               }}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                 <div
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold"
+                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-xs font-bold"
                   style={{
                     background: "var(--accent-primary-light)",
                     color: "var(--accent-primary)",
@@ -221,15 +222,15 @@ export default function PomodoroStatsPage() {
                 >
                   {session.pomodoros}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div
-                    className="text-sm font-medium"
+                    className="text-[13px] sm:text-sm font-medium truncate"
                     style={{ color: "var(--text-primary)" }}
                   >
                     {session.subject}
                   </div>
                   <div
-                    className="text-xs"
+                    className="text-[11px] sm:text-xs"
                     style={{ color: "var(--text-tertiary)" }}
                   >
                     {session.duration}
@@ -237,7 +238,7 @@ export default function PomodoroStatsPage() {
                 </div>
               </div>
               <span
-                className="text-xs"
+                className="text-[11px] sm:text-xs flex-shrink-0 ml-2"
                 style={{ color: "var(--text-tertiary)" }}
               >
                 {session.date}

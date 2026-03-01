@@ -20,17 +20,17 @@ export default function Header({
 
   return (
     <header
-      className="flex items-center justify-between px-4 h-12 flex-shrink-0"
+      className="flex items-center justify-between px-3 sm:px-4 h-12 flex-shrink-0"
       style={{
         background: "var(--bg-secondary)",
         borderBottom: "1px solid var(--border-primary)",
       }}
     >
       {/* Left */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         <button
           onClick={onToggleLeft}
-          className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+          className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
           style={{
             background: leftOpen ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
             color: leftOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
@@ -61,18 +61,18 @@ export default function Header({
         </div>
       </div>
 
-      {/* Center */}
+      {/* Center - hidden on mobile */}
       <div
-        className="text-xs font-medium"
+        className="hidden sm:block text-xs font-medium"
         style={{ color: "var(--text-tertiary)" }}
       >
         Akıllı Öğrenme Platformu
       </div>
 
       {/* Right */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         <button
-          className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 transition-colors"
+          className="hidden sm:flex h-8 items-center gap-1.5 rounded-lg px-2.5 transition-colors"
           style={{
             background: "var(--bg-tertiary)",
             color: "var(--text-tertiary)",
@@ -95,7 +95,7 @@ export default function Header({
 
         <button
           onClick={onToggleRight}
-          className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+          className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
           style={{
             background: rightOpen ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
             color: rightOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
