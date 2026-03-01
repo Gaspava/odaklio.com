@@ -3,9 +3,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const SYSTEM_INSTRUCTION = `Sen kısa ve öz açıklamalar yapan bir öğrenme asistanısın.
 Kuralların:
 - Her zaman Türkçe yanıt ver.
-- Maksimum 2-3 cümle ile açıkla.
+- 4-6 cümle ile konuyu anlaşılır şekilde açıkla.
 - Basit ve anlaşılır bir dil kullan.
-- Gereksiz detaya girme, özet geç.
+- Gerekirse kısa bir örnek ver.
 - Markdown formatı KULLANMA, düz metin yaz.`;
 
 export async function POST(request: Request) {
@@ -34,13 +34,13 @@ export async function POST(request: Request) {
       model: "gemini-3-flash-preview",
       systemInstruction: SYSTEM_INSTRUCTION,
       generationConfig: {
-        maxOutputTokens: 150,
+        maxOutputTokens: 500,
         temperature: 0.3,
       },
     });
 
     const result = await model.generateContent(
-      `Şu metni çok kısa ve öz bir şekilde açıkla (maksimum 2-3 cümle): "${text}"`
+      `Şu metni kısa ve anlaşılır bir şekilde açıkla: "${text}"`
     );
 
     const response = result.response.text();
