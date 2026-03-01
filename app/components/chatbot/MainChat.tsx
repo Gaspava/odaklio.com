@@ -357,8 +357,11 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
     <>
       <div className="flex flex-col h-full" ref={chatAreaRef}>
         {/* Messages */}
-        <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 ${isMobile ? "pb-2" : ""}`}>
-          <div className="max-w-[720px] mx-auto space-y-5 sm:space-y-6">
+        <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto py-4 sm:py-6 ${isMobile ? "pb-2" : ""}`}>
+          <div className={`flex min-h-full ${pinnedItems.length > 0 && !isMobile ? "" : ""}`}>
+            {/* Messages Column */}
+            <div className="flex-1 min-w-0 px-3 sm:px-4">
+              <div className={`${pinnedItems.length > 0 && !isMobile ? "max-w-[720px] ml-auto mr-0 sm:mx-auto" : "max-w-[720px] mx-auto"} space-y-5 sm:space-y-6`}>
             {messages.map((msg, idx) => (
               <div
                 id={`msg-${msg.id}`}
@@ -428,7 +431,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
               </div>
             ))}
             <div />
-          </div>
+              </div>
 
           {/* Quick Prompts */}
           {messages.length <= 1 && (
@@ -471,6 +474,187 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
               </div>
             </div>
           )}
+            </div>
+
+            {/* Pinned Cards Column - Sticky sidebar to the right of chat */}
+            {pinnedItems.length > 0 && !isMobile && (
+              <div className="w-[260px] flex-shrink-0 pr-3 pl-2">
+                <div className="sticky top-4 space-y-3">
+                  {pinnedItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="animate-slide-right rounded-xl overflow-hidden"
+                      style={{
+                        background: "var(--bg-card)",
+                        border: item.isFixed
+                          ? "1.5px solid var(--accent-warning)"
+                          : "1px solid var(--border-primary)",
+                        boxShadow: item.isFixed
+                          ? "0 8px 32px rgba(245, 158, 11, 0.15), var(--shadow-lg)"
+                          : "var(--shadow-lg)",
+                      }}
+                    >
+                      {/* Header */}
+                      <div
+                        className="flex items-center justify-between px-3 py-2"
+                        style={{ borderBottom: "1px solid var(--border-primary)" }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="flex h-6 w-6 items-center justify-center rounded-md"
+                            style={{
+                              background: "var(--accent-warning-light)",
+                              color: "var(--accent-warning)",
+                            }}
+                          >
+                            <IconBrain size={12} />
+                          </div>
+                          <span
+                            className="text-[11px] font-semibold"
+                            style={{ color: "var(--text-primary)" }}
+                          >
+                            Hızlı Öğren
+                          </span>
+                          {item.isFixed && (
+                            <span
+                              className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                              style={{
+                                background: "var(--accent-warning-light)",
+                                color: "var(--accent-warning)",
+                              }}
+                            >
+                              SABİT
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleToggleFixed(item.id)}
+                            className="flex h-6 w-6 items-center justify-center rounded-md transition-all"
+                            style={{
+                              background: item.isFixed
+                                ? "var(--accent-warning)"
+                                : "var(--bg-tertiary)",
+                              color: item.isFixed ? "white" : "var(--text-tertiary)",
+                            }}
+                            title={item.isFixed ? "Sabitlemeyi kaldır" : "Ekrana sabitle"}
+                          >
+                            <IconPin size={12} />
+                          </button>
+                          <button
+                            onClick={() => handleUnpin(item.id)}
+                            className="flex h-6 w-6 items-center justify-center rounded-md transition-colors"
+                            style={{
+                              background: "var(--bg-tertiary)",
+                              color: "var(--text-tertiary)",
+                            }}
+                            title="Kaldır"
+                          >
+                            <IconX size={12} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Selected Text */}
+                      <div className="px-3 pt-2">
+                        <div
+                          className="rounded-md px-2 py-1.5 text-[10px] leading-relaxed"
+                          style={{
+                            background: "var(--bg-tertiary)",
+                            color: "var(--text-secondary)",
+                            borderLeft: "2px solid var(--accent-warning)",
+                          }}
+                        >
+                          &ldquo;{item.text.length > 50 ? item.text.slice(0, 50) + "..." : item.text}&rdquo;
+                        </div>
+                      </div>
+
+                      {/* Summary */}
+                      <div className="px-3 py-2.5">
+                        <p
+                          className="text-[11px] leading-relaxed"
+                          style={{ color: "var(--text-primary)" }}
+                        >
+                          {item.summary.length > 200 ? item.summary.slice(0, 200) + "..." : item.summary}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Mobile Pinned Cards - floating at bottom */}
+            {pinnedItems.length > 0 && isMobile && (
+              <div className="fixed bottom-16 left-2 right-2 z-[90] space-y-2">
+                {pinnedItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="animate-slide-up rounded-xl overflow-hidden"
+                    style={{
+                      background: "var(--bg-card)",
+                      border: item.isFixed
+                        ? "1.5px solid var(--accent-warning)"
+                        : "1px solid var(--border-primary)",
+                      boxShadow: "var(--shadow-xl)",
+                    }}
+                  >
+                    <div
+                      className="flex items-center justify-between px-3 py-2"
+                      style={{ borderBottom: "1px solid var(--border-primary)" }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="flex h-5 w-5 items-center justify-center rounded-md"
+                          style={{
+                            background: "var(--accent-warning-light)",
+                            color: "var(--accent-warning)",
+                          }}
+                        >
+                          <IconBrain size={10} />
+                        </div>
+                        <span className="text-[10px] font-semibold" style={{ color: "var(--text-primary)" }}>
+                          Hızlı Öğren
+                        </span>
+                        {item.isFixed && (
+                          <span
+                            className="text-[8px] font-bold px-1 py-0.5 rounded-full"
+                            style={{ background: "var(--accent-warning-light)", color: "var(--accent-warning)" }}
+                          >
+                            SABİT
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleToggleFixed(item.id)}
+                          className="flex h-5 w-5 items-center justify-center rounded-md transition-all"
+                          style={{
+                            background: item.isFixed ? "var(--accent-warning)" : "var(--bg-tertiary)",
+                            color: item.isFixed ? "white" : "var(--text-tertiary)",
+                          }}
+                        >
+                          <IconPin size={10} />
+                        </button>
+                        <button
+                          onClick={() => handleUnpin(item.id)}
+                          className="flex h-5 w-5 items-center justify-center rounded-md transition-colors"
+                          style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+                        >
+                          <IconX size={10} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="px-3 py-2">
+                      <p className="text-[10px] leading-relaxed line-clamp-3" style={{ color: "var(--text-primary)" }}>
+                        {item.summary.length > 120 ? item.summary.slice(0, 120) + "..." : item.summary}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Input Bar */}
@@ -584,119 +768,6 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
         />
       )}
 
-      {/* Pinned Quick Learn Cards */}
-      {pinnedItems.map((item, idx) => (
-        <div
-          key={item.id}
-          className="fixed z-[90] animate-slide-right"
-          style={{
-            right: isMobile ? 8 : 16,
-            top: isMobile ? 70 + idx * 170 : 72 + idx * 220,
-            width: isMobile ? "calc(100vw - 16px)" : 280,
-            maxWidth: isMobile ? 320 : 280,
-          }}
-        >
-          <div
-            className="rounded-xl overflow-hidden"
-            style={{
-              background: "var(--bg-card)",
-              border: item.isFixed
-                ? "1.5px solid var(--accent-warning)"
-                : "1px solid var(--border-primary)",
-              boxShadow: item.isFixed
-                ? "0 8px 32px rgba(245, 158, 11, 0.15), var(--shadow-xl)"
-                : "var(--shadow-xl)",
-            }}
-          >
-            {/* Header */}
-            <div
-              className="flex items-center justify-between px-3 py-2"
-              style={{ borderBottom: "1px solid var(--border-primary)" }}
-            >
-              <div className="flex items-center gap-2">
-                <div
-                  className="flex h-6 w-6 items-center justify-center rounded-md"
-                  style={{
-                    background: "var(--accent-warning-light)",
-                    color: "var(--accent-warning)",
-                  }}
-                >
-                  <IconBrain size={12} />
-                </div>
-                <span
-                  className="text-[11px] font-semibold"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  Hızlı Öğren
-                </span>
-                {item.isFixed && (
-                  <span
-                    className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                    style={{
-                      background: "var(--accent-warning-light)",
-                      color: "var(--accent-warning)",
-                    }}
-                  >
-                    SABİT
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                {/* Toggle Fixed Button */}
-                <button
-                  onClick={() => handleToggleFixed(item.id)}
-                  className="flex h-6 w-6 items-center justify-center rounded-md transition-all"
-                  style={{
-                    background: item.isFixed
-                      ? "var(--accent-warning)"
-                      : "var(--bg-tertiary)",
-                    color: item.isFixed ? "white" : "var(--text-tertiary)",
-                  }}
-                  title={item.isFixed ? "Sabitlemeyi kaldır" : "Ekrana sabitle"}
-                >
-                  <IconPin size={12} />
-                </button>
-                {/* Close/Unpin Button */}
-                <button
-                  onClick={() => handleUnpin(item.id)}
-                  className="flex h-6 w-6 items-center justify-center rounded-md transition-colors"
-                  style={{
-                    background: "var(--bg-tertiary)",
-                    color: "var(--text-tertiary)",
-                  }}
-                  title="Kaldır"
-                >
-                  <IconX size={12} />
-                </button>
-              </div>
-            </div>
-
-            {/* Selected Text */}
-            <div className="px-3 pt-2">
-              <div
-                className="rounded-md px-2 py-1.5 text-[10px] leading-relaxed"
-                style={{
-                  background: "var(--bg-tertiary)",
-                  color: "var(--text-secondary)",
-                  borderLeft: "2px solid var(--accent-warning)",
-                }}
-              >
-                &ldquo;{item.text.length > 50 ? item.text.slice(0, 50) + "..." : item.text}&rdquo;
-              </div>
-            </div>
-
-            {/* Summary */}
-            <div className="px-3 py-2.5">
-              <p
-                className="text-[11px] leading-relaxed"
-                style={{ color: "var(--text-primary)" }}
-              >
-                {item.summary.length > 200 ? item.summary.slice(0, 200) + "..." : item.summary}
-              </p>
-            </div>
-          </div>
-        </div>
-      ))}
     </>
   );
 }
