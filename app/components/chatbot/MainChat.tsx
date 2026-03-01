@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { IconSend, IconMic, IconHelp } from "../icons/Icons";
 import TextSelectionPopup from "./TextSelectionPopup";
 import SpeedReadingOverlay from "../speed-reading/SpeedReadingOverlay";
+import QuickLearnOverlay from "./QuickLearnOverlay";
 import ChatMessageRenderer from "./ChatMessageRenderer";
 
 interface Message {
@@ -21,7 +22,7 @@ const welcomeMessage: Message = {
   id: "welcome",
   role: "assistant",
   content:
-    "Merhaba! Ben **Odaklio AI**, senin kişisel öğrenme asistanınım.\n\nHerhangi bir konuda soru sorabilir, metin seçerek hızlı okuma yapabilir veya derinlemesine anlayış isteyebilirsin.\n\n[!tip] Nasıl Kullanılır?\nMetin seç → Anlamadım · Bu nedir? · Hızlı Oku seçeneklerini kullan.\n\nBugün ne öğrenmek istiyorsun?",
+    "Merhaba! Ben **Odaklio AI**, senin kişisel öğrenme asistanınım.\n\nHerhangi bir konuda soru sorabilir, metin seçerek hızlı okuma yapabilir veya derinlemesine anlayış isteyebilirsin.\n\n[!tip] Nasıl Kullanılır?\nMetin seç → Hızlı Öğren · Bu nedir? · Hızlı Oku seçeneklerini kullan.\n\nBugün ne öğrenmek istiyorsun?",
   timestamp: new Date(),
 };
 
@@ -126,6 +127,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
     text: string;
   } | null>(null);
   const [speedReadText, setSpeedReadText] = useState<string | null>(null);
+  const [quickLearnText, setQuickLearnText] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -159,7 +161,10 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   }, []);
 
   useEffect(() => {
-    const onMouseDown = () => {
+    const onMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // Don't clear popup when clicking popup buttons
+      if (target.closest("[data-selection-popup]")) return;
       isMouseDownRef.current = true;
       setSelectionPopup(null);
     };
@@ -174,17 +179,6 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
       document.removeEventListener("mouseup", onMouseUp);
     };
   }, [handleTextSelection]);
-
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest("[data-selection-popup]")) {
-        setSelectionPopup(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
 
   const sendToAI = useCallback(
     async (userContent: string, allMessages: Message[]) => {
@@ -249,27 +243,25 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   const handleSend = useCallback(() => {
     if (!input.trim() || isLoading) return;
 
+    const userContent = input;
     const userMsg: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: input,
+      content: userContent,
       timestamp: new Date(),
     };
 
-    setMessages((prev) => {
-      const updated = [...prev, userMsg];
-      sendToAI(input, prev);
-      return updated;
-    });
+    setMessages((prev) => [...prev, userMsg]);
+    sendToAI(userContent, messages);
 
     setInput("");
     if (isMobile) {
       inputRef.current?.blur();
     }
-  }, [input, isLoading, sendToAI, isMobile]);
+  }, [input, isLoading, sendToAI, isMobile, messages]);
 
   const handleSelectionAction = (
-    action: "didnt-understand" | "what-is-this" | "speed-read"
+    action: "quick-learn" | "what-is-this" | "speed-read"
   ) => {
     if (!selectionPopup) return;
     const selectedText = selectionPopup.text;
@@ -280,23 +272,22 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
       return;
     }
 
-    const prompts = {
-      "didnt-understand": `"${selectedText}" kısmını anlamadım. Daha basit ve adım adım açıklar mısın?`,
-      "what-is-this": `"${selectedText}" nedir? Kısaca tanımla ve örnekle açıkla.`,
-    };
+    if (action === "quick-learn") {
+      setQuickLearnText(selectedText);
+      setSelectionPopup(null);
+      return;
+    }
 
-    const userContent = prompts[action];
+    // "what-is-this" — continue in same chat
+    const userContent = `"${selectedText}" nedir? Kısaca tanımla ve örnekle açıkla.`;
     const userMsg: Message = {
       id: Date.now().toString(),
       role: "user",
       content: userContent,
       timestamp: new Date(),
     };
-    setMessages((prev) => {
-      const updated = [...prev, userMsg];
-      sendToAI(userContent, prev);
-      return updated;
-    });
+    setMessages((prev) => [...prev, userMsg]);
+    sendToAI(userContent, messages);
     setSelectionPopup(null);
   };
 
@@ -366,11 +357,8 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                           content: userContent,
                           timestamp: new Date(),
                         };
-                        setMessages((prev) => {
-                          const updated = [...prev, userMsg];
-                          sendToAI(userContent, prev);
-                          return updated;
-                        });
+                        setMessages((prev) => [...prev, userMsg]);
+                        sendToAI(userContent, messages);
                       }}
                       className={`absolute -bottom-2.5 right-4 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold transition-all ${
                         isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
@@ -478,6 +466,8 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
             />
 
             <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
               className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
@@ -506,7 +496,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
               style={{ color: "var(--text-tertiary)" }}
             >
               <span style={{ color: "var(--accent-primary)", opacity: 0.6 }}>●</span>
-              Metni seç → Anlamadım · Bu nedir? · Hızlı Oku
+              Metni seç → Hızlı Öğren · Bu nedir? · Hızlı Oku
             </p>
           )}
         </div>
@@ -532,6 +522,14 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
         <SpeedReadingOverlay
           text={speedReadText}
           onClose={() => setSpeedReadText(null)}
+        />
+      )}
+
+      {/* Quick Learn Overlay */}
+      {quickLearnText && (
+        <QuickLearnOverlay
+          text={quickLearnText}
+          onClose={() => setQuickLearnText(null)}
         />
       )}
     </>

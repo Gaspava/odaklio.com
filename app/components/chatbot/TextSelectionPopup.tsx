@@ -1,14 +1,14 @@
 "use client";
 
 import { useRef, useLayoutEffect, useState } from "react";
-import { IconHelp, IconSearch, IconLightning } from "../icons/Icons";
+import { IconBrain, IconSearch, IconLightning } from "../icons/Icons";
 
 interface TextSelectionPopupProps {
   x: number;
   y: number;
   bottom: number;
   selectedText: string;
-  onAction: (action: "didnt-understand" | "what-is-this" | "speed-read") => void;
+  onAction: (action: "quick-learn" | "what-is-this" | "speed-read") => void;
   onClose: () => void;
   isMobile?: boolean;
 }
@@ -71,15 +71,17 @@ export default function TextSelectionPopup({
           }}
         >
           <button
-            onClick={() => onAction("didnt-understand")}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={() => onAction("quick-learn")}
             className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-medium transition-colors active:scale-[0.96]"
             style={{ color: "var(--accent-warning)", background: "var(--accent-warning-light)" }}
           >
-            <IconHelp size={14} />
-            Anlamadım
+            <IconBrain size={14} />
+            Hızlı Öğren
           </button>
 
           <button
+            onMouseDown={(e) => e.stopPropagation()}
             onClick={() => onAction("what-is-this")}
             className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-medium transition-colors active:scale-[0.96]"
             style={{ color: "var(--accent-secondary)", background: "var(--accent-secondary-light)" }}
@@ -89,6 +91,7 @@ export default function TextSelectionPopup({
           </button>
 
           <button
+            onMouseDown={(e) => e.stopPropagation()}
             onClick={() => onAction("speed-read")}
             className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-medium transition-colors active:scale-[0.96]"
             style={{ color: "var(--accent-primary)", background: "var(--accent-primary-light)" }}
@@ -153,7 +156,8 @@ export default function TextSelectionPopup({
         }}
       >
         <button
-          onClick={() => onAction("didnt-understand")}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={() => onAction("quick-learn")}
           className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
           style={{ color: "var(--accent-warning)" }}
           onMouseEnter={(e) => {
@@ -163,13 +167,14 @@ export default function TextSelectionPopup({
             e.currentTarget.style.background = "transparent";
           }}
         >
-          <IconHelp size={14} />
-          Anlamadım
+          <IconBrain size={14} />
+          Hızlı Öğren
         </button>
 
         <div className="w-px h-5" style={{ background: "var(--border-primary)" }} />
 
         <button
+          onMouseDown={(e) => e.stopPropagation()}
           onClick={() => onAction("what-is-this")}
           className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
           style={{ color: "var(--accent-secondary)" }}
@@ -187,6 +192,7 @@ export default function TextSelectionPopup({
         <div className="w-px h-5" style={{ background: "var(--border-primary)" }} />
 
         <button
+          onMouseDown={(e) => e.stopPropagation()}
           onClick={() => onAction("speed-read")}
           className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
           style={{ color: "var(--accent-primary)" }}
