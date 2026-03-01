@@ -57,7 +57,7 @@ export default function SpeedReadingOverlay({
     if (!word) return null;
     const pivotIndex = Math.max(0, Math.floor(word.length / 2) - (word.length > 4 ? 1 : 0));
     return (
-      <span className="text-5xl font-semibold tracking-wide">
+      <span className="text-3xl sm:text-5xl font-semibold tracking-wide">
         <span style={{ color: "var(--text-secondary)" }}>{word.slice(0, pivotIndex)}</span>
         <span style={{ color: "var(--accent-primary)" }}>{word[pivotIndex]}</span>
         <span style={{ color: "var(--text-secondary)" }}>{word.slice(pivotIndex + 1)}</span>
@@ -67,7 +67,7 @@ export default function SpeedReadingOverlay({
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center animate-fade-in"
+      className="fixed inset-0 z-[200] flex items-center justify-center animate-fade-in p-4"
       style={{ background: "var(--bg-overlay)", backdropFilter: "blur(12px)" }}
     >
       <div
@@ -80,7 +80,7 @@ export default function SpeedReadingOverlay({
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-6 py-4"
+          className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4"
           style={{ borderBottom: "1px solid var(--border-primary)" }}
         >
           <div>
@@ -103,7 +103,7 @@ export default function SpeedReadingOverlay({
         {/* Display Area */}
         <div
           className="flex flex-col items-center justify-center relative"
-          style={{ height: 200 }}
+          style={{ height: 160 }}
         >
           {/* Focus guide line */}
           <div
@@ -121,7 +121,7 @@ export default function SpeedReadingOverlay({
         </div>
 
         {/* Controls */}
-        <div className="px-6 pb-5 space-y-4">
+        <div className="px-4 pb-4 sm:px-6 sm:pb-5 space-y-4">
           {/* Progress */}
           <div>
             <div className="flex items-center justify-between mb-1">
@@ -141,29 +141,29 @@ export default function SpeedReadingOverlay({
           </div>
 
           {/* Buttons & Speed */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => {
                   setCurrentIndex(0);
                   setIsPlaying(false);
                 }}
-                className="flex h-10 w-10 items-center justify-center rounded-xl transition-all"
+                className="flex h-10 w-10 items-center justify-center rounded-xl transition-all active:scale-[0.95]"
                 style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)" }}
               >
                 <IconRefresh size={16} />
               </button>
               <button
                 onClick={() => setIsPlaying(!isPlaying)}
-                className="flex h-12 w-12 items-center justify-center rounded-xl text-white transition-all hover:scale-105"
+                className="flex h-12 w-12 items-center justify-center rounded-xl text-white transition-all active:scale-[0.95]"
                 style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
               >
                 {isPlaying ? <IconPause size={20} /> : <IconPlay size={20} />}
               </button>
             </div>
 
-            <div className="flex items-center gap-3">
-              <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>Hız</span>
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 justify-end">
+              <span className="text-[10px] hidden sm:inline" style={{ color: "var(--text-tertiary)" }}>Hız</span>
               <input
                 type="range"
                 min="100"
@@ -171,7 +171,7 @@ export default function SpeedReadingOverlay({
                 step="50"
                 value={wpm}
                 onChange={(e) => setWpm(Number(e.target.value))}
-                className="h-1 w-24 cursor-pointer appearance-none rounded-full"
+                className="h-1 w-16 sm:w-24 cursor-pointer appearance-none rounded-full"
                 style={{ accentColor: "var(--accent-primary)" }}
               />
               <span

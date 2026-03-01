@@ -13,6 +13,10 @@ interface Message {
   isRichContent?: boolean;
 }
 
+interface MainChatProps {
+  isMobile?: boolean;
+}
+
 const welcomeMessage: Message = {
   id: "welcome",
   role: "assistant",
@@ -80,7 +84,7 @@ async function streamChat(
   onDone();
 }
 
-export default function MainChat() {
+export default function MainChat({ isMobile = false }: MainChatProps) {
   const [messages, setMessages] = useState<Message[]>([welcomeMessage]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -93,6 +97,7 @@ export default function MainChat() {
   const [speedReadText, setSpeedReadText] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatAreaRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -121,7 +126,14 @@ export default function MainChat() {
 
   useEffect(() => {
     document.addEventListener("mouseup", handleTextSelection);
-    return () => document.removeEventListener("mouseup", handleTextSelection);
+    // Also handle touch selection on mobile
+    document.addEventListener("selectionchange", () => {
+      // Debounce selection change on mobile
+      setTimeout(handleTextSelection, 300);
+    });
+    return () => {
+      document.removeEventListener("mouseup", handleTextSelection);
+    };
   }, [handleTextSelection]);
 
   // Close popup when clicking outside
@@ -216,7 +228,11 @@ export default function MainChat() {
     });
 
     setInput("");
-  }, [input, isLoading, sendToAI]);
+    // Blur input on mobile after send to hide keyboard
+    if (isMobile) {
+      inputRef.current?.blur();
+    }
+  }, [input, isLoading, sendToAI, isMobile]);
 
   const handleSelectionAction = (
     action: "didnt-understand" | "what-is-this" | "speed-read"
@@ -250,18 +266,16 @@ export default function MainChat() {
     setSelectionPopup(null);
   };
 
-  const quickPrompts = [
-    "Kuantum fiziği hakkında bilgi ver",
-    "İntegral nasıl çözülür?",
-    "Newton yasalarını açıkla",
-  ];
+  const quickPrompts = isMobile
+    ? ["Kuantum fiziği", "İntegral çöz", "Newton yasaları"]
+    : ["Kuantum fiziği hakkında bilgi ver", "İntegral nasıl çözülür?", "Newton yasalarını açıkla"];
 
   return (
     <>
       <div className="flex flex-col h-full" ref={chatAreaRef}>
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-6">
-          <div className="max-w-2xl mx-auto space-y-6">
+        <div className={`flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 ${isMobile ? "pb-2" : ""}`}>
+          <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -269,7 +283,7 @@ export default function MainChat() {
               >
                 {msg.role === "assistant" && (
                   <div
-                    className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg mr-3 mt-1 text-white text-[10px] font-bold"
+                    className="flex-shrink-0 flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-lg mr-2 sm:mr-3 mt-1 text-white text-[10px] font-bold"
                     style={{ background: "var(--gradient-primary)" }}
                   >
                     O
@@ -277,10 +291,14 @@ export default function MainChat() {
                 )}
 
                 <div
-                  className={`group relative max-w-[85%] ${msg.role === "user" ? "max-w-[70%]" : ""}`}
+                  className={`group relative ${
+                    msg.role === "user"
+                      ? "max-w-[85%] sm:max-w-[70%]"
+                      : "max-w-[90%] sm:max-w-[85%]"
+                  }`}
                 >
                   <div
-                    className="rounded-2xl px-4 py-3"
+                    className="rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3"
                     style={{
                       background:
                         msg.role === "user"
@@ -301,7 +319,7 @@ export default function MainChat() {
                     }}
                   >
                     {msg.role === "assistant" ? (
-                      <div className="prose-content text-sm leading-relaxed whitespace-pre-line select-text">
+                      <div className="prose-content text-[13px] sm:text-sm leading-relaxed whitespace-pre-line select-text">
                         {msg.content}
                         {isLoading && msg.id === messages[messages.length - 1]?.id && !msg.content && (
                           <span className="inline-flex gap-1">
@@ -312,7 +330,7 @@ export default function MainChat() {
                         )}
                       </div>
                     ) : (
-                      <p className="text-sm leading-relaxed">{msg.content}</p>
+                      <p className="text-[13px] sm:text-sm leading-relaxed">{msg.content}</p>
                     )}
                   </div>
 
@@ -334,7 +352,9 @@ export default function MainChat() {
                           return updated;
                         });
                       }}
-                      className="absolute -bottom-2 right-4 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+                      className={`absolute -bottom-2 right-4 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium transition-opacity ${
+                        isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                      }`}
                       style={{
                         background: "var(--bg-card)",
                         border: "1px solid var(--border-primary)",
@@ -354,7 +374,7 @@ export default function MainChat() {
 
           {/* Quick Prompts (show when few messages) */}
           {messages.length <= 1 && (
-            <div className="max-w-2xl mx-auto mt-8">
+            <div className="max-w-2xl mx-auto mt-6 sm:mt-8">
               <p
                 className="text-xs font-medium mb-3 text-center"
                 style={{ color: "var(--text-tertiary)" }}
@@ -368,7 +388,7 @@ export default function MainChat() {
                     onClick={() => {
                       setInput(prompt);
                     }}
-                    className="rounded-full px-4 py-2 text-xs font-medium transition-all hover:scale-[1.02]"
+                    className="rounded-full px-3 py-2 sm:px-4 text-xs font-medium transition-all active:scale-[0.97]"
                     style={{
                       background: "var(--bg-card)",
                       border: "1px solid var(--border-primary)",
@@ -384,9 +404,9 @@ export default function MainChat() {
         </div>
 
         {/* Input Bar */}
-        <div className="flex-shrink-0 px-4 pb-4">
+        <div className={`flex-shrink-0 px-3 sm:px-4 ${isMobile ? "pb-2" : "pb-4"}`}>
           <div
-            className="max-w-2xl mx-auto flex items-center gap-2 rounded-2xl px-4 py-2"
+            className="max-w-2xl mx-auto flex items-center gap-2 rounded-2xl px-3 py-2 sm:px-4"
             style={{
               background: "var(--bg-card)",
               border: "1px solid var(--border-primary)",
@@ -407,6 +427,7 @@ export default function MainChat() {
             </button>
 
             <input
+              ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -414,10 +435,12 @@ export default function MainChat() {
               placeholder={
                 isLoading
                   ? "Yanıt bekleniyor..."
+                  : isMobile
+                  ? "Mesajını yaz..."
                   : "Mesajını yaz veya sesli konuş..."
               }
               disabled={isLoading}
-              className="flex-1 bg-transparent text-sm outline-none disabled:opacity-50"
+              className="flex-1 bg-transparent text-[13px] sm:text-sm outline-none disabled:opacity-50"
               style={{ color: "var(--text-primary)" }}
             />
 
@@ -440,12 +463,14 @@ export default function MainChat() {
             </button>
           </div>
 
-          <p
-            className="text-center text-[10px] mt-2"
-            style={{ color: "var(--text-tertiary)" }}
-          >
-            Metni seç → Anlamadım · Bu nedir? · Hızlı Oku
-          </p>
+          {!isMobile && (
+            <p
+              className="text-center text-[10px] mt-2"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              Metni seç → Anlamadım · Bu nedir? · Hızlı Oku
+            </p>
+          )}
         </div>
       </div>
 
@@ -458,6 +483,7 @@ export default function MainChat() {
             selectedText={selectionPopup.text}
             onAction={handleSelectionAction}
             onClose={() => setSelectionPopup(null)}
+            isMobile={isMobile}
           />
         </div>
       )}

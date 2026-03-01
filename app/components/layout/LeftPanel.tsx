@@ -14,8 +14,13 @@ import {
   IconVolume,
   IconChevronRight,
   IconTrendingUp,
+  IconX,
 } from "../icons/Icons";
 import Link from "next/link";
+
+interface LeftPanelProps {
+  onClose?: () => void;
+}
 
 /* ===== POMODORO MINI ===== */
 function PomodoroMini() {
@@ -101,7 +106,7 @@ function PomodoroMini() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setIsRunning(!isRunning)}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-white"
+              className="flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-lg text-white"
               style={{ background: modeColor }}
             >
               {isRunning ? <IconPause size={12} /> : <IconPlay size={12} />}
@@ -113,7 +118,7 @@ function PomodoroMini() {
                 setSeconds(0);
                 setMode("work");
               }}
-              className="flex h-7 w-7 items-center justify-center rounded-lg"
+              className="flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-lg"
               style={{
                 background: "var(--bg-tertiary)",
                 color: "var(--text-tertiary)",
@@ -137,7 +142,7 @@ function PomodoroMini() {
                   setSeconds(0);
                   setIsRunning(false);
                 }}
-                className="flex-1 rounded-md py-1 text-[10px] font-medium transition-all"
+                className="flex-1 rounded-md py-1.5 sm:py-1 text-[10px] font-medium transition-all"
                 style={{
                   background: mode === m ? "var(--bg-card)" : "transparent",
                   color: mode === m ? modeColor : "var(--text-tertiary)",
@@ -210,7 +215,7 @@ function FocusModesCompact() {
           <button
             key={mode.id}
             onClick={() => setActiveMode(activeMode === mode.id ? null : mode.id)}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all"
+            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 sm:py-2 transition-all"
             style={{
               background: activeMode === mode.id ? `${mode.color}15` : "transparent",
               color: activeMode === mode.id ? mode.color : "var(--text-secondary)",
@@ -277,7 +282,7 @@ function BackgroundSoundsCompact() {
           <button
             key={sound.id}
             onClick={() => setActiveSound(activeSound === sound.id ? null : sound.id)}
-            className="flex flex-col items-center gap-1 rounded-lg py-2 transition-all"
+            className="flex flex-col items-center gap-1 rounded-lg py-2.5 sm:py-2 transition-all"
             style={{
               background: activeSound === sound.id ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
               border: activeSound === sound.id ? "1px solid var(--accent-primary)" : "1px solid transparent",
@@ -320,9 +325,24 @@ function BackgroundSoundsCompact() {
 }
 
 /* ===== LEFT PANEL ===== */
-export default function LeftPanel() {
+export default function LeftPanel({ onClose }: LeftPanelProps) {
   return (
     <div className="h-full overflow-y-auto p-3 space-y-3">
+      {/* Mobile close header */}
+      {onClose && (
+        <div className="flex items-center justify-between pb-1">
+          <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+            Araçlar
+          </h2>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+            style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+          >
+            <IconX size={16} />
+          </button>
+        </div>
+      )}
       <PomodoroMini />
       <FocusModesCompact />
       <BackgroundSoundsCompact />

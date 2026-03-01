@@ -8,13 +8,65 @@ interface TextSelectionPopupProps {
   selectedText: string;
   onAction: (action: "didnt-understand" | "what-is-this" | "speed-read") => void;
   onClose: () => void;
+  isMobile?: boolean;
 }
 
 export default function TextSelectionPopup({
   x,
   y,
   onAction,
+  isMobile = false,
 }: TextSelectionPopupProps) {
+  // On mobile, position at bottom center; on desktop, follow selection
+  if (isMobile) {
+    return (
+      <div
+        className="fixed z-[100] animate-slide-up"
+        style={{
+          left: "50%",
+          bottom: 72,
+          transform: "translateX(-50%)",
+        }}
+      >
+        <div
+          className="flex items-center gap-1 rounded-2xl p-1.5 shadow-lg"
+          style={{
+            background: "var(--bg-card)",
+            border: "1px solid var(--border-primary)",
+            boxShadow: "var(--shadow-xl)",
+          }}
+        >
+          <button
+            onClick={() => onAction("didnt-understand")}
+            className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-medium transition-colors active:scale-[0.96]"
+            style={{ color: "var(--accent-warning)", background: "var(--accent-warning-light)" }}
+          >
+            <IconHelp size={14} />
+            Anlamadım
+          </button>
+
+          <button
+            onClick={() => onAction("what-is-this")}
+            className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-medium transition-colors active:scale-[0.96]"
+            style={{ color: "var(--accent-secondary)", background: "var(--accent-secondary-light)" }}
+          >
+            <IconSearch size={14} />
+            Bu nedir?
+          </button>
+
+          <button
+            onClick={() => onAction("speed-read")}
+            className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-medium transition-colors active:scale-[0.96]"
+            style={{ color: "var(--accent-primary)", background: "var(--accent-primary-light)" }}
+          >
+            <IconLightning size={14} />
+            Hızlı Oku
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="fixed z-[100] animate-fade-in"
