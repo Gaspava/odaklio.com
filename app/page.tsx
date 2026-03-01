@@ -1,14 +1,20 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Header from "./components/layout/Header";
+import Header, { type TabId } from "./components/layout/Header";
 import LeftPanel from "./components/layout/LeftPanel";
 import RightPanel from "./components/layout/RightPanel";
 import MainChat from "./components/chatbot/MainChat";
+import SohbetlerimPage from "./components/pages/SohbetlerimPage";
+import AraclarPage from "./components/pages/AraclarPage";
+import MentorPage from "./components/pages/MentorPage";
+import AnalizPage from "./components/pages/AnalizPage";
 import {
   IconChat,
   IconPomodoro,
+  IconFocus,
   IconMentor,
+  IconBarChart,
 } from "./components/icons/Icons";
 
 function useIsMobile(breakpoint = 768) {
@@ -27,17 +33,20 @@ function useIsMobile(breakpoint = 768) {
 export default function Home() {
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabId>("odaklan");
   const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!isMobile) {
-      setLeftOpen(true);
-      setRightOpen(true);
+      if (activeTab === "odaklan") {
+        setLeftOpen(true);
+        setRightOpen(true);
+      }
     } else {
       setLeftOpen(false);
       setRightOpen(false);
     }
-  }, [isMobile]);
+  }, [isMobile, activeTab]);
 
   const closeAllPanels = useCallback(() => {
     if (isMobile) {
@@ -47,7 +56,7 @@ export default function Home() {
   }, [isMobile]);
 
   useEffect(() => {
-    if (!isMobile) return;
+    if (!isMobile || activeTab !== "odaklan") return;
 
     let touchStartX = 0;
     let touchEndX = 0;
@@ -84,7 +93,7 @@ export default function Home() {
       document.removeEventListener("touchstart", handleTouchStart);
       document.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [isMobile, leftOpen, rightOpen]);
+  }, [isMobile, leftOpen, rightOpen, activeTab]);
 
   useEffect(() => {
     if (isMobile && (leftOpen || rightOpen)) {
@@ -107,103 +116,150 @@ export default function Home() {
     setRightOpen(!rightOpen);
   };
 
+  const handleTabChange = (tab: TabId) => {
+    setActiveTab(tab);
+    if (tab !== "odaklan") {
+      setLeftOpen(false);
+      setRightOpen(false);
+    } else if (!isMobile) {
+      setLeftOpen(true);
+      setRightOpen(true);
+    }
+  };
+
+  const mobileNavTabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
+    { id: "sohbetlerim", label: "Sohbet", icon: <IconChat size={19} /> },
+    { id: "araclar", label: "Araçlar", icon: <IconPomodoro size={19} /> },
+    { id: "odaklan", label: "Odaklan", icon: <IconFocus size={17} className="text-white" /> },
+    { id: "mentor", label: "Mentor", icon: <IconMentor size={19} /> },
+    { id: "analiz", label: "Analiz", icon: <IconBarChart size={19} /> },
+  ];
+
   return (
     <div
       className="flex flex-col h-screen overflow-hidden"
       style={{ background: "var(--bg-primary)" }}
     >
       <Header
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
         onToggleLeft={toggleLeft}
         onToggleRight={toggleRight}
-        onChat={() => { setLeftOpen(false); setRightOpen(false); }}
         leftOpen={leftOpen}
         rightOpen={rightOpen}
       />
 
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* Mobile Overlay Backdrop */}
-        {isMobile && (leftOpen || rightOpen) && (
-          <div className="mobile-overlay" onClick={closeAllPanels} />
-        )}
+      {activeTab === "odaklan" ? (
+        <div className="flex flex-1 overflow-hidden relative">
+          {/* Mobile Overlay Backdrop */}
+          {isMobile && (leftOpen || rightOpen) && (
+            <div className="mobile-overlay" onClick={closeAllPanels} />
+          )}
 
-        {/* Left Panel */}
-        {(!isMobile || leftOpen) && (
+          {/* Left Panel */}
+          {(!isMobile || leftOpen) && (
+            <div
+              className={`flex-shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
+                isMobile ? "panel-mobile-overlay panel-left" : ""
+              }`}
+              style={{
+                width: isMobile ? "85vw" : leftOpen ? 280 : 0,
+                maxWidth: isMobile ? 320 : undefined,
+                borderRight: !isMobile && leftOpen ? "1px solid var(--border-primary)" : "none",
+                background: "var(--bg-secondary)",
+              }}
+            >
+              <LeftPanel onClose={isMobile ? () => setLeftOpen(false) : undefined} />
+            </div>
+          )}
+
+          {/* Main Chat Area */}
           <div
-            className={`flex-shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
-              isMobile ? "panel-mobile-overlay panel-left" : ""
-            }`}
-            style={{
-              width: isMobile ? "85vw" : leftOpen ? 280 : 0,
-              maxWidth: isMobile ? 320 : undefined,
-              borderRight: !isMobile && leftOpen ? "1px solid var(--border-primary)" : "none",
-              background: "var(--bg-secondary)",
-            }}
+            className={`flex-1 min-w-0 overflow-hidden ${isMobile ? "safe-area-bottom" : ""}`}
+            style={{ background: "var(--bg-primary)" }}
           >
-            <LeftPanel onClose={isMobile ? () => setLeftOpen(false) : undefined} />
+            <MainChat isMobile={isMobile} />
           </div>
-        )}
 
-        {/* Main Chat Area */}
-        <div
-          className={`flex-1 min-w-0 overflow-hidden ${isMobile ? "safe-area-bottom" : ""}`}
-          style={{ background: "var(--bg-primary)" }}
-        >
-          <MainChat isMobile={isMobile} />
+          {/* Right Panel */}
+          {(!isMobile || rightOpen) && (
+            <div
+              className={`flex-shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
+                isMobile ? "panel-mobile-overlay panel-right" : ""
+              }`}
+              style={{
+                width: isMobile ? "85vw" : rightOpen ? 300 : 0,
+                maxWidth: isMobile ? 320 : undefined,
+                borderLeft: !isMobile && rightOpen ? "1px solid var(--border-primary)" : "none",
+                background: "var(--bg-secondary)",
+              }}
+            >
+              <RightPanel onClose={isMobile ? () => setRightOpen(false) : undefined} />
+            </div>
+          )}
         </div>
-
-        {/* Right Panel */}
-        {(!isMobile || rightOpen) && (
-          <div
-            className={`flex-shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
-              isMobile ? "panel-mobile-overlay panel-right" : ""
-            }`}
-            style={{
-              width: isMobile ? "85vw" : rightOpen ? 300 : 0,
-              maxWidth: isMobile ? 320 : undefined,
-              borderLeft: !isMobile && rightOpen ? "1px solid var(--border-primary)" : "none",
-              background: "var(--bg-secondary)",
-            }}
-          >
-            <RightPanel onClose={isMobile ? () => setRightOpen(false) : undefined} />
-          </div>
-        )}
-      </div>
+      ) : (
+        <div className="flex-1 overflow-hidden" style={{ background: "var(--bg-primary)" }}>
+          {activeTab === "sohbetlerim" && <SohbetlerimPage />}
+          {activeTab === "araclar" && <AraclarPage />}
+          {activeTab === "mentor" && <MentorPage />}
+          {activeTab === "analiz" && <AnalizPage />}
+        </div>
+      )}
 
       {/* Mobile Bottom Navigation */}
       {isMobile && (
         <nav className="mobile-bottom-nav">
-          <button
-            onClick={toggleLeft}
-            style={{
-              color: leftOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: leftOpen ? "var(--accent-primary-light)" : "transparent",
-            }}
-          >
-            <IconPomodoro size={19} />
-            <span style={{ color: "inherit" }}>Araçlar</span>
-          </button>
+          {mobileNavTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const isOdaklan = tab.id === "odaklan";
 
-          <button
-            onClick={() => { setLeftOpen(false); setRightOpen(false); }}
-            style={{
-              color: !leftOpen && !rightOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: !leftOpen && !rightOpen ? "var(--accent-primary-light)" : "transparent",
-            }}
-          >
-            <IconChat size={19} />
-            <span style={{ color: "inherit" }}>Sohbet</span>
-          </button>
+            if (isOdaklan) {
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className="relative"
+                  style={{ color: "var(--accent-primary)" }}
+                >
+                  <div
+                    className="flex items-center justify-center w-10 h-10 rounded-full -mt-3"
+                    style={{
+                      background: isActive ? "var(--gradient-primary)" : "var(--bg-tertiary)",
+                      boxShadow: isActive ? "0 0 14px rgba(16, 185, 129, 0.4)" : "none",
+                      border: isActive ? "none" : "1px solid var(--border-secondary)",
+                    }}
+                  >
+                    <IconFocus
+                      size={17}
+                      className={isActive ? "text-white" : ""}
+                      style={isActive ? undefined : { color: "var(--text-tertiary)" }}
+                    />
+                  </div>
+                  <span
+                    className="text-[9px] font-semibold"
+                    style={{ color: isActive ? "var(--accent-primary)" : "var(--text-tertiary)" }}
+                  >
+                    {tab.label}
+                  </span>
+                </button>
+              );
+            }
 
-          <button
-            onClick={toggleRight}
-            style={{
-              color: rightOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: rightOpen ? "var(--accent-primary-light)" : "transparent",
-            }}
-          >
-            <IconMentor size={19} />
-            <span style={{ color: "inherit" }}>Mentor</span>
-          </button>
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                style={{
+                  color: isActive ? "var(--accent-primary)" : "var(--text-tertiary)",
+                  background: isActive ? "var(--accent-primary-light)" : "transparent",
+                }}
+              >
+                {tab.icon}
+                <span style={{ color: "inherit" }}>{tab.label}</span>
+              </button>
+            );
+          })}
         </nav>
       )}
     </div>
