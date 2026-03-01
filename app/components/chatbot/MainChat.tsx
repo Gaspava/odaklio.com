@@ -128,12 +128,27 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   } | null>(null);
   const [speedReadText, setSpeedReadText] = useState<string | null>(null);
   const [quickLearnText, setQuickLearnText] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const lastAiMsgIdRef = useRef<string | null>(null);
 
+  // Scroll to the START of the last AI message (not the bottom)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const lastMsg = messages[messages.length - 1];
+    if (!lastMsg || lastMsg.role !== "assistant") return;
+    // Only scroll when a NEW AI message appears, not on every chunk
+    if (lastAiMsgIdRef.current === lastMsg.id) return;
+    lastAiMsgIdRef.current = lastMsg.id;
+
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`msg-${lastMsg.id}`);
+      if (el && scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+        const elTop = el.offsetTop - container.offsetTop;
+        container.scrollTo({ top: elTop - 16, behavior: "smooth" });
+      }
+    });
   }, [messages]);
 
   const isMouseDownRef = useRef(false);
@@ -308,10 +323,11 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
     <>
       <div className="flex flex-col h-full" ref={chatAreaRef}>
         {/* Messages */}
-        <div className={`flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 ${isMobile ? "pb-2" : ""}`}>
+        <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 ${isMobile ? "pb-2" : ""}`}>
           <div className="max-w-[720px] mx-auto space-y-5 sm:space-y-6">
             {messages.map((msg, idx) => (
               <div
+                id={`msg-${msg.id}`}
                 key={msg.id}
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-msg-in`}
                 style={{ animationDelay: `${Math.min(idx * 0.05, 0.3)}s` }}
@@ -377,7 +393,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                 </div>
               </div>
             ))}
-            <div ref={messagesEndRef} />
+            <div />
           </div>
 
           {/* Quick Prompts */}

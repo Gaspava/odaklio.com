@@ -9,7 +9,6 @@ import {
 } from "react";
 import {
   IconSend,
-  IconPlus,
   IconZoomIn,
   IconZoomOut,
   IconMaximize,
@@ -46,10 +45,10 @@ interface MindmapChatProps {
 }
 
 /* ===== CONSTANTS ===== */
-const NODE_WIDTH = 380;
-const NODE_HEIGHT_MIN = 300;
-const NODE_GAP_X = 80;
-const NODE_GAP_Y = 60;
+const NODE_WIDTH = 680;
+const NODE_HEIGHT = 520;
+const NODE_GAP_X = 120;
+const NODE_GAP_Y = 80;
 
 /* ===== STREAMING HELPER ===== */
 async function streamChat(
@@ -111,8 +110,8 @@ async function streamChat(
   onDone();
 }
 
-/* ===== MINI CHAT NODE COMPONENT ===== */
-function MiniChatNode({
+/* ===== CHAT NODE COMPONENT ===== */
+function ChatNodeComponent({
   node,
   isActive,
   onActivate,
@@ -135,12 +134,26 @@ function MiniChatNode({
   const [selectedText, setSelectedText] = useState("");
   const [showBranchButton, setShowBranchButton] = useState(false);
   const [branchBtnPos, setBranchBtnPos] = useState({ x: 0, y: 0 });
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const nodeRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const lastAiMsgIdRef = useRef<string | null>(null);
 
+  // Scroll to the START of the last AI message (not the bottom)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [node.messages]);
+    const lastMsg = node.messages[node.messages.length - 1];
+    if (!lastMsg || lastMsg.role !== "assistant") return;
+    if (lastAiMsgIdRef.current === lastMsg.id) return;
+    lastAiMsgIdRef.current = lastMsg.id;
+
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`mindmap-msg-${node.id}-${lastMsg.id}`);
+      if (el && scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+        const elTop = el.offsetTop;
+        container.scrollTo({ top: elTop - 8, behavior: "smooth" });
+      }
+    });
+  }, [node.messages, node.id]);
 
   const handleSend = () => {
     if (!input.trim() || node.isLoading) return;
@@ -187,7 +200,7 @@ function MiniChatNode({
       className="mindmap-node"
       style={{
         width: NODE_WIDTH,
-        minHeight: NODE_HEIGHT_MIN,
+        height: NODE_HEIGHT,
         borderColor: isActive
           ? isMain
             ? "var(--accent-primary)"
@@ -210,7 +223,7 @@ function MiniChatNode({
       <div className="mindmap-node-header">
         <div className="flex items-center gap-2 min-w-0">
           <div
-            className="w-2 h-2 rounded-full flex-shrink-0"
+            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
             style={{
               background: isMain
                 ? "var(--accent-primary)"
@@ -218,7 +231,7 @@ function MiniChatNode({
             }}
           />
           <span
-            className="text-[11px] font-semibold truncate"
+            className="text-xs font-semibold truncate"
             style={{ color: "var(--text-primary)" }}
           >
             {isMain ? "Ana Sohbet" : node.label}
@@ -231,7 +244,7 @@ function MiniChatNode({
                 e.stopPropagation();
                 onClose();
               }}
-              className="flex h-5 w-5 items-center justify-center rounded transition-colors"
+              className="flex h-6 w-6 items-center justify-center rounded-md transition-colors"
               style={{ color: "var(--text-tertiary)" }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "var(--accent-danger-light)";
@@ -242,24 +255,26 @@ function MiniChatNode({
                 e.currentTarget.style.color = "var(--text-tertiary)";
               }}
             >
-              <IconX size={10} />
+              <IconX size={12} />
             </button>
           )}
         </div>
       </div>
 
-      {/* Messages Area */}
-      <div className="mindmap-node-messages">
+      {/* Messages Area - scrolls ONLY inside this container */}
+      <div
+        ref={scrollContainerRef}
+        className="mindmap-node-messages"
+        onWheel={(e) => e.stopPropagation()}
+      >
         {node.messages.length === 0 && (
-          <div
-            className="flex flex-col items-center justify-center h-full gap-2 py-8"
-          >
+          <div className="flex flex-col items-center justify-center h-full gap-3 py-12">
             <IconGitBranch
-              size={24}
-              style={{ color: "var(--text-tertiary)", opacity: 0.5 }}
+              size={32}
+              style={{ color: "var(--text-tertiary)", opacity: 0.4 }}
             />
             <p
-              className="text-[11px] text-center"
+              className="text-xs text-center"
               style={{ color: "var(--text-tertiary)" }}
             >
               {isMain
@@ -270,6 +285,7 @@ function MiniChatNode({
         )}
         {node.messages.map((msg) => (
           <div
+            id={`mindmap-msg-${node.id}-${msg.id}`}
             key={msg.id}
             className={`mindmap-msg ${
               msg.role === "user" ? "mindmap-msg-user" : "mindmap-msg-ai"
@@ -277,33 +293,32 @@ function MiniChatNode({
           >
             {msg.role === "assistant" ? (
               msg.content ? (
-                <div className="msg-ai-content text-[11px] leading-relaxed">
+                <div className="msg-ai-content">
                   <ChatMessageRenderer content={msg.content} />
                 </div>
               ) : (
                 node.isLoading && (
-                  <div className="flex items-center gap-1 px-1 py-1">
+                  <div className="flex items-center gap-1.5 px-1 py-2">
                     <div
-                      className="typing-dot w-1.5 h-1.5 rounded-full"
+                      className="typing-dot w-2 h-2 rounded-full"
                       style={{ background: "var(--accent-primary)" }}
                     />
                     <div
-                      className="typing-dot w-1.5 h-1.5 rounded-full"
+                      className="typing-dot w-2 h-2 rounded-full"
                       style={{ background: "var(--accent-primary)" }}
                     />
                     <div
-                      className="typing-dot w-1.5 h-1.5 rounded-full"
+                      className="typing-dot w-2 h-2 rounded-full"
                       style={{ background: "var(--accent-primary)" }}
                     />
                   </div>
                 )
               )
             ) : (
-              <p className="text-[11px] leading-relaxed">{msg.content}</p>
+              <p className="text-[13px] leading-relaxed">{msg.content}</p>
             )}
           </div>
         ))}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Branch Button (appears on text selection) */}
@@ -312,16 +327,16 @@ function MiniChatNode({
           className="absolute z-50 animate-fade-in-scale"
           style={{
             left: branchBtnPos.x,
-            top: branchBtnPos.y - 36,
+            top: branchBtnPos.y - 40,
             transform: "translateX(-50%)",
           }}
         >
           <button
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[10px] font-semibold transition-all shadow-lg"
+            className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition-all shadow-lg"
             style={{
               background: "var(--accent-purple)",
               color: "white",
-              boxShadow: "0 4px 12px rgba(139, 92, 246, 0.3)",
+              boxShadow: "0 4px 16px rgba(139, 92, 246, 0.35)",
             }}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => {
@@ -331,7 +346,7 @@ function MiniChatNode({
               window.getSelection()?.removeAllRanges();
             }}
           >
-            <IconGitBranch size={10} />
+            <IconGitBranch size={12} />
             Yeni Yol Oluştur
           </button>
         </div>
@@ -350,7 +365,7 @@ function MiniChatNode({
           onClick={(e) => e.stopPropagation()}
           placeholder={node.isLoading ? "Yanıt bekleniyor..." : "Mesaj yaz..."}
           disabled={node.isLoading}
-          className="flex-1 bg-transparent text-[11px] outline-none disabled:opacity-50"
+          className="flex-1 bg-transparent text-[13px] outline-none disabled:opacity-50"
           style={{ color: "var(--text-primary)" }}
         />
         <button
@@ -359,7 +374,7 @@ function MiniChatNode({
             handleSend();
           }}
           disabled={!input.trim() || node.isLoading}
-          className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg text-white transition-all disabled:opacity-30 active:scale-95"
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
           style={{
             background:
               input.trim() && !node.isLoading
@@ -373,7 +388,7 @@ function MiniChatNode({
                 : "var(--text-tertiary)",
           }}
         >
-          <IconSend size={10} />
+          <IconSend size={14} />
         </button>
       </div>
     </div>
@@ -389,6 +404,16 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
   const panStart = useRef({ x: 0, y: 0 });
   const panOffsetStart = useRef({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
+  const scaleRef = useRef(scale);
+  const offsetRef = useRef(offset);
+
+  // Keep refs in sync
+  useEffect(() => {
+    scaleRef.current = scale;
+  }, [scale]);
+  useEffect(() => {
+    offsetRef.current = offset;
+  }, [offset]);
 
   // Chat nodes
   const [nodes, setNodes] = useState<ChatNode[]>([
@@ -409,20 +434,21 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
   useEffect(() => {
     if (canvasRef.current) {
       const rect = canvasRef.current.getBoundingClientRect();
-      setOffset({
+      const newOffset = {
         x: rect.width / 2 - NODE_WIDTH / 2,
-        y: rect.height / 2 - NODE_HEIGHT_MIN / 2,
-      });
+        y: rect.height / 2 - NODE_HEIGHT / 2,
+      };
+      setOffset(newOffset);
+      offsetRef.current = newOffset;
     }
   }, []);
 
   /* ===== PAN HANDLERS ===== */
   const handleCanvasMouseDown = (e: ReactMouseEvent) => {
-    // Only pan if clicking on canvas background (not on a node)
     if ((e.target as HTMLElement).closest(".mindmap-node")) return;
     setIsPanning(true);
     panStart.current = { x: e.clientX, y: e.clientY };
-    panOffsetStart.current = { ...offset };
+    panOffsetStart.current = { ...offsetRef.current };
   };
 
   const handleCanvasMouseMove = useCallback(
@@ -430,10 +456,12 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
       if (!isPanning) return;
       const dx = e.clientX - panStart.current.x;
       const dy = e.clientY - panStart.current.y;
-      setOffset({
+      const newOffset = {
         x: panOffsetStart.current.x + dx,
         y: panOffsetStart.current.y + dy,
-      });
+      };
+      setOffset(newOffset);
+      offsetRef.current = newOffset;
     },
     [isPanning]
   );
@@ -451,15 +479,36 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
     };
   }, [handleCanvasMouseMove, handleCanvasMouseUp]);
 
-  /* ===== ZOOM HANDLERS ===== */
-  const handleWheel = useCallback(
-    (e: WheelEvent) => {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.05 : 0.05;
-      setScale((s) => Math.min(Math.max(s + delta, 0.3), 2));
-    },
-    []
-  );
+  /* ===== ZOOM TO CURSOR ===== */
+  const handleWheel = useCallback((e: WheelEvent) => {
+    // Don't zoom if scrolling inside a chat node's message area
+    if ((e.target as HTMLElement).closest(".mindmap-node-messages")) return;
+
+    e.preventDefault();
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const oldScale = scaleRef.current;
+    const delta = e.deltaY > 0 ? -0.08 : 0.08;
+    const newScale = Math.min(Math.max(oldScale + delta, 0.25), 2.5);
+
+    // Zoom toward cursor: adjust offset so the point under the cursor stays fixed
+    const oldOff = offsetRef.current;
+    const newOffset = {
+      x: mouseX - (mouseX - oldOff.x) * (newScale / oldScale),
+      y: mouseY - (mouseY - oldOff.y) * (newScale / oldScale),
+    };
+
+    scaleRef.current = newScale;
+    offsetRef.current = newOffset;
+    setScale(newScale);
+    setOffset(newOffset);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -468,16 +517,41 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
     return () => canvas.removeEventListener("wheel", handleWheel);
   }, [handleWheel]);
 
-  const zoomIn = () => setScale((s) => Math.min(s + 0.15, 2));
-  const zoomOut = () => setScale((s) => Math.max(s - 0.15, 0.3));
+  const zoomAtCenter = useCallback((delta: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+
+    const oldScale = scaleRef.current;
+    const newScale = Math.min(Math.max(oldScale + delta, 0.25), 2.5);
+    const oldOff = offsetRef.current;
+    const newOffset = {
+      x: cx - (cx - oldOff.x) * (newScale / oldScale),
+      y: cy - (cy - oldOff.y) * (newScale / oldScale),
+    };
+
+    scaleRef.current = newScale;
+    offsetRef.current = newOffset;
+    setScale(newScale);
+    setOffset(newOffset);
+  }, []);
+
+  const zoomIn = () => zoomAtCenter(0.15);
+  const zoomOut = () => zoomAtCenter(-0.15);
   const resetView = () => {
-    setScale(1);
+    const newScale = 1;
+    scaleRef.current = newScale;
+    setScale(newScale);
     if (canvasRef.current) {
       const rect = canvasRef.current.getBoundingClientRect();
-      setOffset({
+      const newOffset = {
         x: rect.width / 2 - NODE_WIDTH / 2,
-        y: rect.height / 2 - NODE_HEIGHT_MIN / 2,
-      });
+        y: rect.height / 2 - NODE_HEIGHT / 2,
+      };
+      offsetRef.current = newOffset;
+      setOffset(newOffset);
     }
   };
 
@@ -511,10 +585,11 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
         )
       );
 
-      // Prepare API messages from this node
       const node = nodes.find((n) => n.id === nodeId);
-      const apiMessages = (node?.messages || [])
-        .map((m) => ({ role: m.role, content: m.content }));
+      const apiMessages = (node?.messages || []).map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
       apiMessages.push({ role: "user", content });
 
       try {
@@ -545,10 +620,7 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
                       isLoading: false,
                       messages: n.messages.map((m) =>
                         m.id === aiMsgId
-                          ? {
-                              ...m,
-                              content: `[!danger] Hata\n${error}`,
-                            }
+                          ? { ...m, content: `[!danger] Hata\n${error}` }
                           : m
                       ),
                     }
@@ -596,7 +668,6 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
       const parentNode = nodes.find((n) => n.id === parentNodeId);
       if (!parentNode) return;
 
-      // Count existing children to position new node
       const childCount = nodes.filter(
         (n) => n.parentId === parentNodeId
       ).length;
@@ -605,9 +676,12 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
       const newNode: ChatNode = {
         id: newId,
         x: parentNode.x + NODE_WIDTH + NODE_GAP_X,
-        y: parentNode.y + childCount * (NODE_HEIGHT_MIN + NODE_GAP_Y),
+        y: parentNode.y + childCount * (NODE_HEIGHT + NODE_GAP_Y),
         parentId: parentNodeId,
-        label: selectedText.length > 30 ? selectedText.slice(0, 30) + "..." : selectedText,
+        label:
+          selectedText.length > 40
+            ? selectedText.slice(0, 40) + "..."
+            : selectedText,
         messages: [],
         isLoading: false,
       };
@@ -619,13 +693,16 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
       ]);
       setActiveNodeId(newId);
 
-      // Animate pan to new node
+      // Pan to new node
       if (canvasRef.current) {
         const rect = canvasRef.current.getBoundingClientRect();
-        setOffset({
-          x: rect.width / 2 - (newNode.x + NODE_WIDTH / 2) * scale,
-          y: rect.height / 2 - (newNode.y + NODE_HEIGHT_MIN / 2) * scale,
-        });
+        const s = scaleRef.current;
+        const newOffset = {
+          x: rect.width / 2 - (newNode.x + NODE_WIDTH / 2) * s,
+          y: rect.height / 2 - (newNode.y + NODE_HEIGHT / 2) * s,
+        };
+        offsetRef.current = newOffset;
+        setOffset(newOffset);
       }
 
       // Auto-send the selected text as first message
@@ -634,13 +711,12 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
         handleSendMessage(newId, question);
       }, 100);
     },
-    [nodes, scale, handleSendMessage]
+    [nodes, handleSendMessage]
   );
 
   /* ===== CLOSE NODE ===== */
   const handleCloseNode = useCallback(
     (nodeId: string) => {
-      // Recursively remove all children
       const idsToRemove = new Set<string>();
       const findChildren = (id: string) => {
         idsToRemove.add(id);
@@ -672,10 +748,9 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
       if (!from || !to) return null;
 
       const fromX = from.x + NODE_WIDTH;
-      const fromY = from.y + NODE_HEIGHT_MIN / 2;
+      const fromY = from.y + NODE_HEIGHT / 2;
       const toX = to.x;
-      const toY = to.y + NODE_HEIGHT_MIN / 2;
-
+      const toY = to.y + NODE_HEIGHT / 2;
       const midX = (fromX + toX) / 2;
 
       return (
@@ -685,14 +760,13 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
           fill="none"
           stroke="var(--accent-purple)"
           strokeWidth={2}
-          strokeDasharray="6 3"
+          strokeDasharray="8 4"
           opacity={0.5}
         />
       );
     });
   };
 
-  /* ===== NODE COUNT INFO ===== */
   const branchCount = nodes.length - 1;
 
   return (
@@ -829,10 +903,12 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
               style={{
                 left: node.x,
                 top: node.y,
-                transition: isPanning ? "none" : "left 0.3s ease, top 0.3s ease",
+                transition: isPanning
+                  ? "none"
+                  : "left 0.3s ease, top 0.3s ease",
               }}
             >
-              <MiniChatNode
+              <ChatNodeComponent
                 node={node}
                 isActive={activeNodeId === node.id}
                 onActivate={() => setActiveNodeId(node.id)}
@@ -861,8 +937,9 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
             className="text-[10px] font-medium"
             style={{ color: "var(--text-tertiary)" }}
           >
-            Metin sec → &quot;Yeni Yol Oluştur&quot; ile paralel sohbet oluştur
-            &bull; Boş alana tıkla ve sürükle
+            Metin seç &rarr; &quot;Yeni Yol Oluştur&quot; ile paralel sohbet
+            oluştur &bull; Boş alana tıkla ve sürükle &bull; Scroll ile
+            yakınlaştır
           </span>
         </div>
       </div>
