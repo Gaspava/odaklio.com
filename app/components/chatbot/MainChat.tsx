@@ -31,20 +31,22 @@ interface ModelOption {
   label: string;
   description: string;
   icon: string;
+  thinkingLevel?: string;
 }
 
 const MODEL_OPTIONS: ModelOption[] = [
   {
-    id: "gemini-3-flash-preview",
+    id: "flash",
     label: "Gemini 3 Flash",
     description: "Hizli ve verimli",
     icon: "⚡",
   },
   {
-    id: "gemini-3-flash-thinking-preview",
+    id: "thinking",
     label: "Gemini 3 Flash Thinking",
     description: "Derin dusunme yetenegi",
     icon: "🧠",
+    thinkingLevel: "high",
   },
 ];
 
@@ -53,12 +55,12 @@ async function streamChat(
   onChunk: (text: string) => void,
   onError: (error: string) => void,
   onDone: () => void,
-  model?: string
+  thinkingLevel?: string
 ) {
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, model }),
+    body: JSON.stringify({ messages, thinkingLevel }),
   });
 
   if (!res.ok) {
@@ -272,7 +274,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
           () => {
             setIsLoading(false);
           },
-          selectedModel
+          MODEL_OPTIONS.find((m) => m.id === selectedModel)?.thinkingLevel
         );
       } catch (error) {
         const errorMsg =

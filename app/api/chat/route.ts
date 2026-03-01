@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { messages, model: modelId } = body;
+    const { messages, thinkingLevel } = body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return Response.json(
@@ -58,19 +58,28 @@ export async function POST(request: Request) {
       );
     }
 
-    const ALLOWED_MODELS = [
-      "gemini-3-flash-preview",
-      "gemini-3-flash-thinking-preview",
-    ];
-    const selectedModel = ALLOWED_MODELS.includes(modelId)
-      ? modelId
-      : "gemini-3-flash-preview";
+    const ALLOWED_LEVELS = ["minimal", "low", "medium", "high"];
+    const selectedLevel = ALLOWED_LEVELS.includes(thinkingLevel)
+      ? thinkingLevel
+      : undefined;
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: selectedModel,
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const modelParams: any = {
+      model: "gemini-3-flash-preview",
       systemInstruction: SYSTEM_INSTRUCTION,
-    });
+    };
+
+    if (selectedLevel) {
+      modelParams.generationConfig = {
+        thinkingConfig: {
+          thinkingLevel: selectedLevel.toUpperCase(),
+        },
+      };
+    }
+
+    const model = genAI.getGenerativeModel(modelParams);
 
     const lastMessage = messages[messages.length - 1];
 
