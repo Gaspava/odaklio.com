@@ -143,9 +143,7 @@ export default function Home() {
       <Header
         activeTab={activeTab}
         onTabChange={handleTabChange}
-        onToggleLeft={toggleLeft}
         onToggleRight={toggleRight}
-        leftOpen={leftOpen}
         rightOpen={rightOpen}
       />
 
