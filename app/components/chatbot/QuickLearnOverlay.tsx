@@ -66,7 +66,7 @@ export default function QuickLearnOverlay({
       }}
     >
       <div
-        className="relative w-full max-w-md rounded-2xl overflow-hidden"
+        className="relative w-full max-w-lg rounded-2xl overflow-hidden max-h-[80vh] flex flex-col"
         style={{
           background: "var(--bg-card)",
           border: "1px solid var(--border-primary)",
@@ -130,7 +130,7 @@ export default function QuickLearnOverlay({
         </div>
 
         {/* Summary */}
-        <div className="px-4 py-4 sm:px-5 sm:py-5">
+        <div className="px-4 py-4 sm:px-5 sm:py-5 overflow-y-auto flex-1">
           {isLoading && (
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5">

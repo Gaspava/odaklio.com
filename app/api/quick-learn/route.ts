@@ -1,11 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const SYSTEM_INSTRUCTION = `Sen kısa ve öz açıklamalar yapan bir öğrenme asistanısın.
+const SYSTEM_INSTRUCTION = `Sen açıklamalar yapan bir öğrenme asistanısın.
 Kuralların:
 - Her zaman Türkçe yanıt ver.
-- 4-6 cümle ile konuyu anlaşılır şekilde açıkla.
+- Konuyu 3-5 cümle ile kısa ve öz açıkla.
 - Basit ve anlaşılır bir dil kullan.
-- Gerekirse kısa bir örnek ver.
 - Markdown formatı KULLANMA, düz metin yaz.`;
 
 export async function POST(request: Request) {
@@ -34,7 +33,7 @@ export async function POST(request: Request) {
       model: "gemini-3-flash-preview",
       systemInstruction: SYSTEM_INSTRUCTION,
       generationConfig: {
-        maxOutputTokens: 500,
+        maxOutputTokens: 1024,
         temperature: 0.3,
       },
     });
