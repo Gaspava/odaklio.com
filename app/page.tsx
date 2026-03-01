@@ -129,8 +129,8 @@ export default function Home() {
 
   return (
     <div
-      className="flex flex-col h-screen overflow-hidden"
-      style={{ background: "var(--bg-primary)" }}
+      className="flex flex-col overflow-hidden"
+      style={{ background: "var(--bg-primary)", height: "100dvh" }}
     >
       <Header
         onToggleLeft={toggleLeft}
@@ -166,7 +166,7 @@ export default function Home() {
 
         {/* Main Chat Area */}
         <div
-          className={`flex-1 min-w-0 overflow-hidden ${isMobile ? "safe-area-bottom" : ""}`}
+          className="flex-1 min-w-0 overflow-hidden"
           style={{ background: "var(--bg-primary)" }}
         >
           {chatStyle === "standard" ? (

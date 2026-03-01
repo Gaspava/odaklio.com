@@ -973,10 +973,7 @@ body {
 
   .mobile-bottom-nav {
     display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    flex-shrink: 0;
     z-index: 30;
     height: 60px;
     padding: 0 8px;
@@ -1034,11 +1031,7 @@ body {
   }
 
   .safe-area-bottom {
-    padding-bottom: calc(60px + env(safe-area-inset-bottom));
-  }
-
-  .chat-input-mobile {
-    padding-bottom: calc(60px + env(safe-area-inset-bottom) + 8px) !important;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   .speed-reading-mobile {
