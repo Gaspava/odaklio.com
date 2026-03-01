@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Mobile viewport height fix - 100vh is unreliable on mobile browsers */
+.h-screen-safe {
+  height: 100vh;
+  height: 100dvh;
+}
+
 /* ===== ODAKLIO DESIGN SYSTEM v2 ===== */
 
 :root {
