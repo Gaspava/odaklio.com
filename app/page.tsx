@@ -179,10 +179,10 @@ export default function Home() {
           <div className="mobile-overlay" onClick={closeAllPanels} />
         )}
 
-        {/* Left Panel */}
+        {/* Left Panel + Close Notch */}
         {showSidePanels && (!isMobile || leftOpen) && (
           <div
-            className={`flex-shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
+            className={`flex-shrink-0 overflow-visible transition-all duration-300 ease-in-out relative ${
               isMobile ? "panel-mobile-overlay panel-left" : ""
             }`}
             style={{
@@ -193,6 +193,30 @@ export default function Home() {
             }}
           >
             <LeftPanel onClose={() => setLeftOpen(false)} />
+            {/* Close notch on right edge of left panel */}
+            {!isMobile && leftOpen && (
+              <button
+                onClick={() => setLeftOpen(false)}
+                className="absolute top-3 flex items-center justify-center transition-all hover:opacity-100 z-20"
+                style={{
+                  right: -12,
+                  width: 12,
+                  height: 32,
+                  background: "var(--bg-secondary)",
+                  borderRadius: "0 5px 5px 0",
+                  color: "var(--text-tertiary)",
+                  border: "1px solid var(--border-primary)",
+                  borderLeft: "none",
+                  opacity: 0.6,
+                  cursor: "pointer",
+                }}
+                title="Araçlar panelini kapat"
+              >
+                <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
+            )}
           </div>
         )}
 
@@ -200,12 +224,12 @@ export default function Home() {
         {showSidePanels && !isMobile && !leftOpen && (
           <button
             onClick={toggleLeft}
-            className="flex-shrink-0 flex items-center justify-center transition-all hover:opacity-100 self-start mt-4"
+            className="flex-shrink-0 flex items-center justify-center transition-all hover:opacity-100 self-start mt-3"
             style={{
-              width: 16,
-              height: 40,
+              width: 12,
+              height: 32,
               background: "var(--bg-tertiary)",
-              borderRadius: "0 6px 6px 0",
+              borderRadius: "0 5px 5px 0",
               color: "var(--text-tertiary)",
               border: "1px solid var(--border-primary)",
               borderLeft: "none",
@@ -214,7 +238,7 @@ export default function Home() {
             }}
             title="Araçlar panelini aç"
           >
-            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </button>
@@ -232,12 +256,12 @@ export default function Home() {
         {showSidePanels && !isMobile && !rightOpen && (
           <button
             onClick={toggleRight}
-            className="flex-shrink-0 flex items-center justify-center transition-all hover:opacity-100 self-start mt-4"
+            className="flex-shrink-0 flex items-center justify-center transition-all hover:opacity-100 self-start mt-3"
             style={{
-              width: 16,
-              height: 40,
+              width: 12,
+              height: 32,
               background: "var(--bg-tertiary)",
-              borderRadius: "6px 0 0 6px",
+              borderRadius: "5px 0 0 5px",
               color: "var(--text-tertiary)",
               border: "1px solid var(--border-primary)",
               borderRight: "none",
@@ -246,16 +270,16 @@ export default function Home() {
             }}
             title="Mentor panelini aç"
           >
-            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
         )}
 
-        {/* Right Panel */}
+        {/* Right Panel + Close Notch */}
         {showSidePanels && (!isMobile || rightOpen) && (
           <div
-            className={`flex-shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
+            className={`flex-shrink-0 overflow-visible transition-all duration-300 ease-in-out relative ${
               isMobile ? "panel-mobile-overlay panel-right" : ""
             }`}
             style={{
@@ -265,6 +289,30 @@ export default function Home() {
               background: "var(--bg-secondary)",
             }}
           >
+            {/* Close notch on left edge of right panel */}
+            {!isMobile && rightOpen && (
+              <button
+                onClick={() => setRightOpen(false)}
+                className="absolute top-3 flex items-center justify-center transition-all hover:opacity-100 z-20"
+                style={{
+                  left: -12,
+                  width: 12,
+                  height: 32,
+                  background: "var(--bg-secondary)",
+                  borderRadius: "5px 0 0 5px",
+                  color: "var(--text-tertiary)",
+                  border: "1px solid var(--border-primary)",
+                  borderRight: "none",
+                  opacity: 0.6,
+                  cursor: "pointer",
+                }}
+                title="Mentor panelini kapat"
+              >
+                <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            )}
             <RightPanel
               onClose={() => setRightOpen(false)}
               onNewChat={handleNewChat}

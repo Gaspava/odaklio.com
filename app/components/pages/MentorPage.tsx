@@ -1,354 +1,256 @@
 "use client";
 
-import { useState } from "react";
-import {
-  IconStar,
-  IconLightning,
-  IconBookmark,
-  IconChevronRight,
-  IconChevronLeft,
-  IconHelp,
-  IconSend,
-  IconMentor,
-  IconTrendingUp,
-  IconBrain,
-} from "../icons/Icons";
+import { useState, useRef, useEffect } from "react";
+import { IconSend } from "../icons/Icons";
 
-/* ===== MENTOR CHAT ===== */
-function MentorChat() {
-  const [mentorInput, setMentorInput] = useState("");
-
-  const messages = [
-    { role: "mentor" as const, text: "Merhaba! Ben senin kişisel öğrenme mentorunum. Sana çalışma stratejileri, motivasyon ve öğrenme teknikleri konusunda yardımcı olabilirim." },
-    { role: "user" as const, text: "Sınavlara nasıl daha iyi hazırlanabilirim?" },
-    { role: "mentor" as const, text: "Harika bir soru! İşte etkili sınav hazırlığı için 3 altın kural:\n\n1. **Aralıklı Tekrar**: Konuları 1, 3 ve 7 gün arayla tekrar et.\n2. **Aktif Hatırlama**: Sadece okumak yerine kendini test et.\n3. **Pomodoro**: 25 dk çalış, 5 dk mola ver." },
-  ];
-
-  return (
-    <div
-      className="rounded-xl overflow-hidden transition-all"
-      style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
-    >
-      <div className="flex items-center gap-2 p-4 pb-3" style={{ borderBottom: "1px solid var(--border-secondary)" }}>
-        <div
-          className="flex h-8 w-8 items-center justify-center rounded-xl text-white"
-          style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow-sm)" }}
-        >
-          <IconMentor size={16} />
-        </div>
-        <div>
-          <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-            AI Mentor
-          </h3>
-          <span className="text-[10px] flex items-center gap-1" style={{ color: "var(--accent-success)" }}>
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--accent-success)" }} />
-            Aktif
-          </span>
-        </div>
-      </div>
-
-      <div className="p-4 space-y-3 max-h-[300px] overflow-y-auto">
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-          >
-            <div
-              className="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[12px] leading-relaxed"
-              style={
-                msg.role === "user"
-                  ? { background: "var(--gradient-primary)", color: "white", borderRadius: "16px 16px 4px 16px" }
-                  : { background: "var(--bg-tertiary)", color: "var(--text-primary)", borderRadius: "4px 16px 16px 16px", border: "1px solid var(--border-primary)" }
-              }
-            >
-              {msg.text}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex items-center gap-2 p-3" style={{ borderTop: "1px solid var(--border-secondary)" }}>
-        <input
-          type="text"
-          value={mentorInput}
-          onChange={(e) => setMentorInput(e.target.value)}
-          placeholder="Mentora bir soru sor..."
-          className="input"
-          style={{ height: 38, fontSize: 12, padding: "0 12px" }}
-        />
-        <button
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all active:scale-95"
-          style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow-sm)" }}
-        >
-          <IconSend size={13} />
-        </button>
-      </div>
-    </div>
-  );
+/* ===== PERSONAS ===== */
+interface Persona {
+  id: string;
+  name: string;
+  emoji: string;
+  role: string;
+  color: string;
+  gradient: string;
+  greeting: string;
+  style: string;
 }
 
-/* ===== LEARNING TIPS ===== */
-function LearningTips() {
-  const tips = [
-    {
-      type: "tip" as const,
-      title: "Feynman Tekniği",
-      content: "Bir konuyu öğrenmek için onu basit kelimelerle birine anlatmayı dene. Anlatamadığın yerler, öğrenmen gereken yerlerdir.",
-      icon: <IconLightning size={12} />,
-      color: "var(--accent-primary)",
-    },
-    {
-      type: "question" as const,
-      title: "Kendini Test Et",
-      content: "Son çalıştığın konunun 3 ana fikrini kendi cümlelerinle yazabilir misin?",
-      icon: <IconHelp size={12} />,
-      color: "var(--accent-secondary)",
-    },
-    {
-      type: "encouragement" as const,
-      title: "Motivasyon",
-      content: "7 günlük çalışma streak'ini koruyorsun! Bu süreklilik beyinde kalıcı nöral bağlantılar oluşturur.",
-      icon: <IconStar size={12} />,
-      color: "var(--accent-warning)",
-    },
-    {
-      type: "tip" as const,
-      title: "Aktif Hatırlama",
-      content: "Okuduğun notları kapatıp hatırlamaya çalışmak, tekrar okumaktan 50% daha etkilidir.",
-      icon: <IconBrain size={12} />,
-      color: "var(--accent-purple)",
-    },
-  ];
+const personas: Persona[] = [
+  {
+    id: "coach",
+    name: "Ders Koçu",
+    emoji: "🎓",
+    role: "Akademik Danışman",
+    color: "#10b981",
+    gradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+    greeting: "Merhaba! Ben senin ders koçunum. Çalışma planı oluşturmak, konuları derinlemesine anlamak veya sınava hazırlanmak konusunda yanındayım. Bugün hangi konuda çalışmak istersin?",
+    style: "Akademik, yapılandırılmış ve teşvik edici",
+  },
+  {
+    id: "psych",
+    name: "Psikolog",
+    emoji: "🧠",
+    role: "Ruhsal Destek",
+    color: "#8b5cf6",
+    gradient: "linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)",
+    greeting: "Merhaba, nasıl hissediyorsun bugün? Sınav stresi, motivasyon kaybı ya da sadece konuşmak istediğin bir şey varsa buradayım. Her duygu önemli ve geçerli.",
+    style: "Empatik, anlayışlı ve destekleyici",
+  },
+  {
+    id: "buddy",
+    name: "Kanka",
+    emoji: "😎",
+    role: "Çalışma Arkadaşı",
+    color: "#f59e0b",
+    gradient: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)",
+    greeting: "Selaaam! Naber, bugün ne çalışıyoruz? Birlikte çalışmak daha eğlenceli! Takılsan sormaktan çekinme, birlikte çözeriz.",
+    style: "Samimi, eğlenceli ve motive edici",
+  },
+  {
+    id: "expert",
+    name: "Uzman",
+    emoji: "🔬",
+    role: "Konu Uzmanı",
+    color: "#3b82f6",
+    gradient: "linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)",
+    greeting: "Hoş geldiniz. Herhangi bir konuda derinlemesine bilgi, detaylı açıklama veya ileri düzey sorularınız için hazırım. Hangi alanda araştırma yapmak istersiniz?",
+    style: "Detaylı, bilimsel ve analitik",
+  },
+];
 
-  return (
-    <div
-      className="rounded-xl p-5 transition-all"
-      style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
-    >
-      <div className="flex items-center gap-2 mb-4">
-        <div
-          className="flex h-6 w-6 items-center justify-center rounded-lg"
-          style={{ background: "var(--accent-success-light)", color: "var(--accent-success)" }}
-        >
-          <IconLightning size={14} />
-        </div>
-        <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-          Öğrenme İpuçları
-        </h3>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {tips.map((tip, i) => (
-          <div
-            key={i}
-            className="rounded-xl p-3.5 transition-all hover:scale-[1.01]"
-            style={{ background: "var(--bg-tertiary)" }}
-          >
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold mb-2"
-              style={{ background: `${tip.color}15`, color: tip.color }}
-            >
-              {tip.icon}
-              {tip.title}
-            </span>
-            <p className="text-[11px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              {tip.content}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ===== FLASHCARDS FULL ===== */
-function FlashcardsFull() {
-  const [flipped, setFlipped] = useState(false);
-  const [cardIndex, setCardIndex] = useState(0);
-
-  const cards = [
-    { q: "Newton'un birinci yasası nedir?", a: "Eylemsizlik yasası: Net kuvvet yoksa cisim halini korur.", category: "Fizik" },
-    { q: "∫ x² dx = ?", a: "x³/3 + C", category: "Matematik" },
-    { q: "Mitoz vs Mayoz farkı?", a: "Mitoz: 2 diploid hücre. Mayoz: 4 haploid hücre.", category: "Biyoloji" },
-    { q: "DNA'nın yapı taşı nedir?", a: "Nükleotidler (şeker + fosfat + baz)", category: "Biyoloji" },
-    { q: "E = mc² ne anlama gelir?", a: "Enerji = kütle × ışık hızının karesi. Kütle-enerji eşdeğerliği.", category: "Fizik" },
-  ];
-
-  const card = cards[cardIndex];
-
-  return (
-    <div
-      className="rounded-xl p-5 transition-all"
-      style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div
-            className="flex h-6 w-6 items-center justify-center rounded-lg"
-            style={{ background: "var(--accent-warning-light)", color: "var(--accent-warning)" }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="4" width="20" height="16" rx="2" />
-              <path d="M12 8v8" />
-              <path d="M8 12h8" />
-            </svg>
-          </div>
-          <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-            Flashcard&apos;lar
-          </h3>
-        </div>
-        <span className="text-[11px] font-semibold" style={{ color: "var(--text-tertiary)" }}>
-          {cardIndex + 1} / {cards.length}
-        </span>
-      </div>
-
-      <div
-        className="cursor-pointer rounded-2xl p-6 text-center transition-all active:scale-[0.98]"
-        onClick={() => setFlipped(!flipped)}
-        style={{
-          background: flipped ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
-          border: flipped ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid var(--border-secondary)",
-          minHeight: 140,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: flipped ? "var(--shadow-glow-sm)" : "none",
-        }}
-      >
-        <span
-          className="text-[10px] font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1.5"
-          style={{ color: flipped ? "var(--accent-primary)" : "var(--text-tertiary)" }}
-        >
-          {flipped ? "Cevap" : "Soru"}
-          <span className="px-1.5 py-0.5 rounded text-[8px]" style={{ background: "var(--bg-card)", color: "var(--text-tertiary)" }}>
-            {card.category}
-          </span>
-        </span>
-        <p className="text-sm font-medium leading-relaxed" style={{ color: "var(--text-primary)" }}>
-          {flipped ? card.a : card.q}
-        </p>
-        {!flipped && (
-          <span className="text-[10px] mt-3" style={{ color: "var(--text-tertiary)" }}>
-            Cevap için tıkla
-          </span>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between mt-4">
-        <button
-          onClick={() => { setFlipped(false); setCardIndex((cardIndex - 1 + cards.length) % cards.length); }}
-          className="flex h-9 w-9 items-center justify-center rounded-xl transition-all active:scale-95"
-          style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
-        >
-          <IconChevronLeft size={14} />
-        </button>
-        <div className="flex gap-1.5">
-          {cards.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => { setFlipped(false); setCardIndex(i); }}
-              className="w-2 h-2 rounded-full transition-all"
-              style={{
-                background: i === cardIndex ? "var(--accent-primary)" : "var(--bg-tertiary)",
-                boxShadow: i === cardIndex ? "var(--shadow-glow-sm)" : "none",
-              }}
-            />
-          ))}
-        </div>
-        <button
-          onClick={() => { setFlipped(false); setCardIndex((cardIndex + 1) % cards.length); }}
-          className="flex h-9 w-9 items-center justify-center rounded-xl transition-all active:scale-95"
-          style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
-        >
-          <IconChevronRight size={14} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ===== RECOMMENDATIONS ===== */
-function RecommendationsFull() {
-  const items = [
-    { title: "Dalga-Parçacık İkiliği", tag: "Önerilen", icon: <IconLightning size={12} />, color: "var(--accent-primary)", desc: "Kuantum fiziğinin temel kavramı" },
-    { title: "İntegral Pratik Soruları", tag: "Soru Bankası", icon: <IconStar size={12} />, color: "var(--accent-warning)", desc: "50+ pratik soru" },
-    { title: "Hücre Bölünmesi Video", tag: "Video", icon: <IconBookmark size={12} />, color: "var(--accent-secondary)", desc: "15 dk animasyonlu anlatım" },
-    { title: "Osmanlı Kronolojisi", tag: "Kaynak", icon: <IconBookmark size={12} />, color: "var(--accent-purple)", desc: "İnteraktif zaman çizelgesi" },
-    { title: "İngilizce Tense Quiz", tag: "Quiz", icon: <IconStar size={12} />, color: "var(--accent-cyan)", desc: "20 soruluk test" },
-    { title: "Python Algoritma Soruları", tag: "Pratik", icon: <IconLightning size={12} />, color: "var(--accent-danger)", desc: "Başlangıç seviyesi" },
-  ];
-
-  return (
-    <div
-      className="rounded-xl p-5 transition-all"
-      style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
-    >
-      <div className="flex items-center gap-2 mb-4">
-        <div
-          className="flex h-6 w-6 items-center justify-center rounded-lg"
-          style={{ background: "var(--accent-secondary-light)", color: "var(--accent-secondary)" }}
-        >
-          <IconStar size={14} />
-        </div>
-        <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-          Sana Özel Öneriler
-        </h3>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {items.map((item, i) => (
-          <button
-            key={i}
-            className="flex items-center gap-3 rounded-xl p-3 transition-all active:scale-[0.98] hover:shadow-sm text-left"
-            style={{ background: "var(--bg-tertiary)" }}
-          >
-            <span
-              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl"
-              style={{ background: `${item.color}12`, color: item.color }}
-            >
-              {item.icon}
-            </span>
-            <div className="flex-1 min-w-0">
-              <span className="text-[11px] font-semibold block truncate" style={{ color: "var(--text-primary)" }}>
-                {item.title}
-              </span>
-              <span className="text-[9px] block" style={{ color: "var(--text-tertiary)" }}>
-                {item.desc}
-              </span>
-              <span
-                className="inline-block mt-1 px-1.5 py-0.5 rounded text-[8px] font-semibold"
-                style={{ background: `${item.color}10`, color: item.color }}
-              >
-                {item.tag}
-              </span>
-            </div>
-            <IconChevronRight size={12} className="flex-shrink-0" style={{ color: "var(--text-tertiary)" }} />
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+interface Message {
+  id: number;
+  role: "user" | "mentor";
+  text: string;
 }
 
 /* ===== MENTOR PAGE ===== */
 export default function MentorPage() {
-  return (
-    <div className="h-full overflow-y-auto">
-      <div className="max-w-2xl mx-auto p-4 sm:p-6 space-y-4">
-        <div className="space-y-1">
-          <h1 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
-            Mentor
-          </h1>
-          <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-            Kişisel öğrenme mentorun ve çalışma rehberin
-          </p>
-        </div>
+  const [activePersona, setActivePersona] = useState<Persona>(personas[0]);
+  const [messages, setMessages] = useState<Message[]>([
+    { id: 1, role: "mentor", text: personas[0].greeting },
+  ]);
+  const [input, setInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-        <MentorChat />
-        <LearningTips />
-        <FlashcardsFull />
-        <RecommendationsFull />
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handlePersonaChange = (persona: Persona) => {
+    setActivePersona(persona);
+    setMessages([{ id: 1, role: "mentor", text: persona.greeting }]);
+    setInput("");
+  };
+
+  const handleSend = () => {
+    if (!input.trim()) return;
+    const userMsg: Message = { id: Date.now(), role: "user", text: input.trim() };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+
+    // Simulated mentor reply
+    setTimeout(() => {
+      const replies: Record<string, string> = {
+        coach: "Güzel bir soru! Bu konuda şöyle bir yaklaşım önerebilirim: Önce temel kavramları gözden geçirelim, sonra pratik sorularla pekiştirelim. Adım adım ilerleyelim.",
+        psych: "Seni anlıyorum, bu tür duygular gayet normal. Kendine nazik olmayı unutma. Biraz derin nefes al ve bir adım geri çekilip duruma yeniden bakalım.",
+        buddy: "Haa anladım! Bak şimdi, bunu düşünmenin en kolay yolu şöyle: basitçe parçalara ayır ve teker teker çöz. Takıldığın yeri söyle birlikte bakalım!",
+        expert: "Bu konuda literatürde birkaç farklı yaklaşım bulunmaktadır. En kabul gören teori şöyle açıklar: temel prensipleri anlamak için önce varsayımları incelememiz gerekir.",
+      };
+      const mentorMsg: Message = {
+        id: Date.now() + 1,
+        role: "mentor",
+        text: replies[activePersona.id] || "Anlıyorum, devam edelim.",
+      };
+      setMessages((prev) => [...prev, mentorMsg]);
+    }, 800);
+  };
+
+  return (
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Persona Selector */}
+      <div
+        className="flex-shrink-0 px-3 sm:px-4 py-3"
+        style={{ borderBottom: "1px solid var(--border-primary)" }}
+      >
+        <div className="max-w-2xl mx-auto">
+          <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+            {personas.map((persona) => {
+              const isActive = activePersona.id === persona.id;
+              return (
+                <button
+                  key={persona.id}
+                  onClick={() => handlePersonaChange(persona)}
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 transition-all active:scale-95 flex-shrink-0"
+                  style={{
+                    background: isActive ? `${persona.color}15` : "var(--bg-tertiary)",
+                    border: isActive ? `1.5px solid ${persona.color}40` : "1.5px solid transparent",
+                    boxShadow: isActive ? `0 0 12px ${persona.color}15` : "none",
+                  }}
+                >
+                  <span className="text-lg">{persona.emoji}</span>
+                  <div className="text-left">
+                    <span
+                      className="text-[11px] font-bold block leading-tight"
+                      style={{ color: isActive ? persona.color : "var(--text-primary)" }}
+                    >
+                      {persona.name}
+                    </span>
+                    <span className="text-[9px] leading-tight" style={{ color: "var(--text-tertiary)" }}>
+                      {persona.role}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Chat Messages */}
+      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4">
+        <div className="max-w-2xl mx-auto space-y-3">
+          {/* Persona Info Card */}
+          <div
+            className="rounded-2xl p-4 mb-4 text-center"
+            style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
+          >
+            <span className="text-3xl mb-2 block">{activePersona.emoji}</span>
+            <h3 className="text-base font-bold mb-0.5" style={{ color: "var(--text-primary)" }}>
+              {activePersona.name}
+            </h3>
+            <p className="text-[11px] mb-2" style={{ color: "var(--text-tertiary)" }}>
+              {activePersona.role}
+            </p>
+            <span
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-semibold"
+              style={{ background: `${activePersona.color}12`, color: activePersona.color }}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full animate-pulse"
+                style={{ background: activePersona.color }}
+              />
+              Çevrimiçi
+            </span>
+            <p className="text-[10px] mt-2 px-4 leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
+              Tarz: {activePersona.style}
+            </p>
+          </div>
+
+          {/* Messages */}
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-msg-in`}
+            >
+              {msg.role === "mentor" && (
+                <div
+                  className="flex-shrink-0 flex items-end mr-2"
+                >
+                  <div
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-xs"
+                    style={{ background: `${activePersona.color}15` }}
+                  >
+                    {activePersona.emoji}
+                  </div>
+                </div>
+              )}
+              <div
+                className="max-w-[80%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed"
+                style={
+                  msg.role === "user"
+                    ? {
+                        background: activePersona.gradient,
+                        color: "white",
+                        borderRadius: "20px 20px 4px 20px",
+                        boxShadow: `0 0 12px ${activePersona.color}25`,
+                      }
+                    : {
+                        background: "var(--bg-card)",
+                        color: "var(--text-primary)",
+                        borderRadius: "4px 20px 20px 20px",
+                        border: "1px solid var(--border-primary)",
+                      }
+                }
+              >
+                {msg.text}
+              </div>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+
+      {/* Input Bar */}
+      <div
+        className="flex-shrink-0 px-3 sm:px-4 py-3"
+        style={{
+          borderTop: "1px solid var(--border-primary)",
+          background: "var(--bg-secondary)",
+        }}
+      >
+        <div className="max-w-2xl mx-auto flex items-center gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            placeholder={`${activePersona.name}'a bir mesaj yaz...`}
+            className="input"
+            style={{ height: 42, fontSize: 13, padding: "0 14px" }}
+          />
+          <button
+            onClick={handleSend}
+            className="flex h-[42px] w-[42px] flex-shrink-0 items-center justify-center rounded-xl text-white transition-all active:scale-95"
+            style={{
+              background: activePersona.gradient,
+              boxShadow: `0 0 12px ${activePersona.color}30`,
+              opacity: input.trim() ? 1 : 0.5,
+            }}
+          >
+            <IconSend size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -370,30 +370,7 @@ function MindMapPreview() {
 /* ===== RIGHT PANEL ===== */
 export default function RightPanel({ onClose, onNewChat, chatStyle }: RightPanelProps) {
   return (
-    <div className="h-full overflow-y-auto p-3 space-y-3 stagger-children relative">
-      {/* Notch close button - top left */}
-      {onClose && (
-        <button
-          onClick={onClose}
-          className="absolute top-2 left-0 z-10 flex items-center justify-center transition-all active:scale-95 hover:opacity-100"
-          style={{
-            width: 20,
-            height: 36,
-            background: "var(--bg-tertiary)",
-            borderRadius: "0 8px 8px 0",
-            color: "var(--text-tertiary)",
-            border: "1px solid var(--border-primary)",
-            borderLeft: "none",
-            opacity: 0.7,
-          }}
-          title="Paneli kapat"
-        >
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-        </button>
-      )}
-
+    <div className="h-full overflow-y-auto p-3 space-y-3 stagger-children">
       <div className="flex items-center justify-between pb-0.5">
         <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
           Mentor & Araçlar
