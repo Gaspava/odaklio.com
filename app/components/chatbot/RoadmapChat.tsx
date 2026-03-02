@@ -665,6 +665,7 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
     }
 
     let cancelled = false;
+    setPhase("loading");
 
     async function loadExisting() {
       try {
