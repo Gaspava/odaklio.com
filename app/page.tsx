@@ -5,7 +5,15 @@ import LandingPage from "./components/landing/LandingPage";
 import Dashboard from "./components/dashboard/Dashboard";
 
 export default function Home() {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, loading, logout } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{ background: "var(--bg-primary)", height: "100dvh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="auth-spinner" style={{ width: 32, height: 32 }} />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <LandingPage />;

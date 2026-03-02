@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function GirisPage() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -22,21 +22,17 @@ export default function GirisPage() {
     setError("");
     setLoading(true);
 
-    // Small delay for UX
-    await new Promise((r) => setTimeout(r, 600));
-
-    const success = login(username, password);
-    if (success) {
-      router.push("/");
-    } else {
-      setError("Kullanıcı adı veya şifre yanlış.");
+    const result = await login(email, password);
+    if (result.error) {
+      setError(translateError(result.error));
       setLoading(false);
+    } else {
+      router.push("/");
     }
   };
 
   return (
     <div className="auth-page">
-      {/* Background effects */}
       <div className="auth-bg-glow" />
       <div className="auth-bg-glow-2" />
 
@@ -72,17 +68,17 @@ export default function GirisPage() {
 
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="auth-field">
-              <label className="auth-label">Kullanıcı Adı</label>
+              <label className="auth-label">E-posta</label>
               <div className="auth-input-wrapper">
                 <svg className="auth-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
                 </svg>
                 <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Kullanıcı adını gir"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="ornek@email.com"
                   className="auth-input"
                   required
                   autoFocus
@@ -158,4 +154,11 @@ export default function GirisPage() {
       </div>
     </div>
   );
+}
+
+function translateError(msg: string): string {
+  if (msg.includes("Invalid login credentials")) return "E-posta veya şifre yanlış.";
+  if (msg.includes("Email not confirmed")) return "E-posta adresin henüz doğrulanmadı. Gelen kutunu kontrol et.";
+  if (msg.includes("Too many requests")) return "Çok fazla deneme yaptın. Biraz bekleyip tekrar dene.";
+  return msg;
 }
