@@ -112,7 +112,6 @@ function AiAvatar() {
 export default function MainChat({ isMobile = false }: MainChatProps) {
   const {
     activeConversationId,
-    isLoadingConversation,
     saveUserMessage,
     saveAssistantMessage,
     generateTitle,
@@ -123,6 +122,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [selectionPopup, setSelectionPopup] = useState<{
     x: number;
@@ -137,24 +137,20 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastAiMsgIdRef = useRef<string | null>(null);
   const isFirstMessageRef = useRef(true);
-  const currentConvIdRef = useRef<string | null>(null);
 
-  // Track active conversation changes — load messages or reset
+  // Load conversation ONLY on mount — if there's an active conversation, fetch its messages
   useEffect(() => {
-    if (activeConversationId && activeConversationId !== currentConvIdRef.current) {
-      currentConvIdRef.current = activeConversationId;
+    if (activeConversationId) {
       isFirstMessageRef.current = false;
+      setIsInitialLoading(true);
       loadConversation(activeConversationId).then((loaded) => {
         if (loaded.length > 0) {
           setMessages([welcomeMessage, ...loaded]);
         }
+        setIsInitialLoading(false);
       });
-    } else if (!activeConversationId && currentConvIdRef.current !== null) {
-      currentConvIdRef.current = null;
-      isFirstMessageRef.current = true;
-      setMessages([welcomeMessage]);
     }
-  }, [activeConversationId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll to the START of the last AI message
   useEffect(() => {
@@ -226,8 +222,6 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
       try {
         const result = await saveUserMessage(userContent);
         conversationId = result.conversationId;
-        // Sync ref immediately so the useEffect doesn't trigger a reload
-        currentConvIdRef.current = conversationId;
         if (isFirst) {
           isFirstMessageRef.current = false;
         }
@@ -377,7 +371,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
         { text: "Hücre bölünmesi nedir?", icon: "🧬" },
       ];
 
-  if (isLoadingConversation) {
+  if (isInitialLoading) {
     return (
       <div className="flex flex-col h-full items-center justify-center gap-3">
         <div className="auth-spinner" style={{ width: 28, height: 28 }} />
