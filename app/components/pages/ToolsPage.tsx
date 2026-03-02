@@ -1,6 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/app/providers/AuthProvider";
+import {
+  getSavedFlashcards,
+  getSavedFlashcardsByConversation,
+  deleteSavedFlashcard,
+  getUserNotes,
+  deleteUserNote,
+  getConversation,
+  type SavedFlashcard,
+  type UserNote,
+} from "@/lib/db/conversations";
 import {
   IconChevronLeft,
   IconChevronRight,
@@ -80,13 +91,56 @@ function ToolCard({ name, description, icon, color, tag, count, onClick }: ToolC
 
 /* ===== NOTLARIM (MY NOTES) DETAIL ===== */
 function NotlarimDetail({ onBack }: { onBack: () => void }) {
-  const notes = [
-    { id: 1, title: "Fizik - Newton Yasaları", date: "Bugün", preview: "F = m × a formülü ve uygulamaları...", color: "var(--accent-primary)" },
-    { id: 2, title: "Matematik - İntegral", date: "Dün", preview: "Belirli integral hesaplama adımları...", color: "var(--accent-secondary)" },
-    { id: 3, title: "Biyoloji - Hücre Yapısı", date: "2 gün önce", preview: "Hücre organelleri ve görevleri...", color: "var(--accent-success)" },
-    { id: 4, title: "Tarih - Osmanlı Dönemi", date: "3 gün önce", preview: "Kuruluş döneminden yükseliş dönemine...", color: "var(--accent-warning)" },
-    { id: 5, title: "Kimya - Periyodik Tablo", date: "1 hafta önce", preview: "Elementlerin sınıflandırılması...", color: "var(--accent-purple)" },
-  ];
+  const { user } = useAuth();
+  const [notes, setNotes] = useState<UserNote[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      getUserNotes(user.id).then(data => {
+        setNotes(data);
+        setLoading(false);
+      });
+    }
+  }, [user]);
+
+  const handleDelete = async (noteId: string) => {
+    try {
+      await deleteUserNote(noteId);
+      setNotes(prev => prev.filter(n => n.id !== noteId));
+    } catch (err) {
+      console.error("Failed to delete note:", err);
+    }
+  };
+
+  const filteredNotes = notes.filter(n =>
+    n.content.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return "Simdi";
+    if (diffMins < 60) return `${diffMins} dk once`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} saat once`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return "Dun";
+    if (diffDays < 7) return `${diffDays} gun once`;
+    return date.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+  };
+
+  const pageColors: Record<string, string> = {
+    "Odak": "#10b981",
+    "Mentor": "#8b5cf6",
+    "Araclar": "#f59e0b",
+    "Analiz": "#3b82f6",
+    "Ana Sayfa": "#ef4444",
+    "Sayfa": "#6b7280",
+  };
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -99,45 +153,82 @@ function NotlarimDetail({ onBack }: { onBack: () => void }) {
           <IconChevronLeft size={16} />
         </button>
         <div>
-          <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Notlarım</h2>
+          <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Notlarim</h2>
           <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>{notes.length} not</p>
         </div>
-        <button
-          className="ml-auto flex h-8 items-center gap-1.5 px-3 rounded-lg transition-all active:scale-95 text-white text-[11px] font-semibold"
-          style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow-sm)" }}
-        >
-          <IconPlus size={12} />
-          Yeni Not
-        </button>
       </div>
 
       <div className="relative">
         <div className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-tertiary)" }}>
           <IconSearch size={13} />
         </div>
-        <input type="text" placeholder="Notlarda ara..." className="input" style={{ paddingLeft: 34, height: 38, fontSize: 12 }} />
+        <input
+          type="text"
+          placeholder="Notlarda ara..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="input"
+          style={{ paddingLeft: 34, height: 38, fontSize: 12 }}
+        />
       </div>
 
-      <div className="space-y-2">
-        {notes.map((note) => (
-          <button
-            key={note.id}
-            className="w-full text-left rounded-xl p-3.5 transition-all active:scale-[0.99] hover:shadow-md"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
-          >
-            <div className="flex items-start gap-3">
-              <div className="w-1 h-10 rounded-full flex-shrink-0 mt-0.5" style={{ background: note.color }} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-[13px] font-semibold truncate" style={{ color: "var(--text-primary)" }}>{note.title}</h3>
-                  <span className="text-[10px] flex-shrink-0" style={{ color: "var(--text-tertiary)" }}>{note.date}</span>
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin mx-auto mb-2" style={{ color: "var(--text-tertiary)" }} />
+          <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>Yukleniyor...</p>
+        </div>
+      ) : filteredNotes.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style={{ background: "rgba(16, 185, 129, 0.1)" }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <p className="text-sm font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+            {search ? "Sonuc bulunamadi" : "Henuz not eklemediniz"}
+          </p>
+          <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+            {search ? "Farkli bir arama deneyin" : "Herhangi bir sayfada metin secip 'Notlarima Ekle' butonuna tiklayin"}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filteredNotes.map((note) => (
+            <div
+              key={note.id}
+              className="rounded-xl p-3.5 transition-all hover:shadow-md group"
+              style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-1 h-10 rounded-full flex-shrink-0 mt-0.5" style={{ background: pageColors[note.source_page] || "#6b7280" }} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{
+                      background: `${pageColors[note.source_page] || "#6b7280"}15`,
+                      color: pageColors[note.source_page] || "#6b7280"
+                    }}>
+                      {note.source_page}
+                    </span>
+                    <span className="text-[10px] flex-shrink-0" style={{ color: "var(--text-tertiary)" }}>
+                      {formatDate(note.created_at)}
+                    </span>
+                    <button
+                      onClick={() => handleDelete(note.id)}
+                      className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-[10px] px-1.5 py-0.5 rounded"
+                      style={{ color: "var(--accent-danger)" }}
+                    >
+                      Sil
+                    </button>
+                  </div>
+                  <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-primary)" }}>
+                    {note.content.length > 200 ? note.content.slice(0, 200) + "..." : note.content}
+                  </p>
                 </div>
-                <p className="text-[11px] mt-0.5 truncate" style={{ color: "var(--text-tertiary)" }}>{note.preview}</p>
               </div>
             </div>
-          </button>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -209,27 +300,96 @@ function MindMapDetail({ onBack }: { onBack: () => void }) {
 }
 
 /* ===== FLASH KARTLAR DETAIL ===== */
+interface Deck {
+  conversationId: string;
+  title: string;
+  cards: SavedFlashcard[];
+  lastDate: string;
+}
+
 function FlashcardDetail({ onBack }: { onBack: () => void }) {
-  const [flipped, setFlipped] = useState(false);
+  const { user } = useAuth();
+  const [decks, setDecks] = useState<Deck[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeDeck, setActiveDeck] = useState<Deck | null>(null);
   const [cardIndex, setCardIndex] = useState(0);
+  const [flipped, setFlipped] = useState(false);
 
-  const decks = [
-    { name: "Fizik Formülleri", count: 24, color: "var(--accent-primary)", mastered: 18 },
-    { name: "Biyoloji Terimleri", count: 32, color: "var(--accent-success)", mastered: 20 },
-    { name: "Matematik Kuralları", count: 18, color: "var(--accent-secondary)", mastered: 12 },
-    { name: "Tarih Tarihleri", count: 40, color: "var(--accent-warning)", mastered: 25 },
-  ];
+  useEffect(() => {
+    if (!user) return;
+    loadDecks();
+  }, [user]);
 
-  const [activeDeck, setActiveDeck] = useState<number | null>(null);
+  const loadDecks = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const allCards = await getSavedFlashcards(user.id);
+      // Group by conversation_id
+      const grouped: Record<string, SavedFlashcard[]> = {};
+      for (const card of allCards) {
+        if (!grouped[card.conversation_id]) grouped[card.conversation_id] = [];
+        grouped[card.conversation_id].push(card);
+      }
 
-  const cards = [
-    { q: "Newton'un birinci yasası nedir?", a: "Eylemsizlik yasası: Net kuvvet sıfırsa cisim halini korur." },
-    { q: "F = m × a ne anlama gelir?", a: "Kuvvet = kütle × ivme. Newton'un ikinci yasası." },
-    { q: "Momentum formülü?", a: "p = m × v (kütle × hız)" },
-  ];
+      // Build deck objects
+      const deckList: Deck[] = [];
+      for (const [convId, cards] of Object.entries(grouped)) {
+        let title = "Flash Kart Destesi";
+        try {
+          const conv = await getConversation(convId);
+          if (conv?.title) title = conv.title;
+        } catch {}
+        deckList.push({
+          conversationId: convId,
+          title,
+          cards: cards.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
+          lastDate: cards[0]?.created_at || "",
+        });
+      }
+      setDecks(deckList);
+    } catch (err) {
+      console.error("Failed to load flashcards:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  if (activeDeck !== null) {
-    const card = cards[cardIndex];
+  const handleDeleteCard = async (cardId: string) => {
+    try {
+      await deleteSavedFlashcard(cardId);
+      if (activeDeck) {
+        const updatedCards = activeDeck.cards.filter(c => c.id !== cardId);
+        if (updatedCards.length === 0) {
+          setActiveDeck(null);
+          setDecks(prev => prev.filter(d => d.conversationId !== activeDeck.conversationId));
+        } else {
+          const updated = { ...activeDeck, cards: updatedCards };
+          setActiveDeck(updated);
+          setDecks(prev => prev.map(d => d.conversationId === activeDeck.conversationId ? updated : d));
+          if (cardIndex >= updatedCards.length) setCardIndex(updatedCards.length - 1);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to delete card:", err);
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);
+    if (diffDays === 0) return "Bugun";
+    if (diffDays === 1) return "Dun";
+    if (diffDays < 7) return `${diffDays} gun once`;
+    return date.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+  };
+
+  // Active deck card review view
+  if (activeDeck) {
+    const card = activeDeck.cards[cardIndex];
+    if (!card) { setActiveDeck(null); return null; }
+
     return (
       <div className="space-y-4 animate-fade-in">
         <div className="flex items-center gap-3">
@@ -240,9 +400,12 @@ function FlashcardDetail({ onBack }: { onBack: () => void }) {
           >
             <IconChevronLeft size={16} />
           </button>
-          <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>{decks[activeDeck].name}</h2>
-          <span className="text-[11px] ml-auto" style={{ color: "var(--text-tertiary)" }}>
-            {cardIndex + 1} / {cards.length}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{activeDeck.title}</h2>
+            <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>{activeDeck.cards.length} kart</p>
+          </div>
+          <span className="text-[11px] font-medium" style={{ color: "var(--text-tertiary)" }}>
+            {cardIndex + 1} / {activeDeck.cards.length}
           </span>
         </div>
 
@@ -250,65 +413,79 @@ function FlashcardDetail({ onBack }: { onBack: () => void }) {
           className="cursor-pointer rounded-2xl p-8 text-center transition-all active:scale-[0.98]"
           onClick={() => setFlipped(!flipped)}
           style={{
-            background: flipped ? "var(--accent-primary-light)" : "var(--bg-card)",
-            border: flipped ? "2px solid rgba(16, 185, 129, 0.3)" : "2px solid var(--border-primary)",
+            background: flipped ? "rgba(245, 158, 11, 0.06)" : "var(--bg-card)",
+            border: flipped ? "2px solid rgba(245, 158, 11, 0.3)" : "2px solid var(--border-primary)",
             minHeight: 180,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: flipped ? "var(--shadow-glow)" : "var(--shadow-card)",
+            boxShadow: flipped ? "0 0 20px rgba(245, 158, 11, 0.1)" : "var(--shadow-card)",
           }}
         >
           <span
             className="text-[10px] font-bold uppercase tracking-widest mb-3"
-            style={{ color: flipped ? "var(--accent-primary)" : "var(--text-tertiary)" }}
+            style={{ color: flipped ? "#f59e0b" : "var(--text-tertiary)" }}
           >
             {flipped ? "Cevap" : "Soru"}
           </span>
           <p className="text-base font-semibold leading-relaxed" style={{ color: "var(--text-primary)" }}>
-            {flipped ? card.a : card.q}
+            {flipped ? card.answer : card.question}
           </p>
           {!flipped && (
             <span className="text-[10px] mt-4" style={{ color: "var(--text-tertiary)" }}>
-              Cevap i\u00e7in t\u0131kla
+              Cevap icin tikla
             </span>
           )}
         </div>
 
         <div className="flex items-center justify-between">
           <button
-            onClick={() => { setFlipped(false); setCardIndex((cardIndex - 1 + cards.length) % cards.length); }}
-            className="flex h-10 w-10 items-center justify-center rounded-xl transition-all active:scale-95"
+            onClick={() => { setFlipped(false); setCardIndex(Math.max(0, cardIndex - 1)); }}
+            disabled={cardIndex === 0}
+            className="flex h-10 w-10 items-center justify-center rounded-xl transition-all active:scale-95 disabled:opacity-30"
             style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
           >
             <IconChevronLeft size={16} />
           </button>
           <div className="flex gap-2">
-            {cards.map((_, i) => (
+            {activeDeck.cards.map((_, i) => (
               <button
                 key={i}
                 onClick={() => { setFlipped(false); setCardIndex(i); }}
                 className="w-2.5 h-2.5 rounded-full transition-all"
                 style={{
-                  background: i === cardIndex ? "var(--accent-primary)" : "var(--bg-tertiary)",
-                  boxShadow: i === cardIndex ? "var(--shadow-glow-sm)" : "none",
+                  background: i === cardIndex ? "#f59e0b" : "var(--bg-tertiary)",
+                  boxShadow: i === cardIndex ? "0 0 8px rgba(245, 158, 11, 0.4)" : "none",
                 }}
               />
             ))}
           </div>
           <button
-            onClick={() => { setFlipped(false); setCardIndex((cardIndex + 1) % cards.length); }}
-            className="flex h-10 w-10 items-center justify-center rounded-xl transition-all active:scale-95"
+            onClick={() => { setFlipped(false); setCardIndex(Math.min(activeDeck.cards.length - 1, cardIndex + 1)); }}
+            disabled={cardIndex === activeDeck.cards.length - 1}
+            className="flex h-10 w-10 items-center justify-center rounded-xl transition-all active:scale-95 disabled:opacity-30"
             style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
           >
             <IconChevronRight size={16} />
+          </button>
+        </div>
+
+        {/* Delete card button */}
+        <div className="text-center">
+          <button
+            onClick={() => handleDeleteCard(card.id)}
+            className="text-[11px] px-3 py-1.5 rounded-lg transition-all active:scale-95"
+            style={{ color: "var(--accent-danger)", background: "rgba(239, 68, 68, 0.08)" }}
+          >
+            Bu karti sil
           </button>
         </div>
       </div>
     );
   }
 
+  // Deck list view
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center gap-3">
@@ -321,49 +498,62 @@ function FlashcardDetail({ onBack }: { onBack: () => void }) {
         </button>
         <div>
           <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Flash Kartlar</h2>
-          <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>{decks.length} deste</p>
+          <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+            {decks.length} deste, {decks.reduce((sum, d) => sum + d.cards.length, 0)} kart
+          </p>
         </div>
-        <button
-          className="ml-auto flex h-8 items-center gap-1.5 px-3 rounded-lg transition-all active:scale-95 text-white text-[11px] font-semibold"
-          style={{ background: "var(--gradient-warm)" }}
-        >
-          <IconPlus size={12} />
-          Yeni Deste
-        </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {decks.map((deck, i) => (
-          <button
-            key={i}
-            onClick={() => setActiveDeck(i)}
-            className="text-left rounded-xl p-4 transition-all active:scale-[0.98] hover:shadow-lg"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-xl"
-                style={{ background: `${deck.color}15`, color: deck.color }}
-              >
-                <IconFlashcard size={18} />
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin mx-auto mb-2" style={{ color: "var(--text-tertiary)" }} />
+          <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>Yukleniyor...</p>
+        </div>
+      ) : decks.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style={{ background: "rgba(245, 158, 11, 0.1)" }}>
+            <IconFlashcard size={24} style={{ color: "#f59e0b" }} />
+          </div>
+          <p className="text-sm font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+            Henuz kaydedilmis kart yok
+          </p>
+          <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+            Odak modunda Flash Kart sohbetinde 'Ekle' butonuna tiklayarak kart kaydedin
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {decks.map((deck) => (
+            <button
+              key={deck.conversationId}
+              onClick={() => { setActiveDeck(deck); setCardIndex(0); setFlipped(false); }}
+              className="text-left rounded-xl p-4 transition-all active:scale-[0.98] hover:shadow-lg"
+              style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-xl"
+                  style={{ background: "rgba(245, 158, 11, 0.1)", color: "#f59e0b" }}
+                >
+                  <IconFlashcard size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-[13px] font-bold truncate" style={{ color: "var(--text-primary)" }}>{deck.title}</h3>
+                  <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>{deck.cards.length} kart</span>
+                </div>
               </div>
-              <div className="flex-1">
-                <h3 className="text-[13px] font-bold" style={{ color: "var(--text-primary)" }}>{deck.name}</h3>
-                <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>{deck.count} kart</span>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                  {formatDate(deck.lastDate)}
+                </span>
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: "rgba(245, 158, 11, 0.1)", color: "#f59e0b" }}>
+                  Tekrar et
+                </span>
               </div>
-            </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: "var(--bg-tertiary)" }}>
-              <div
-                className="h-full rounded-full"
-                style={{ width: `${(deck.mastered / deck.count) * 100}%`, background: deck.color }}
-              />
-            </div>
-            <span className="text-[10px] mt-1.5 block" style={{ color: "var(--text-tertiary)" }}>
-              {deck.mastered}/{deck.count} \u00f6\u011frenildi
-            </span>
-          </button>
-        ))}
-      </div>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -551,7 +741,19 @@ function SpeedReadDetail({ onBack }: { onBack: () => void }) {
 
 /* ===== TOOLS PAGE ===== */
 export default function ToolsPage() {
+  const { user } = useAuth();
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  const [notesCount, setNotesCount] = useState(0);
+  const [flashcardInfo, setFlashcardInfo] = useState({ decks: 0, cards: 0 });
+
+  useEffect(() => {
+    if (!user) return;
+    getUserNotes(user.id).then(notes => setNotesCount(notes.length)).catch(() => {});
+    getSavedFlashcards(user.id).then(cards => {
+      const uniqueConvs = new Set(cards.map(c => c.conversation_id));
+      setFlashcardInfo({ decks: uniqueConvs.size, cards: cards.length });
+    }).catch(() => {});
+  }, [user]);
 
   const tools = [
     {
@@ -560,8 +762,7 @@ export default function ToolsPage() {
       description: "Ders notlar\u0131n\u0131 olu\u015ftur, d\u00fczenle ve organize et",
       icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
       color: "#10b981",
-      tag: "5 not",
-      count: "Son: Bug\u00fcn",
+      tag: notesCount > 0 ? `${notesCount} not` : "Bos",
     },
     {
       id: "mindmap",
@@ -578,8 +779,8 @@ export default function ToolsPage() {
       description: "Tekrar ve ezber i\u00e7in flash kart desteleri olu\u015ftur",
       icon: <IconFlashcard size={20} />,
       color: "#f59e0b",
-      tag: "4 deste",
-      count: "114 kart",
+      tag: flashcardInfo.decks > 0 ? `${flashcardInfo.decks} deste` : "Bos",
+      count: flashcardInfo.cards > 0 ? `${flashcardInfo.cards} kart` : undefined,
     },
     {
       id: "pomodoro",

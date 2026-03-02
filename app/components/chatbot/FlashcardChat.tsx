@@ -6,6 +6,8 @@ import {
   useConversation,
   type ChatMessage,
 } from "@/app/providers/ConversationProvider";
+import { saveFlashcard } from "@/lib/db/conversations";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 /* ===== TYPES ===== */
 interface FlashcardChatProps {
@@ -193,17 +195,16 @@ function FlashcardCard({
 
 /* ===== SCORE SUMMARY ===== */
 function ScoreSummary({
-  correct,
-  incorrect,
-  total,
+  totalAnswered,
+  savedCount,
   onReset,
 }: {
-  correct: number;
-  incorrect: number;
-  total: number;
+  totalAnswered: number;
+  savedCount: number;
   onReset: () => void;
 }) {
-  const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const skipped = totalAnswered - savedCount;
+  const saveRatio = totalAnswered > 0 ? savedCount / totalAnswered : 0;
 
   return (
     <div
@@ -218,15 +219,15 @@ function ScoreSummary({
         className="flex items-center justify-center w-16 h-16 rounded-full mb-1"
         style={{
           background:
-            percentage >= 70
+            saveRatio >= 0.7
               ? "rgba(16, 185, 129, 0.12)"
-              : percentage >= 40
+              : saveRatio >= 0.4
               ? "rgba(245, 158, 11, 0.12)"
-              : "rgba(239, 68, 68, 0.12)",
+              : "rgba(156, 163, 175, 0.12)",
         }}
       >
         <span className="text-3xl">
-          {percentage >= 70 ? "\uD83C\uDF89" : percentage >= 40 ? "\uD83D\uDCAA" : "\uD83D\uDCDA"}
+          {saveRatio >= 0.7 ? "\uD83C\uDF89" : saveRatio >= 0.4 ? "\uD83D\uDCAA" : "\uD83D\uDCDA"}
         </span>
       </div>
 
@@ -241,15 +242,33 @@ function ScoreSummary({
         <div className="flex flex-col items-center">
           <span
             className="text-2xl font-bold"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            {totalAnswered}
+          </span>
+          <span
+            className="text-[11px] font-medium"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            Toplam kart
+          </span>
+        </div>
+        <div
+          className="w-px h-8"
+          style={{ background: "var(--border-primary)" }}
+        />
+        <div className="flex flex-col items-center">
+          <span
+            className="text-2xl font-bold"
             style={{ color: "var(--accent-primary)" }}
           >
-            {correct}
+            {savedCount}
           </span>
           <span
             className="text-[11px] font-medium"
             style={{ color: "var(--text-tertiary)" }}
           >
-            Dogru
+            Kaydedilen
           </span>
         </div>
         <div
@@ -259,33 +278,15 @@ function ScoreSummary({
         <div className="flex flex-col items-center">
           <span
             className="text-2xl font-bold"
-            style={{ color: "var(--accent-danger)" }}
+            style={{ color: "var(--text-tertiary)" }}
           >
-            {incorrect}
+            {skipped}
           </span>
           <span
             className="text-[11px] font-medium"
             style={{ color: "var(--text-tertiary)" }}
           >
-            Yanlis
-          </span>
-        </div>
-        <div
-          className="w-px h-8"
-          style={{ background: "var(--border-primary)" }}
-        />
-        <div className="flex flex-col items-center">
-          <span
-            className="text-2xl font-bold"
-            style={{ color: "var(--accent-warning)" }}
-          >
-            %{percentage}
-          </span>
-          <span
-            className="text-[11px] font-medium"
-            style={{ color: "var(--text-tertiary)" }}
-          >
-            Basari
+            Gecilen
           </span>
         </div>
       </div>
@@ -324,6 +325,7 @@ export default function FlashcardChat({
     refreshConversations,
     loadConversation,
   } = useConversation();
+  const { user } = useAuth();
 
   const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
   const [input, setInput] = useState("");
@@ -334,7 +336,9 @@ export default function FlashcardChat({
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [scores, setScores] = useState({ correct: 0, incorrect: 0 });
+  const [savedCount, setSavedCount] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [totalAnswered, setTotalAnswered] = useState(0);
   const [isReviewComplete, setIsReviewComplete] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -357,7 +361,8 @@ export default function FlashcardChat({
               setFlashcards(parsed);
               setCurrentCardIndex(0);
               setIsFlipped(false);
-              setScores({ correct: 0, incorrect: 0 });
+              setSavedCount(0);
+              setTotalAnswered(0);
               setIsReviewComplete(false);
             }
           }
@@ -443,7 +448,8 @@ export default function FlashcardChat({
             setFlashcards(parsed);
             setCurrentCardIndex(0);
             setIsFlipped(false);
-            setScores({ correct: 0, incorrect: 0 });
+            setSavedCount(0);
+            setTotalAnswered(0);
             setIsReviewComplete(false);
           }
         }
@@ -519,31 +525,47 @@ export default function FlashcardChat({
     }
   }, [currentCardIndex]);
 
-  const handleKnow = useCallback(() => {
-    setScores((prev) => ({ ...prev, correct: prev.correct + 1 }));
+  const handleAdd = useCallback(async () => {
+    if (saving || flashcards.length === 0) return;
+    const card = flashcards[currentCardIndex];
+    setSaving(true);
+    try {
+      const convId = activeConversationId;
+      if (convId && user) {
+        await saveFlashcard(user.id, convId, card.question, card.answer);
+      }
+      setSavedCount((prev) => prev + 1);
+    } catch (err) {
+      console.error("Failed to save flashcard:", err);
+    } finally {
+      setSaving(false);
+    }
+    // Move to next card
     if (currentCardIndex < flashcards.length - 1) {
       setCurrentCardIndex((prev) => prev + 1);
       setIsFlipped(false);
     } else {
       setIsReviewComplete(true);
     }
-  }, [currentCardIndex, flashcards.length]);
+    setTotalAnswered((prev) => prev + 1);
+  }, [saving, flashcards, currentCardIndex, activeConversationId, user]);
 
-  const handleDontKnow = useCallback(() => {
-    setScores((prev) => ({ ...prev, incorrect: prev.incorrect + 1 }));
+  const handleSkip = useCallback(() => {
     if (currentCardIndex < flashcards.length - 1) {
       setCurrentCardIndex((prev) => prev + 1);
       setIsFlipped(false);
     } else {
       setIsReviewComplete(true);
     }
-  }, [currentCardIndex, flashcards.length]);
+    setTotalAnswered((prev) => prev + 1);
+  }, [flashcards, currentCardIndex]);
 
   const handleResetCards = useCallback(() => {
     setFlashcards([]);
     setCurrentCardIndex(0);
     setIsFlipped(false);
-    setScores({ correct: 0, incorrect: 0 });
+    setSavedCount(0);
+    setTotalAnswered(0);
     setIsReviewComplete(false);
     inputRef.current?.focus();
   }, []);
@@ -568,17 +590,6 @@ export default function FlashcardChat({
       </div>
     );
   }
-
-  /* ===== PROGRESS BAR WIDTH ===== */
-  const totalAnswered = scores.correct + scores.incorrect;
-  const progressPercent =
-    flashcards.length > 0
-      ? Math.round((totalAnswered / flashcards.length) * 100)
-      : 0;
-  const correctPercent =
-    totalAnswered > 0
-      ? Math.round((scores.correct / totalAnswered) * 100)
-      : 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -634,43 +645,61 @@ export default function FlashcardChat({
               </button>
             </div>
 
-            {/* Know / Don't Know Buttons */}
+            {/* Skip / Add Buttons */}
             <div className="flex items-center gap-3 w-full max-w-[320px]">
               <button
-                onClick={handleDontKnow}
+                onClick={handleSkip}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
                 style={{
-                  background: "rgba(239, 68, 68, 0.1)",
-                  color: "var(--accent-danger)",
-                  border: "1px solid rgba(239, 68, 68, 0.25)",
+                  background: "var(--bg-tertiary)",
+                  color: "var(--text-secondary)",
+                  border: "1px solid var(--border-primary)",
                 }}
               >
-                <span aria-hidden="true">&#10060;</span>
-                Bilmiyorum
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 17 18 12 13 7" /><polyline points="6 17 11 12 6 7" /></svg>
+                Gec
               </button>
               <button
-                onClick={handleKnow}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
+                onClick={handleAdd}
+                disabled={saving}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95 disabled:opacity-60"
                 style={{
                   background: "rgba(16, 185, 129, 0.1)",
                   color: "var(--accent-primary)",
                   border: "1px solid rgba(16, 185, 129, 0.25)",
                 }}
               >
-                <span aria-hidden="true">&#9989;</span>
-                Biliyorum
+                {saving ? (
+                  <div className="auth-spinner" style={{ width: 14, height: 14 }} />
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>
+                )}
+                Ekle
               </button>
             </div>
 
             {/* Progress Bar */}
             <div className="w-full max-w-[320px]">
               <div className="flex items-center justify-between mb-1.5">
-                <span
-                  className="text-[10px] font-medium"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  Ilerleme
-                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-[10px] font-medium"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    Ilerleme
+                  </span>
+                  {savedCount > 0 && (
+                    <span
+                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+                      style={{
+                        background: "rgba(16, 185, 129, 0.1)",
+                        color: "var(--accent-primary)",
+                      }}
+                    >
+                      {savedCount} kaydedildi
+                    </span>
+                  )}
+                </div>
                 <span
                   className="text-[10px] font-medium"
                   style={{ color: "var(--text-tertiary)" }}
@@ -683,20 +712,21 @@ export default function FlashcardChat({
                 style={{ background: "var(--bg-tertiary)" }}
               >
                 <div className="h-full rounded-full flex overflow-hidden transition-all duration-500">
-                  {/* Correct portion */}
+                  {/* Saved portion */}
                   <div
                     className="h-full transition-all duration-500"
                     style={{
-                      width: `${flashcards.length > 0 ? (scores.correct / flashcards.length) * 100 : 0}%`,
+                      width: `${flashcards.length > 0 ? (savedCount / flashcards.length) * 100 : 0}%`,
                       background: "var(--accent-primary)",
                     }}
                   />
-                  {/* Incorrect portion */}
+                  {/* Skipped portion */}
                   <div
                     className="h-full transition-all duration-500"
                     style={{
-                      width: `${flashcards.length > 0 ? (scores.incorrect / flashcards.length) * 100 : 0}%`,
-                      background: "var(--accent-danger)",
+                      width: `${flashcards.length > 0 ? ((totalAnswered - savedCount) / flashcards.length) * 100 : 0}%`,
+                      background: "var(--text-tertiary)",
+                      opacity: 0.3,
                     }}
                   />
                 </div>
@@ -715,9 +745,8 @@ export default function FlashcardChat({
           }}
         >
           <ScoreSummary
-            correct={scores.correct}
-            incorrect={scores.incorrect}
-            total={flashcards.length}
+            totalAnswered={totalAnswered}
+            savedCount={savedCount}
             onReset={handleResetCards}
           />
         </div>

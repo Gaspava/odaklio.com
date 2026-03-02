@@ -236,3 +236,108 @@ export async function updateCanvasState(
     .eq("id", conversationId);
   if (error) throw error;
 }
+
+/* ===== SAVED FLASHCARDS ===== */
+
+export interface SavedFlashcard {
+  id: string;
+  user_id: string;
+  conversation_id: string;
+  question: string;
+  answer: string;
+  created_at: string;
+}
+
+export async function saveFlashcard(
+  userId: string,
+  conversationId: string,
+  question: string,
+  answer: string
+): Promise<SavedFlashcard> {
+  const { data, error } = await supabase
+    .from("saved_flashcards")
+    .insert({ user_id: userId, conversation_id: conversationId, question, answer })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getSavedFlashcards(userId: string): Promise<SavedFlashcard[]> {
+  const { data, error } = await supabase
+    .from("saved_flashcards")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getSavedFlashcardsByConversation(
+  conversationId: string
+): Promise<SavedFlashcard[]> {
+  const { data, error } = await supabase
+    .from("saved_flashcards")
+    .select("*")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function deleteSavedFlashcard(flashcardId: string): Promise<void> {
+  const { error } = await supabase
+    .from("saved_flashcards")
+    .delete()
+    .eq("id", flashcardId);
+  if (error) throw error;
+}
+
+/* ===== USER NOTES ===== */
+
+export interface UserNote {
+  id: string;
+  user_id: string;
+  content: string;
+  source_page: string;
+  source_context: string | null;
+  created_at: string;
+}
+
+export async function saveUserNoteToDb(
+  userId: string,
+  content: string,
+  sourcePage: string,
+  sourceContext?: string
+): Promise<UserNote> {
+  const { data, error } = await supabase
+    .from("user_notes")
+    .insert({
+      user_id: userId,
+      content,
+      source_page: sourcePage,
+      source_context: sourceContext || null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getUserNotes(userId: string): Promise<UserNote[]> {
+  const { data, error } = await supabase
+    .from("user_notes")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function deleteUserNote(noteId: string): Promise<void> {
+  const { error } = await supabase
+    .from("user_notes")
+    .delete()
+    .eq("id", noteId);
+  if (error) throw error;
+}

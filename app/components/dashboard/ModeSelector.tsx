@@ -5,7 +5,6 @@ import {
   IconChat,
   IconMindMap,
   IconFlashcard,
-  IconEdit,
   IconRoadmap,
 } from "../icons/Icons";
 
@@ -36,13 +35,6 @@ const modes = [
     gradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
   },
   {
-    id: "note",
-    name: "Not Alma",
-    desc: "Yapılandırılmış not çıkarma",
-    color: "#3b82f6",
-    gradient: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-  },
-  {
     id: "roadmap",
     name: "Roadmap",
     desc: "Adım adım öğrenme planı",
@@ -58,7 +50,6 @@ const modeIcons: Record<
   standard: IconChat,
   mindmap: IconMindMap,
   flashcard: IconFlashcard,
-  note: IconEdit,
   roadmap: IconRoadmap,
 };
 
@@ -121,7 +112,7 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
           className="mode-selector-grid"
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
+            gridTemplateColumns: "repeat(4, 1fr)",
             gap: 16,
           }}
         >

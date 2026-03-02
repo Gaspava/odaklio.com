@@ -112,9 +112,9 @@ const WELCOME_MESSAGE: ChatMessage = {
 };
 
 const QUICK_PROMPTS = [
-  { text: "Python ogrenme yolu", icon: "🐍" },
-  { text: "Web gelistirme", icon: "🌐" },
-  { text: "Makine ogrenmesi", icon: "🤖" },
+  { text: "Python ogrenme yolu", icon: "\uD83D\uDC0D" },
+  { text: "Web gelistirme", icon: "\uD83C\uDF10" },
+  { text: "Makine ogrenmesi", icon: "\uD83E\uDD16" },
 ];
 
 /* ===== CHECKMARK ICON ===== */
@@ -439,6 +439,10 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
   );
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
 
+  // 2-panel layout state
+  const [activeTab, setActiveTab] = useState<"roadmap" | "chat">("chat");
+  const [detailStep, setDetailStep] = useState<RoadmapStep | null>(null);
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastAiMsgIdRef = useRef<string | null>(null);
@@ -625,6 +629,7 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
 
   const handleAskDetail = useCallback(
     (step: RoadmapStep) => {
+      setDetailStep(step);
       const userContent = `Adim ${step.number}: ${step.title} hakkinda detayli bilgi ver`;
       const userMsg: ChatMessage = {
         id: Date.now().toString(),
@@ -634,8 +639,9 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
       };
       setMessages((prev) => [...prev, userMsg]);
       sendToAI(userContent, messages);
+      if (isMobile) setActiveTab("chat");
     },
-    [sendToAI, messages]
+    [sendToAI, messages, isMobile]
   );
 
   const toggleStepComplete = useCallback((stepNumber: number) => {
@@ -667,123 +673,442 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
 
   const hasRoadmap = steps.length > 0;
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* Main scrollable area */}
-      <div
-        ref={scrollContainerRef}
-        className={`flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 ${isMobile ? "pb-2" : ""}`}
-      >
-        <div className="max-w-[720px] mx-auto">
-          {/* Roadmap Timeline Display */}
-          {hasRoadmap ? (
-            <div className="mb-8">
-              {/* Roadmap Title */}
-              {roadmapTitle && (
-                <div className="text-center mb-6 animate-msg-in">
-                  <h1
-                    className="text-xl sm:text-2xl font-bold mb-2"
+  /* ===== FULL-WIDTH MODE (before roadmap generated) ===== */
+  if (!hasRoadmap) {
+    return (
+      <div className="flex flex-col h-full" style={{ background: "var(--bg-primary)" }}>
+        {/* Main scrollable area */}
+        <div
+          ref={scrollContainerRef}
+          className={`flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 ${isMobile ? "pb-2" : ""}`}
+        >
+          <div className="max-w-[720px] mx-auto">
+            {/* Messages */}
+            <div className="space-y-5 sm:space-y-6">
+              {messages.map((msg, idx) => (
+                <div
+                  id={`roadmap-msg-${msg.id}`}
+                  key={msg.id}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-msg-in`}
+                  style={{
+                    animationDelay: `${Math.min(idx * 0.05, 0.3)}s`,
+                  }}
+                >
+                  {msg.role === "assistant" && <AiAvatar />}
+
+                  <div
+                    className={`group relative ${
+                      msg.role === "user"
+                        ? "max-w-[85%] sm:max-w-[70%]"
+                        : "max-w-[92%] sm:max-w-[88%]"
+                    }`}
+                  >
+                    <div
+                      className={`px-3.5 py-3 sm:px-4 sm:py-3.5 ${
+                        msg.role === "user" ? "msg-user" : "msg-ai"
+                      }`}
+                    >
+                      {msg.role === "assistant" ? (
+                        <>
+                          {msg.content ? (
+                            <ChatMessageRenderer content={msg.content} />
+                          ) : (
+                            isLoading &&
+                            msg.id ===
+                              messages[messages.length - 1]?.id && (
+                              <TypingIndicator />
+                            )
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-[13px] sm:text-sm leading-relaxed">
+                          {msg.content}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Quick Prompts (show when no user messages yet) */}
+            {messages.length <= 1 && (
+              <div
+                className="mt-8 sm:mt-10 animate-fade-in"
+                style={{ animationDelay: "0.3s" }}
+              >
+                <div className="text-center mb-6">
+                  <div
+                    className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 animate-float"
                     style={{
-                      background:
-                        "linear-gradient(135deg, #ef4444, #f97316, #ef4444)",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      backgroundClip: "text",
+                      background: "rgba(239, 68, 68, 0.1)",
+                      boxShadow: "0 0 20px rgba(239, 68, 68, 0.15)",
                     }}
                   >
-                    {roadmapTitle}
-                  </h1>
+                    <IconRoadmap size={28} style={{ color: "#ef4444" }} />
+                  </div>
+                  <h2
+                    className="text-base font-bold mb-1"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    Ne ogrenmek istiyorsun?
+                  </h2>
                   <p
                     className="text-xs"
                     style={{ color: "var(--text-tertiary)" }}
                   >
-                    {steps.length} adimlik ogrenme plani
+                    Bir konu sec, sana adim adim ogrenme yolu cikarayim
                   </p>
                 </div>
-              )}
 
-              {/* Progress Bar */}
-              <ProgressBar
-                completed={completedSteps.size}
-                total={steps.length}
-              />
-
-              {/* Timeline */}
-              <div className="relative">
-                {/* Vertical timeline line */}
-                <div
-                  className="absolute"
-                  style={{
-                    left: 11,
-                    top: 28,
-                    bottom: 16,
-                    width: 2,
-                    background: `linear-gradient(to bottom, #ef4444, var(--border-primary))`,
-                    borderRadius: 1,
-                  }}
-                />
-
-                {/* Steps */}
-                {steps.map((step, idx) => (
-                  <StepCard
-                    key={step.number}
-                    step={step}
-                    isCompleted={completedSteps.has(step.number)}
-                    isExpanded={expandedStep === step.number}
-                    onToggleComplete={() => toggleStepComplete(step.number)}
-                    onToggleExpand={() =>
-                      setExpandedStep(
-                        expandedStep === step.number ? null : step.number
-                      )
-                    }
-                    onAskDetail={() => handleAskDetail(step)}
-                    index={idx}
-                  />
-                ))}
+                <div className="grid grid-cols-1 sm:flex sm:flex-wrap sm:justify-center gap-2 sm:gap-2.5">
+                  {QUICK_PROMPTS.map((prompt, i) => (
+                    <button
+                      key={prompt.text}
+                      onClick={() => handleQuickPrompt(prompt.text)}
+                      className="flex items-center gap-2 rounded-xl px-3.5 py-3 sm:px-4 sm:py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md stagger-children"
+                      style={{
+                        background: "var(--bg-card)",
+                        border: "1px solid var(--border-primary)",
+                        color: "var(--text-secondary)",
+                        animationDelay: `${0.4 + i * 0.08}s`,
+                      }}
+                    >
+                      <span className="text-sm">{prompt.icon}</span>
+                      <span>{prompt.text}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
+            )}
+          </div>
+        </div>
 
-              {/* Completion celebration */}
-              {completedSteps.size === steps.length && steps.length > 0 && (
-                <div
-                  className="text-center py-6 rounded-xl mt-4 animate-msg-in"
+        {/* Input Bar */}
+        <div
+          className={`flex-shrink-0 px-3 sm:px-4 ${isMobile ? "pb-2" : "pb-4"}`}
+        >
+          <div
+            className="max-w-[720px] mx-auto flex items-center gap-2 rounded-2xl px-3 py-2.5 sm:px-4 transition-all"
+            style={{
+              background: "var(--bg-card)",
+              border: "1px solid var(--border-primary)",
+              boxShadow: input.trim()
+                ? "0 0 12px rgba(239, 68, 68, 0.15)"
+                : "var(--shadow-md)",
+              borderColor: input.trim()
+                ? "rgba(239, 68, 68, 0.25)"
+                : "var(--border-primary)",
+            }}
+          >
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              placeholder={
+                isLoading
+                  ? "Yanit bekleniyor..."
+                  : "Ne ogrenmek istiyorsun? (or: React ogrenme yolu)"
+              }
+              disabled={isLoading}
+              className="flex-1 bg-transparent text-[13px] sm:text-sm outline-none disabled:opacity-50"
+              style={{ color: "var(--text-primary)" }}
+            />
+
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={handleSend}
+              disabled={!input.trim() || isLoading}
+              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
+              style={{
+                background:
+                  input.trim() && !isLoading
+                    ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                    : "var(--bg-tertiary)",
+                color:
+                  input.trim() && !isLoading
+                    ? "white"
+                    : "var(--text-tertiary)",
+                boxShadow:
+                  input.trim() && !isLoading
+                    ? "0 0 12px rgba(239, 68, 68, 0.3)"
+                    : "none",
+              }}
+            >
+              <IconSend size={14} />
+            </button>
+          </div>
+
+          {!isMobile && (
+            <p
+              className="text-center text-[10px] mt-2.5 flex items-center justify-center gap-1.5"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              <span style={{ color: "#ef4444", opacity: 0.6 }}>&#9679;</span>
+              Adimlari tamamla isaretiyle takip et &#183; Detay butonu ile
+              derinlemesine ogren
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ===== 2-PANEL MODE (after roadmap generated) ===== */
+  return (
+    <div className="flex h-full relative" style={{ background: "var(--bg-primary)" }}>
+      {/* Mobile tab bar - only when hasRoadmap && isMobile */}
+      {isMobile && (
+        <div
+          className="absolute top-0 left-0 right-0 z-10 flex"
+          style={{
+            borderBottom: "1px solid var(--border-primary)",
+            background: "var(--bg-secondary)",
+          }}
+        >
+          <button
+            onClick={() => setActiveTab("roadmap")}
+            className="flex-1 py-2.5 text-xs font-semibold transition-colors"
+            style={{
+              color: activeTab === "roadmap" ? "#ef4444" : "var(--text-tertiary)",
+              borderBottom: activeTab === "roadmap" ? "2px solid #ef4444" : "2px solid transparent",
+            }}
+          >
+            Harita
+          </button>
+          <button
+            onClick={() => setActiveTab("chat")}
+            className="flex-1 py-2.5 text-xs font-semibold transition-colors"
+            style={{
+              color: activeTab === "chat" ? "#ef4444" : "var(--text-tertiary)",
+              borderBottom: activeTab === "chat" ? "2px solid #ef4444" : "2px solid transparent",
+            }}
+          >
+            Sohbet
+          </button>
+        </div>
+      )}
+
+      {/* LEFT PANEL: Roadmap timeline */}
+      <div
+        style={{
+          width: isMobile ? "100%" : "45%",
+          display: isMobile && activeTab !== "roadmap" ? "none" : "flex",
+          flexDirection: "column",
+          borderRight: isMobile ? "none" : "1px solid var(--border-primary)",
+          background: "var(--bg-secondary)",
+          transition: "width 0.3s ease",
+        }}
+        className="overflow-y-auto"
+      >
+        <div
+          className="p-4 sm:p-6"
+          style={{ paddingTop: isMobile ? 52 : undefined }}
+        >
+          {/* Roadmap Title */}
+          {roadmapTitle && (
+            <div className="text-center mb-6 animate-msg-in">
+              <h1
+                className="text-xl sm:text-2xl font-bold mb-2"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #ef4444, #f97316, #ef4444)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                {roadmapTitle}
+              </h1>
+              <p
+                className="text-xs"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                {steps.length} adimlik ogrenme plani
+              </p>
+            </div>
+          )}
+
+          {/* Progress Bar */}
+          <ProgressBar
+            completed={completedSteps.size}
+            total={steps.length}
+          />
+
+          {/* Timeline */}
+          <div className="relative">
+            {/* Vertical timeline line */}
+            <div
+              className="absolute"
+              style={{
+                left: 11,
+                top: 28,
+                bottom: 16,
+                width: 2,
+                background: `linear-gradient(to bottom, #ef4444, var(--border-primary))`,
+                borderRadius: 1,
+              }}
+            />
+
+            {/* Steps */}
+            {steps.map((step, idx) => (
+              <StepCard
+                key={step.number}
+                step={step}
+                isCompleted={completedSteps.has(step.number)}
+                isExpanded={expandedStep === step.number}
+                onToggleComplete={() => toggleStepComplete(step.number)}
+                onToggleExpand={() =>
+                  setExpandedStep(
+                    expandedStep === step.number ? null : step.number
+                  )
+                }
+                onAskDetail={() => handleAskDetail(step)}
+                index={idx}
+              />
+            ))}
+          </div>
+
+          {/* Completion celebration */}
+          {completedSteps.size === steps.length && steps.length > 0 && (
+            <div
+              className="text-center py-6 rounded-xl mt-4 animate-msg-in"
+              style={{
+                background: "rgba(16, 185, 129, 0.08)",
+                border: "1px solid rgba(16, 185, 129, 0.2)",
+              }}
+            >
+              <span className="text-3xl mb-2 block">&#127881;</span>
+              <p
+                className="text-sm font-bold"
+                style={{ color: "#10b981" }}
+              >
+                Tebrikler! Tum adimlari tamamladin!
+              </p>
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                Yeni bir konu kesfetmek icin sohbet panelinden soru sorabilirsin.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* RIGHT PANEL: Chat + Detail */}
+      <div
+        style={{
+          flex: 1,
+          display: isMobile && activeTab !== "chat" ? "none" : "flex",
+          flexDirection: "column",
+          minWidth: 0,
+        }}
+      >
+        {/* Mobile top padding for tab bar */}
+        {isMobile && <div style={{ height: 42, flexShrink: 0 }} />}
+
+        {/* Detail step card - shown at top when a step detail is active */}
+        {detailStep && (
+          <div
+            className="flex-shrink-0 p-3"
+            style={{
+              borderBottom: "1px solid var(--border-primary)",
+              background: "var(--bg-secondary)",
+            }}
+          >
+            <div
+              className="rounded-xl p-3"
+              style={{
+                background: "rgba(239, 68, 68, 0.04)",
+                border: "1px solid rgba(239, 68, 68, 0.15)",
+              }}
+            >
+              <div className="flex items-center gap-2 mb-1.5">
+                <span
+                  className="flex items-center justify-center rounded-lg text-[10px] font-bold"
                   style={{
-                    background: "rgba(16, 185, 129, 0.08)",
-                    border: "1px solid rgba(16, 185, 129, 0.2)",
+                    width: 22,
+                    height: 22,
+                    background: "#ef4444",
+                    color: "white",
                   }}
                 >
-                  <span className="text-3xl mb-2 block">&#127881;</span>
-                  <p
-                    className="text-sm font-bold"
-                    style={{ color: "#10b981" }}
-                  >
-                    Tebrikler! Tum adimlari tamamladin!
-                  </p>
-                  <p
-                    className="text-xs mt-1"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    Yeni bir konu kesfetmek icin asagidan soru sorabilirsin.
-                  </p>
-                </div>
-              )}
+                  {detailStep.number}
+                </span>
+                <span
+                  className="font-semibold text-sm flex-1"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {detailStep.title}
+                </span>
+                <span
+                  className="text-[10px] px-2 py-0.5 rounded-full"
+                  style={{
+                    background: "var(--bg-tertiary)",
+                    color: "var(--text-tertiary)",
+                  }}
+                >
+                  {detailStep.duration}
+                </span>
+                <button
+                  onClick={() => setDetailStep(null)}
+                  className="ml-1 text-xs rounded-md p-1 transition-colors hover:opacity-70"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  &#10005;
+                </button>
+              </div>
+              <p
+                className="text-[11px]"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {detailStep.description}
+              </p>
             </div>
-          ) : null}
+          </div>
+        )}
 
-          {/* Messages (non-roadmap responses & user messages) */}
+        {/* Messages area - scrollable */}
+        <div
+          ref={scrollContainerRef}
+          className={`flex-1 overflow-y-auto p-4 sm:p-6 ${isMobile ? "pb-2" : ""}`}
+        >
           <div className="space-y-5 sm:space-y-6">
             {messages.map((msg, idx) => {
-              // For assistant messages that contain roadmap data, skip rendering as messages
-              // (they are shown in the timeline above)
+              // Hide welcome message in 2-panel mode (roadmap panel replaces it)
+              if (msg.id === "welcome") return null;
+
+              // For assistant messages that contain roadmap data, render a compact note
               const isRoadmapData =
                 msg.role === "assistant" &&
-                msg.id !== "welcome" &&
                 (parseRoadmapSteps(msg.content).length > 0 ||
                   parseRoadmapTitle(msg.content) !== null);
 
-              // Still show roadmap messages if the timeline isn't visible yet (streaming)
-              // or show non-roadmap assistant messages normally
-              if (isRoadmapData && hasRoadmap && msg.content.length > 0) {
-                return null;
+              if (isRoadmapData && msg.content.length > 0) {
+                return (
+                  <div
+                    id={`roadmap-msg-${msg.id}`}
+                    key={msg.id}
+                    className="flex justify-start animate-msg-in"
+                    style={{
+                      animationDelay: `${Math.min(idx * 0.05, 0.3)}s`,
+                    }}
+                  >
+                    <AiAvatar />
+                    <div className="group relative max-w-[92%] sm:max-w-[88%]">
+                      <div className="px-3.5 py-3 sm:px-4 sm:py-3.5 msg-ai">
+                        <div className="flex items-center gap-2 text-[12px]" style={{ color: "var(--text-tertiary)" }}>
+                          <IconRoadmap size={12} style={{ color: "#ef4444" }} />
+                          <span>Yol haritasi olusturuldu - sol panelde goruntuleniyor</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
               }
 
               return (
@@ -832,128 +1157,78 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
               );
             })}
           </div>
-
-          {/* Quick Prompts (show when no messages yet) */}
-          {messages.length <= 1 && (
-            <div
-              className="mt-8 sm:mt-10 animate-fade-in"
-              style={{ animationDelay: "0.3s" }}
-            >
-              <div className="text-center mb-6">
-                <div
-                  className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 animate-float"
-                  style={{
-                    background: "rgba(239, 68, 68, 0.1)",
-                    boxShadow: "0 0 20px rgba(239, 68, 68, 0.15)",
-                  }}
-                >
-                  <IconRoadmap size={28} style={{ color: "#ef4444" }} />
-                </div>
-                <h2
-                  className="text-base font-bold mb-1"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  Ne ogrenmek istiyorsun?
-                </h2>
-                <p
-                  className="text-xs"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  Bir konu sec, sana adim adim ogrenme yolu cikarayim
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:flex sm:flex-wrap sm:justify-center gap-2 sm:gap-2.5">
-                {QUICK_PROMPTS.map((prompt, i) => (
-                  <button
-                    key={prompt.text}
-                    onClick={() => handleQuickPrompt(prompt.text)}
-                    className="flex items-center gap-2 rounded-xl px-3.5 py-3 sm:px-4 sm:py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md stagger-children"
-                    style={{
-                      background: "var(--bg-card)",
-                      border: "1px solid var(--border-primary)",
-                      color: "var(--text-secondary)",
-                      animationDelay: `${0.4 + i * 0.08}s`,
-                    }}
-                  >
-                    <span className="text-sm">{prompt.icon}</span>
-                    <span>{prompt.text}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
-      </div>
 
-      {/* Input Bar */}
-      <div
-        className={`flex-shrink-0 px-3 sm:px-4 ${isMobile ? "pb-2" : "pb-4"}`}
-      >
+        {/* Input Bar */}
         <div
-          className="max-w-[720px] mx-auto flex items-center gap-2 rounded-2xl px-3 py-2.5 sm:px-4 transition-all"
-          style={{
-            background: "var(--bg-card)",
-            border: "1px solid var(--border-primary)",
-            boxShadow: input.trim()
-              ? "0 0 12px rgba(239, 68, 68, 0.15)"
-              : "var(--shadow-md)",
-            borderColor: input.trim()
-              ? "rgba(239, 68, 68, 0.25)"
-              : "var(--border-primary)",
-          }}
+          className={`flex-shrink-0 p-3 sm:p-4`}
+          style={{ borderTop: "1px solid var(--border-primary)" }}
         >
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder={
-              isLoading
-                ? "Yanit bekleniyor..."
-                : "Ne ogrenmek istiyorsun? (or: React ogrenme yolu)"
-            }
-            disabled={isLoading}
-            className="flex-1 bg-transparent text-[13px] sm:text-sm outline-none disabled:opacity-50"
-            style={{ color: "var(--text-primary)" }}
-          />
-
-          <button
-            type="button"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
+          <div
+            className="flex items-center gap-2 rounded-2xl px-3 py-2.5 sm:px-4 transition-all"
             style={{
-              background:
-                input.trim() && !isLoading
-                  ? "linear-gradient(135deg, #ef4444, #dc2626)"
-                  : "var(--bg-tertiary)",
-              color:
-                input.trim() && !isLoading
-                  ? "white"
-                  : "var(--text-tertiary)",
-              boxShadow:
-                input.trim() && !isLoading
-                  ? "0 0 12px rgba(239, 68, 68, 0.3)"
-                  : "none",
+              background: "var(--bg-card)",
+              border: "1px solid var(--border-primary)",
+              boxShadow: input.trim()
+                ? "0 0 12px rgba(239, 68, 68, 0.15)"
+                : "var(--shadow-md)",
+              borderColor: input.trim()
+                ? "rgba(239, 68, 68, 0.25)"
+                : "var(--border-primary)",
             }}
           >
-            <IconSend size={14} />
-          </button>
-        </div>
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              placeholder={
+                isLoading
+                  ? "Yanit bekleniyor..."
+                  : "Adimlar hakkinda soru sor..."
+              }
+              disabled={isLoading}
+              className="flex-1 bg-transparent text-[13px] sm:text-sm outline-none disabled:opacity-50"
+              style={{ color: "var(--text-primary)" }}
+            />
 
-        {!isMobile && (
-          <p
-            className="text-center text-[10px] mt-2.5 flex items-center justify-center gap-1.5"
-            style={{ color: "var(--text-tertiary)" }}
-          >
-            <span style={{ color: "#ef4444", opacity: 0.6 }}>&#9679;</span>
-            Adimlari tamamla isaretiyle takip et &#183; Detay butonu ile
-            derinlemesine ogren
-          </p>
-        )}
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={handleSend}
+              disabled={!input.trim() || isLoading}
+              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
+              style={{
+                background:
+                  input.trim() && !isLoading
+                    ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                    : "var(--bg-tertiary)",
+                color:
+                  input.trim() && !isLoading
+                    ? "white"
+                    : "var(--text-tertiary)",
+                boxShadow:
+                  input.trim() && !isLoading
+                    ? "0 0 12px rgba(239, 68, 68, 0.3)"
+                    : "none",
+              }}
+            >
+              <IconSend size={14} />
+            </button>
+          </div>
+
+          {!isMobile && (
+            <p
+              className="text-center text-[10px] mt-2.5 flex items-center justify-center gap-1.5"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              <span style={{ color: "#ef4444", opacity: 0.6 }}>&#9679;</span>
+              Adimlari tamamla isaretiyle takip et &#183; Detay butonu ile
+              derinlemesine ogren
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

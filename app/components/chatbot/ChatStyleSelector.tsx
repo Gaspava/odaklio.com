@@ -1,8 +1,8 @@
 "use client";
 
-import { IconChat, IconMindMap, IconFlashcard, IconEdit, IconRoadmap, IconX } from "../icons/Icons";
+import { IconChat, IconMindMap, IconFlashcard, IconRoadmap, IconX } from "../icons/Icons";
 
-export type ChatStyle = "standard" | "mindmap" | "flashcard" | "note" | "roadmap";
+export type ChatStyle = "standard" | "mindmap" | "flashcard" | "roadmap";
 
 interface ChatStyleSelectorProps {
   onSelect: (style: ChatStyle) => void;
@@ -17,7 +17,6 @@ export default function ChatStyleSelector({
     { id: "standard" as ChatStyle, name: "Standart Sohbet", desc: "Klasik AI sohbet deneyimi", color: "var(--accent-primary)", bgColor: "var(--accent-primary-light)", icon: <IconChat size={24} /> },
     { id: "mindmap" as ChatStyle, name: "Mindmap Chat", desc: "2D paralel sohbet haritasi", color: "var(--accent-purple)", bgColor: "var(--accent-purple-light)", icon: <IconMindMap size={24} /> },
     { id: "flashcard" as ChatStyle, name: "Flashcard", desc: "AI destekli hafiza kartlari", color: "#f59e0b", bgColor: "rgba(245, 158, 11, 0.1)", icon: <IconFlashcard size={24} />, isNew: true },
-    { id: "note" as ChatStyle, name: "Not Alma", desc: "Yapilandirilmis not cikarma", color: "var(--accent-secondary)", bgColor: "var(--accent-secondary-light)", icon: <IconEdit size={24} />, isNew: true },
     { id: "roadmap" as ChatStyle, name: "Roadmap", desc: "Adim adim ogrenme plani", color: "#ef4444", bgColor: "rgba(239, 68, 68, 0.1)", icon: <IconRoadmap size={24} />, isNew: true },
   ];
 

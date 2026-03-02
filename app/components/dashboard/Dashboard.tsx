@@ -7,7 +7,6 @@ import RightPanel from "../layout/RightPanel";
 import MainChat from "../chatbot/MainChat";
 import MindmapChat from "../chatbot/MindmapChat";
 import FlashcardChat from "../chatbot/FlashcardChat";
-import NoteChat from "../chatbot/NoteChat";
 import RoadmapChat from "../chatbot/RoadmapChat";
 import ChatStyleSelector, {
   type ChatStyle,
@@ -26,6 +25,7 @@ import {
 } from "../icons/Icons";
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { useConversation } from "@/app/providers/ConversationProvider";
+import NoteSelectionPopup from "../notes/NoteSelectionPopup";
 
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(false);
@@ -185,7 +185,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           standard: "standard",
           mindmap: "mindmap",
           flashcard: "flashcard",
-          note: "note",
+          note: "standard",
           roadmap: "roadmap",
         };
         setChatStyle(typeToStyle[convType || "standard"] || "standard");
@@ -227,8 +227,6 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
             return <MindmapChat key={chatKey} isMobile={isMobile} />;
           case "flashcard":
             return <FlashcardChat key={chatKey} isMobile={isMobile} />;
-          case "note":
-            return <NoteChat key={chatKey} isMobile={isMobile} />;
           case "roadmap":
             return <RoadmapChat key={chatKey} isMobile={isMobile} />;
           default:
@@ -390,7 +388,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           {renderPageContent()}
         </div>
 
-        {showSidePanels && !["flashcard", "note", "roadmap"].includes(chatStyle) && !isMobile && !rightOpen && (
+        {showSidePanels && !["flashcard", "roadmap"].includes(chatStyle) && !isMobile && !rightOpen && (
           <button
             onClick={toggleRight}
             className="flex-shrink-0 flex items-center justify-center transition-all hover:opacity-100 self-start mt-3"
@@ -413,7 +411,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           </button>
         )}
 
-        {showSidePanels && !["flashcard", "note", "roadmap"].includes(chatStyle) && (!isMobile || rightOpen) && (
+        {showSidePanels && !["flashcard", "roadmap"].includes(chatStyle) && (!isMobile || rightOpen) && (
           <div
             className={`flex-shrink-0 overflow-visible transition-all duration-300 ease-in-out relative ${
               isMobile ? "panel-mobile-overlay panel-right" : ""
@@ -528,6 +526,8 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           onClose={() => setShowStyleSelector(false)}
         />
       )}
+
+      <NoteSelectionPopup />
     </div>
   );
 }

@@ -328,7 +328,6 @@ function FocusModesCompact({ onSelectMode }: { onSelectMode?: (mode: string) => 
     { id: "standard", name: "Standart", icon: <IconChat size={14} />, color: "#10b981" },
     { id: "mindmap", name: "Mindmap", icon: <IconMindMap size={14} />, color: "#8b5cf6" },
     { id: "flashcard", name: "Flashcard", icon: <IconFlashcard size={14} />, color: "#f59e0b" },
-    { id: "note", name: "Not Alma", icon: <IconEdit size={14} />, color: "#3b82f6" },
     { id: "roadmap", name: "Roadmap", icon: <IconRoadmap size={14} />, color: "#ef4444" },
   ];
 
