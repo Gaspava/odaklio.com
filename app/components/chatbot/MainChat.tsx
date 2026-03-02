@@ -226,6 +226,8 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
       try {
         const result = await saveUserMessage(userContent);
         conversationId = result.conversationId;
+        // Sync ref immediately so the useEffect doesn't trigger a reload
+        currentConvIdRef.current = conversationId;
         if (isFirst) {
           isFirstMessageRef.current = false;
         }
