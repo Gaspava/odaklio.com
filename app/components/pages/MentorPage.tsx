@@ -245,6 +245,17 @@ export default function MentorPage() {
     setInput("");
     setIsLoading(true);
 
+    // Add user message immediately (before any DB call)
+    const userMsg: ChatMessage = {
+      id: Date.now().toString(),
+      role: "user",
+      content: userContent,
+    };
+    setChatMessages((prev) => ({
+      ...prev,
+      [personaId]: [...(prev[personaId] || []), userMsg],
+    }));
+
     // Ensure conversation exists
     let convId = conversationIds[personaId];
     if (!convId) {
@@ -258,17 +269,6 @@ export default function MentorPage() {
         return;
       }
     }
-
-    // Add user message
-    const userMsg: ChatMessage = {
-      id: Date.now().toString(),
-      role: "user",
-      content: userContent,
-    };
-    setChatMessages((prev) => ({
-      ...prev,
-      [personaId]: [...(prev[personaId] || []), userMsg],
-    }));
 
     // Save user message to DB
     try {
