@@ -403,6 +403,7 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isGeneratingRef = useRef(false);
 
   /* ===== AUTO-SCROLL RIGHT ===== */
   const scrollToRight = useCallback(() => {
@@ -422,6 +423,7 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
 
     setPhase("loading");
     setIsGenerating(true);
+    isGeneratingRef.current = true;
     setError(null);
 
     let fullResponse = "";
@@ -473,6 +475,7 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
       setPhase("input");
     } finally {
       setIsGenerating(false);
+      isGeneratingRef.current = false;
     }
   }, [isGenerating, saveUserMessage, generateTitle, saveAssistantMessage, refreshConversations]);
 
@@ -663,6 +666,9 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
       setColumns([]);
       return;
     }
+
+    // Don't interfere while handleGenerate is running — it manages its own state
+    if (isGeneratingRef.current) return;
 
     let cancelled = false;
     setPhase("loading");
