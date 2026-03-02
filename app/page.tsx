@@ -17,7 +17,10 @@ import {
   IconChat,
   IconPomodoro,
   IconMentor,
+  IconSun,
+  IconMoon,
 } from "./components/icons/Icons";
+import { useTheme } from "@/app/providers/ThemeProvider";
 
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(false);
@@ -40,6 +43,7 @@ export default function Home() {
   const [chatKey, setChatKey] = useState(0);
   const [activePage, setActivePage] = useState<PageType>("focus");
   const isMobile = useIsMobile();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     if (!isMobile) {
@@ -168,10 +172,70 @@ export default function Home() {
       className="flex flex-col overflow-hidden"
       style={{ background: "var(--bg-primary)", height: "100dvh" }}
     >
-      <Header
-        activePage={activePage}
-        onPageChange={handlePageChange}
-      />
+      {/* Full header on desktop only */}
+      {!isMobile && (
+        <Header
+          activePage={activePage}
+          onPageChange={handlePageChange}
+        />
+      )}
+
+      {/* Minimal mobile header with sidebar toggles */}
+      {isMobile && (
+        <div className="mobile-top-bar">
+          <button
+            onClick={toggleLeft}
+            className="mobile-sidebar-toggle"
+            title="Araçlar"
+            style={{
+              opacity: showSidePanels ? 1 : 0.4,
+              pointerEvents: showSidePanels ? "auto" : "none",
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+          </button>
+
+          <div className="mobile-top-center">
+            <div
+              className="mobile-logo"
+              style={{
+                background: "var(--gradient-primary)",
+                boxShadow: "var(--shadow-glow-sm)",
+              }}
+            >
+              O
+            </div>
+            <button
+              onClick={toggleTheme}
+              className="mobile-theme-toggle"
+            >
+              {theme === "dark" ? <IconSun size={14} /> : <IconMoon size={14} />}
+            </button>
+          </div>
+
+          <button
+            onClick={toggleRight}
+            className="mobile-sidebar-toggle"
+            title="Mentor"
+            style={{
+              opacity: showSidePanels ? 1 : 0.4,
+              pointerEvents: showSidePanels ? "auto" : "none",
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden relative">
         {/* Mobile Overlay Backdrop */}
