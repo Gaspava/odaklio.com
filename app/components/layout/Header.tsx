@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { useTheme } from "@/app/providers/ThemeProvider";
+import { useAuth } from "@/app/providers/AuthProvider";
 import { IconSun, IconMoon } from "../icons/Icons";
 
 export type PageType = "history" | "tools" | "focus" | "mentor" | "analysis";
@@ -14,7 +16,7 @@ interface HeaderProps {
 const pages: { id: PageType; label: string; icon: React.ReactNode }[] = [
   {
     id: "history",
-    label: "Geçmiş",
+    label: "Gecmis",
     icon: (
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
@@ -24,7 +26,7 @@ const pages: { id: PageType; label: string; icon: React.ReactNode }[] = [
   },
   {
     id: "tools",
-    label: "Araçlar",
+    label: "Araclar",
     icon: (
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="7" height="7" rx="1.5" />
@@ -73,6 +75,31 @@ export default function Header({
   onLogout,
 }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
+
+  const displayName = user?.user_metadata?.full_name || user?.email || "";
+  const initials = displayName
+    ? displayName
+        .split(" ")
+        .map((w: string) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "?";
 
   return (
     <header
@@ -150,7 +177,7 @@ export default function Header({
         })}
       </div>
 
-      {/* Right - Theme + Avatar */}
+      {/* Right - Theme + Profile Menu */}
       <div className="flex items-center gap-1.5 sm:gap-2">
         <button
           onClick={toggleTheme}
@@ -163,20 +190,77 @@ export default function Header({
           {theme === "dark" ? <IconSun size={15} /> : <IconMoon size={15} />}
         </button>
 
-        <div className="tooltip-trigger">
+        {/* Profile dropdown */}
+        <div className="relative" ref={menuRef}>
           <button
-            onClick={onLogout}
+            onClick={() => setMenuOpen(!menuOpen)}
             className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-white cursor-pointer transition-all hover:scale-105"
             style={{
               background: "var(--gradient-primary)",
               boxShadow: "var(--shadow-glow-sm)",
               border: "none",
             }}
-            title="Çıkış Yap"
           >
-            A
+            {initials}
           </button>
-          <span className="tooltip-content">Çıkış Yap</span>
+
+          {menuOpen && (
+            <div className="profile-dropdown">
+              {/* User info */}
+              <div className="profile-dropdown-header">
+                <div
+                  className="profile-dropdown-avatar"
+                  style={{ background: "var(--gradient-primary)" }}
+                >
+                  {initials}
+                </div>
+                <div className="profile-dropdown-info">
+                  <span className="profile-dropdown-name">
+                    {user?.user_metadata?.full_name || "Kullanici"}
+                  </span>
+                  <span className="profile-dropdown-email">
+                    {user?.email || user?.phone || ""}
+                  </span>
+                </div>
+              </div>
+
+              <div className="profile-dropdown-divider" />
+
+              {/* Menu items */}
+              <button className="profile-dropdown-item" onClick={() => setMenuOpen(false)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                Profil
+              </button>
+
+              <button className="profile-dropdown-item" onClick={() => setMenuOpen(false)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                  <line x1="1" y1="10" x2="23" y2="10" />
+                </svg>
+                Abonelik
+              </button>
+
+              <div className="profile-dropdown-divider" />
+
+              <button
+                className="profile-dropdown-item profile-dropdown-item-danger"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onLogout?.();
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Cikis Yap
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

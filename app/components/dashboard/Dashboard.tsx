@@ -49,6 +49,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const isMobile = useIsMobile();
   const { theme, toggleTheme } = useTheme();
 
+  // Prevent body scroll when dashboard is active
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   useEffect(() => {
     if (!isMobile) {
       setLeftOpen(true);
