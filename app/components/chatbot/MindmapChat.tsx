@@ -9,9 +9,6 @@ import {
 } from "react";
 import {
   IconSend,
-  IconZoomIn,
-  IconZoomOut,
-  IconMaximize,
   IconX,
   IconGitBranch,
 } from "../icons/Icons";
@@ -538,23 +535,6 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
     setOffset(newOffset);
   }, []);
 
-  const zoomIn = () => zoomAtCenter(0.15);
-  const zoomOut = () => zoomAtCenter(-0.15);
-  const resetView = () => {
-    const newScale = 1;
-    scaleRef.current = newScale;
-    setScale(newScale);
-    if (canvasRef.current) {
-      const rect = canvasRef.current.getBoundingClientRect();
-      const newOffset = {
-        x: rect.width / 2 - NODE_WIDTH / 2,
-        y: rect.height / 2 - NODE_HEIGHT / 2,
-      };
-      offsetRef.current = newOffset;
-      setOffset(newOffset);
-    }
-  };
-
   /* ===== SEND MESSAGE ===== */
   const handleSendMessage = useCallback(
     async (nodeId: string, content: string) => {
@@ -767,88 +747,8 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
     });
   };
 
-  const branchCount = nodes.length - 1;
-
   return (
     <div className="flex flex-col h-full relative overflow-hidden">
-      {/* Top Bar */}
-      <div
-        className="flex items-center justify-between px-4 py-2.5 flex-shrink-0 z-10"
-        style={{
-          background: "var(--bg-secondary)",
-          borderBottom: "1px solid var(--border-primary)",
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <div
-            className="flex h-6 w-6 items-center justify-center rounded-lg"
-            style={{
-              background: "var(--accent-purple-light)",
-              color: "var(--accent-purple)",
-            }}
-          >
-            <IconGitBranch size={12} />
-          </div>
-          <span
-            className="text-xs font-semibold"
-            style={{ color: "var(--text-primary)" }}
-          >
-            MindmapChat
-          </span>
-          {branchCount > 0 && (
-            <span
-              className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-              style={{
-                background: "var(--accent-purple-light)",
-                color: "var(--accent-purple)",
-              }}
-            >
-              {branchCount} dal
-            </span>
-          )}
-        </div>
-
-        {/* Zoom Controls */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={zoomOut}
-            className="flex h-7 w-7 items-center justify-center rounded-lg transition-all"
-            style={{
-              background: "var(--bg-tertiary)",
-              color: "var(--text-tertiary)",
-            }}
-          >
-            <IconZoomOut size={13} />
-          </button>
-          <span
-            className="text-[10px] font-mono w-10 text-center"
-            style={{ color: "var(--text-tertiary)" }}
-          >
-            {Math.round(scale * 100)}%
-          </span>
-          <button
-            onClick={zoomIn}
-            className="flex h-7 w-7 items-center justify-center rounded-lg transition-all"
-            style={{
-              background: "var(--bg-tertiary)",
-              color: "var(--text-tertiary)",
-            }}
-          >
-            <IconZoomIn size={13} />
-          </button>
-          <button
-            onClick={resetView}
-            className="flex h-7 w-7 items-center justify-center rounded-lg transition-all ml-1"
-            style={{
-              background: "var(--bg-tertiary)",
-              color: "var(--text-tertiary)",
-            }}
-            title="Görünümü sıfırla"
-          >
-            <IconMaximize size={13} />
-          </button>
-        </div>
-      </div>
 
       {/* Canvas */}
       <div

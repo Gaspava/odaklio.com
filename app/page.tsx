@@ -138,8 +138,8 @@ export default function Home() {
     }
   };
 
-  // Side panels only show on the Focus (Odak) page in standard mode
-  const showSidePanels = activePage === "focus" && chatStyle === "standard";
+  // Side panels show on the Focus (Odak) page in both standard and mindmap mode
+  const showSidePanels = activePage === "focus";
 
   // Render the active page content
   const renderPageContent = () => {
