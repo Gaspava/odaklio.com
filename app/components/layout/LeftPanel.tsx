@@ -15,6 +15,7 @@ import {
   IconChevronRight,
   IconTrendingUp,
   IconChat,
+  IconGitBranch,
 } from "../icons/Icons";
 import Link from "next/link";
 import { useConversation } from "@/app/providers/ConversationProvider";
@@ -22,7 +23,7 @@ import type { Conversation } from "@/lib/db/conversations";
 
 interface LeftPanelProps {
   onClose?: () => void;
-  onOpenConversation?: (id: string) => void;
+  onOpenConversation?: (id: string, type?: string) => void;
 }
 
 /* ===== RELATIVE TIME ===== */
@@ -44,7 +45,7 @@ function relativeTime(dateStr: string): string {
 }
 
 /* ===== CHAT HISTORY SIDEBAR ===== */
-function ChatHistorySidebar({ onOpenConversation }: { onOpenConversation?: (id: string) => void }) {
+function ChatHistorySidebar({ onOpenConversation }: { onOpenConversation?: (id: string, type?: string) => void }) {
   const { conversations, activeConversationId, startNewConversation } = useConversation();
 
   return (
@@ -97,16 +98,30 @@ function ChatHistorySidebar({ onOpenConversation }: { onOpenConversation?: (id: 
         <div className="space-y-0.5 max-h-[280px] overflow-y-auto">
           {conversations.map((conv: Conversation) => {
             const isActive = activeConversationId === conv.id;
+            const isMindmap = conv.type === "mindmap";
             return (
               <button
                 key={conv.id}
-                onClick={() => onOpenConversation?.(conv.id)}
+                onClick={() => onOpenConversation?.(conv.id, conv.type)}
                 className="w-full text-left flex items-center gap-2 rounded-lg px-2 py-2 transition-all active:scale-[0.98]"
                 style={{
-                  background: isActive ? "var(--accent-primary-light)" : "transparent",
-                  color: isActive ? "var(--accent-primary)" : "var(--text-secondary)",
+                  background: isActive
+                    ? isMindmap ? "rgba(139, 92, 246, 0.1)" : "var(--accent-primary-light)"
+                    : "transparent",
+                  color: isActive
+                    ? isMindmap ? "var(--accent-purple)" : "var(--accent-primary)"
+                    : "var(--text-secondary)",
                 }}
               >
+                <div
+                  className="flex h-5 w-5 items-center justify-center rounded-md flex-shrink-0"
+                  style={{
+                    background: isMindmap ? "rgba(139, 92, 246, 0.12)" : "var(--accent-primary-light)",
+                    color: isMindmap ? "var(--accent-purple)" : "var(--accent-primary)",
+                  }}
+                >
+                  {isMindmap ? <IconGitBranch size={10} /> : <IconChat size={10} />}
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] font-medium truncate">{conv.title}</p>
                   <p className="text-[9px] mt-0.5" style={{ color: "var(--text-tertiary)" }}>
@@ -116,7 +131,7 @@ function ChatHistorySidebar({ onOpenConversation }: { onOpenConversation?: (id: 
                 {isActive && (
                   <div
                     className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                    style={{ background: "var(--accent-primary)" }}
+                    style={{ background: isMindmap ? "var(--accent-purple)" : "var(--accent-primary)" }}
                   />
                 )}
               </button>

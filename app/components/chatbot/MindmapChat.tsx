@@ -13,6 +13,7 @@ import {
   IconGitBranch,
 } from "../icons/Icons";
 import ChatMessageRenderer from "./ChatMessageRenderer";
+import { useConversation } from "@/app/providers/ConversationProvider";
 
 /* ===== TYPES ===== */
 interface Message {
@@ -394,6 +395,18 @@ function ChatNodeComponent({
 
 /* ===== MAIN MINDMAP CHAT ===== */
 export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
+  const {
+    activeConversationId,
+    activeConversationType,
+    createMindmapConversation,
+    saveMindmap,
+    loadMindmap,
+    saveMindmapMessage,
+    updateMindmapMessage,
+    generateTitle,
+    refreshConversations,
+  } = useConversation();
+
   // Canvas state
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
@@ -426,9 +439,71 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
   ]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [activeNodeId, setActiveNodeId] = useState("main");
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
 
-  // Center canvas on mount
+  // Refs for DB persistence
+  const convIdRef = useRef<string | null>(activeConversationId);
+  const isFirstMessageRef = useRef(true);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load existing mindmap conversation on mount
   useEffect(() => {
+    if (activeConversationId && activeConversationType === "mindmap") {
+      convIdRef.current = activeConversationId;
+      isFirstMessageRef.current = false;
+      setIsInitialLoading(true);
+
+      loadMindmap(activeConversationId).then((data) => {
+        if (data.nodes.length > 0) {
+          // Reconstruct nodes with messages
+          const msgsByNode = new Map<string, Message[]>();
+          for (const m of data.messages) {
+            const nodeId = m.node_id || "main";
+            if (!msgsByNode.has(nodeId)) msgsByNode.set(nodeId, []);
+            msgsByNode.get(nodeId)!.push({
+              id: m.id,
+              role: m.role,
+              content: m.content,
+              timestamp: new Date(m.created_at),
+            });
+          }
+
+          const loadedNodes: ChatNode[] = data.nodes.map((n) => ({
+            id: n.id,
+            x: n.position_x,
+            y: n.position_y,
+            parentId: n.parent_node_id,
+            label: n.label,
+            messages: msgsByNode.get(n.id) || [],
+            isLoading: false,
+          }));
+
+          // Rebuild connections from parent relationships
+          const loadedConnections: Connection[] = data.nodes
+            .filter((n) => n.parent_node_id !== null)
+            .map((n) => ({ fromId: n.parent_node_id!, toId: n.id }));
+
+          setNodes(loadedNodes);
+          setConnections(loadedConnections);
+
+          // Restore canvas state
+          if (data.canvasState) {
+            const cs = data.canvasState;
+            setOffset({ x: cs.offsetX, y: cs.offsetY });
+            offsetRef.current = { x: cs.offsetX, y: cs.offsetY };
+            setScale(cs.scale);
+            scaleRef.current = cs.scale;
+            setActiveNodeId(cs.activeNodeId || "main");
+          }
+        }
+        setIsInitialLoading(false);
+      });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Center canvas on mount (only if not loading from DB)
+  useEffect(() => {
+    if (convIdRef.current) return; // Will use restored canvas state
     if (canvasRef.current) {
       const rect = canvasRef.current.getBoundingClientRect();
       const newOffset = {
@@ -439,6 +514,65 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
       offsetRef.current = newOffset;
     }
   }, []);
+
+  // Debounced save of mindmap structure
+  const debouncedSave = useCallback(() => {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      const cid = convIdRef.current;
+      if (!cid) return;
+      setNodes((currentNodes) => {
+        const nodeData = currentNodes.map((n, i) => ({
+          id: n.id,
+          parentNodeId: n.parentId,
+          label: n.label,
+          x: n.x,
+          y: n.y,
+          sortOrder: i,
+        }));
+        saveMindmap(cid, {
+          nodes: nodeData,
+          canvasState: {
+            offsetX: offsetRef.current.x,
+            offsetY: offsetRef.current.y,
+            scale: scaleRef.current,
+            activeNodeId,
+          },
+        }).catch((err) => console.error("Failed to save mindmap:", err));
+        return currentNodes; // don't mutate
+      });
+    }, 1000);
+  }, [activeNodeId, saveMindmap]);
+
+  // Save on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      const cid = convIdRef.current;
+      if (!cid) return;
+      // Fire final save synchronously-ish
+      setNodes((currentNodes) => {
+        const nodeData = currentNodes.map((n, i) => ({
+          id: n.id,
+          parentNodeId: n.parentId,
+          label: n.label,
+          x: n.x,
+          y: n.y,
+          sortOrder: i,
+        }));
+        saveMindmap(cid, {
+          nodes: nodeData,
+          canvasState: {
+            offsetX: offsetRef.current.x,
+            offsetY: offsetRef.current.y,
+            scale: scaleRef.current,
+            activeNodeId,
+          },
+        }).catch(() => {});
+        return currentNodes;
+      });
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ===== PAN HANDLERS ===== */
   const handleCanvasMouseDown = (e: ReactMouseEvent) => {
@@ -538,6 +672,38 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
   /* ===== SEND MESSAGE ===== */
   const handleSendMessage = useCallback(
     async (nodeId: string, content: string) => {
+      // Create conversation in DB on first message
+      let cid = convIdRef.current;
+      if (!cid) {
+        try {
+          cid = await createMindmapConversation();
+          convIdRef.current = cid;
+          // Save initial node structure
+          setNodes((currentNodes) => {
+            const nodeData = currentNodes.map((n, i) => ({
+              id: n.id,
+              parentNodeId: n.parentId,
+              label: n.label,
+              x: n.x,
+              y: n.y,
+              sortOrder: i,
+            }));
+            saveMindmap(cid!, {
+              nodes: nodeData,
+              canvasState: {
+                offsetX: offsetRef.current.x,
+                offsetY: offsetRef.current.y,
+                scale: scaleRef.current,
+                activeNodeId: nodeId,
+              },
+            }).catch(() => {});
+            return currentNodes;
+          });
+        } catch (err) {
+          console.error("Failed to create mindmap conversation:", err);
+        }
+      }
+
       const userMsg: Message = {
         id: Date.now().toString(),
         role: "user",
@@ -565,6 +731,14 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
         )
       );
 
+      // Save user message to DB
+      let userDbId: string | undefined;
+      if (cid) {
+        saveMindmapMessage(cid, nodeId, "user", content)
+          .then((id) => { userDbId = id; })
+          .catch((err) => console.error("Failed to save user message:", err));
+      }
+
       const node = nodes.find((n) => n.id === nodeId);
       const apiMessages = (node?.messages || []).map((m) => ({
         role: m.role,
@@ -572,10 +746,14 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
       }));
       apiMessages.push({ role: "user", content });
 
+      let fullAiContent = "";
+      let aiDbId: string | undefined;
+
       try {
         await streamChat(
           apiMessages,
           (text) => {
+            fullAiContent += text;
             setNodes((prev) =>
               prev.map((n) =>
                 n.id === nodeId
@@ -616,6 +794,22 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
             );
           }
         );
+
+        // Save AI response to DB
+        if (cid && fullAiContent) {
+          saveMindmapMessage(cid, nodeId, "assistant", fullAiContent)
+            .then((id) => { aiDbId = id; })
+            .catch((err) => console.error("Failed to save AI message:", err));
+        }
+
+        // Generate title on first message
+        if (isFirstMessageRef.current && cid) {
+          isFirstMessageRef.current = false;
+          generateTitle(cid, content).then(() => refreshConversations());
+        }
+
+        // Trigger debounced save of mindmap structure
+        debouncedSave();
       } catch (error) {
         const errorMsg =
           error instanceof Error ? error.message : "Bilinmeyen hata";
@@ -639,7 +833,7 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
         );
       }
     },
-    [nodes]
+    [nodes, createMindmapConversation, saveMindmap, saveMindmapMessage, generateTitle, refreshConversations, debouncedSave]
   );
 
   /* ===== CREATE BRANCH ===== */
@@ -685,13 +879,16 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
         setOffset(newOffset);
       }
 
+      // Save structure to DB
+      debouncedSave();
+
       // Auto-send the selected text as first message
       setTimeout(() => {
         const question = `"${selectedText}" hakkında detaylı bilgi ver.`;
         handleSendMessage(newId, question);
       }, 100);
     },
-    [nodes, handleSendMessage]
+    [nodes, handleSendMessage, debouncedSave]
   );
 
   /* ===== CLOSE NODE ===== */
@@ -716,8 +913,11 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
       if (idsToRemove.has(activeNodeId)) {
         setActiveNodeId("main");
       }
+
+      // Save updated structure to DB
+      debouncedSave();
     },
-    [nodes, activeNodeId]
+    [nodes, activeNodeId, debouncedSave]
   );
 
   /* ===== RENDER CONNECTIONS (SVG) ===== */
@@ -746,6 +946,14 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
       );
     });
   };
+
+  if (isInitialLoading) {
+    return (
+      <div className="flex items-center justify-center h-full" style={{ background: "var(--bg-primary)" }}>
+        <div className="auth-spinner" style={{ width: 32, height: 32 }} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full relative overflow-hidden">

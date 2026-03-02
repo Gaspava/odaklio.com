@@ -50,7 +50,15 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const [activePage, setActivePage] = useState<PageType>(initialPage || "focus");
   const isMobile = useIsMobile();
   const { theme, toggleTheme } = useTheme();
-  const { loadConversation, startNewConversation } = useConversation();
+  const { loadConversation, startNewConversation, conversations, activeConversationType } = useConversation();
+
+  // Sync chatStyle with conversation type (for /chat/[id] URL loads)
+  useEffect(() => {
+    if (activeConversationType === "mindmap" && chatStyle !== "mindmap") {
+      setChatStyle("mindmap");
+      setChatKey((k) => k + 1);
+    }
+  }, [activeConversationType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Prevent body scroll when dashboard is active
   useEffect(() => {
@@ -157,20 +165,30 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
     }
   };
 
-  const handleOpenConversation = useCallback((id: string) => {
+  const handleOpenConversation = useCallback((id: string, type?: string) => {
     if (id) {
-      loadConversation(id);
+      loadConversation(id).then(() => {
+        // Set chat style based on conversation type
+        const convType = type || conversations.find((c) => c.id === id)?.type;
+        setChatStyle(convType === "mindmap" ? "mindmap" : "standard");
+        setChatKey((k) => k + 1);
+        setActivePage("focus");
+        if (isMobile) {
+          setLeftOpen(false);
+          setRightOpen(false);
+        }
+      });
     } else {
       startNewConversation();
+      setChatStyle("standard");
+      setChatKey((k) => k + 1);
+      setActivePage("focus");
+      if (isMobile) {
+        setLeftOpen(false);
+        setRightOpen(false);
+      }
     }
-    setChatStyle("standard");
-    setChatKey((k) => k + 1);
-    setActivePage("focus");
-    if (isMobile) {
-      setLeftOpen(false);
-      setRightOpen(false);
-    }
-  }, [loadConversation, startNewConversation, isMobile]);
+  }, [loadConversation, startNewConversation, isMobile, conversations]);
 
   const showSidePanels = activePage === "focus";
 
