@@ -398,9 +398,9 @@ export default function LandingPage() {
       </section>
 
       {/* ===== FOOTER ===== */}
-      <footer className="landing-footer">
+      <footer className="landing-footer" style={{ paddingTop: 32, paddingBottom: 32 }}>
         <div className="landing-container">
-          <div className="landing-footer-inner">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "20px 40px", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
             <div className="flex items-center gap-3">
               <div
                 className="flex h-8 w-8 items-center justify-center rounded-xl text-white text-xs font-bold"
@@ -410,8 +410,27 @@ export default function LandingPage() {
               </div>
               <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Odaklio</span>
             </div>
-            <p style={{ color: "var(--text-tertiary)", fontSize: 13 }}>
-              &copy; 2025 Odaklio. Tüm hakları saklıdır.
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px", alignItems: "center" }}>
+              <Link href="/hakkimizda" style={{ color: "var(--text-tertiary)", textDecoration: "none", fontSize: 13, transition: "color 0.15s" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "var(--accent-primary)")}
+                onMouseLeave={e => (e.currentTarget.style.color = "var(--text-tertiary)")}>Hakkımızda</Link>
+              <Link href="/kullanici-sozlesmesi" style={{ color: "var(--text-tertiary)", textDecoration: "none", fontSize: 13, transition: "color 0.15s" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "var(--accent-primary)")}
+                onMouseLeave={e => (e.currentTarget.style.color = "var(--text-tertiary)")}>Kullanıcı Sözleşmesi</Link>
+              <Link href="/gizlilik" style={{ color: "var(--text-tertiary)", textDecoration: "none", fontSize: 13, transition: "color 0.15s" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "var(--accent-primary)")}
+                onMouseLeave={e => (e.currentTarget.style.color = "var(--text-tertiary)")}>Gizlilik Politikası</Link>
+              <Link href="/kvkk" style={{ color: "var(--text-tertiary)", textDecoration: "none", fontSize: 13, transition: "color 0.15s" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "var(--accent-primary)")}
+                onMouseLeave={e => (e.currentTarget.style.color = "var(--text-tertiary)")}>KVKK</Link>
+              <Link href="/cerez-politikasi" style={{ color: "var(--text-tertiary)", textDecoration: "none", fontSize: 13, transition: "color 0.15s" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "var(--accent-primary)")}
+                onMouseLeave={e => (e.currentTarget.style.color = "var(--text-tertiary)")}>Çerez Politikası</Link>
+            </div>
+          </div>
+          <div style={{ borderTop: "1px solid var(--border-secondary)", paddingTop: 16 }}>
+            <p style={{ color: "var(--text-tertiary)", fontSize: 12, margin: 0 }}>
+              &copy; 2025 Odaklio. Tüm hakları saklıdır. &nbsp;·&nbsp; destek@odaklio.com
             </p>
           </div>
         </div>

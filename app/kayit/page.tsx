@@ -31,7 +31,7 @@ export default function KayitPage() {
     setError("");
 
     if (!agreed) {
-      setError("Kullanim kosullarini kabul etmelisiniz.");
+      setError("Devam etmek için sözleşmeyi kabul etmelisiniz.");
       return;
     }
 
@@ -62,7 +62,7 @@ export default function KayitPage() {
     setError("");
 
     if (!agreed) {
-      setError("Kullanim kosullarini kabul etmelisiniz.");
+      setError("Devam etmek için sözleşmeyi kabul etmelisiniz.");
       return;
     }
 
@@ -309,8 +309,13 @@ export default function KayitPage() {
                   className="auth-checkbox"
                 />
                 <span className="auth-checkbox-label">
-                  <span style={{ color: "var(--text-tertiary)" }}>
-                    Kullanim kosullarini ve gizlilik politikasini kabul ediyorum.
+                  <span style={{ color: "var(--text-tertiary)", fontSize: 13, lineHeight: 1.5 }}>
+                    <Link href="/kullanici-sozlesmesi" target="_blank" style={{ color: "var(--accent-primary)", textDecoration: "none", fontWeight: 500 }}>Kullanıcı Sözleşmesi</Link>
+                    {", "}
+                    <Link href="/gizlilik" target="_blank" style={{ color: "var(--accent-primary)", textDecoration: "none", fontWeight: 500 }}>Gizlilik Politikası</Link>
+                    {" ve "}
+                    <Link href="/kvkk" target="_blank" style={{ color: "var(--accent-primary)", textDecoration: "none", fontWeight: 500 }}>KVKK Aydınlatma Metni</Link>
+                    {"'ni okudum ve kabul ediyorum."}
                   </span>
                 </span>
               </label>
@@ -371,8 +376,13 @@ export default function KayitPage() {
                   className="auth-checkbox"
                 />
                 <span className="auth-checkbox-label">
-                  <span style={{ color: "var(--text-tertiary)" }}>
-                    Kullanim kosullarini ve gizlilik politikasini kabul ediyorum.
+                  <span style={{ color: "var(--text-tertiary)", fontSize: 13, lineHeight: 1.5 }}>
+                    <Link href="/kullanici-sozlesmesi" target="_blank" style={{ color: "var(--accent-primary)", textDecoration: "none", fontWeight: 500 }}>Kullanıcı Sözleşmesi</Link>
+                    {", "}
+                    <Link href="/gizlilik" target="_blank" style={{ color: "var(--accent-primary)", textDecoration: "none", fontWeight: 500 }}>Gizlilik Politikası</Link>
+                    {" ve "}
+                    <Link href="/kvkk" target="_blank" style={{ color: "var(--accent-primary)", textDecoration: "none", fontWeight: 500 }}>KVKK Aydınlatma Metni</Link>
+                    {"'ni okudum ve kabul ediyorum."}
                   </span>
                 </span>
               </label>
