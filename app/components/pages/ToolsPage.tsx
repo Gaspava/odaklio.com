@@ -9,8 +9,10 @@ import {
   getUserNotes,
   deleteUserNote,
   getConversation,
+  getUserRoadmaps,
   type SavedFlashcard,
   type UserNote,
+  type RoadmapWithProgress,
 } from "@/lib/db/conversations";
 import {
   IconChevronLeft,
@@ -29,6 +31,7 @@ import {
   IconPomodoro,
   IconSpeedRead,
   IconSettings,
+  IconRoadmap,
 } from "../icons/Icons";
 
 /* ===== TOOL CARD ===== */
@@ -739,12 +742,204 @@ function SpeedReadDetail({ onBack }: { onBack: () => void }) {
   );
 }
 
+/* ===== YOL HARITALARI (ROADMAPS) DETAIL ===== */
+function RoadmapDetail({ onBack, onOpenConversation }: { onBack: () => void; onOpenConversation?: (id: string, type?: string) => void }) {
+  const { user } = useAuth();
+  const [roadmaps, setRoadmaps] = useState<RoadmapWithProgress[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (user) {
+      getUserRoadmaps(user.id).then(data => {
+        setRoadmaps(data);
+        setLoading(false);
+      }).catch(() => setLoading(false));
+    }
+  }, [user]);
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return "Simdi";
+    if (diffMins < 60) return `${diffMins} dk once`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} saat once`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return "Dun";
+    if (diffDays < 7) return `${diffDays} gun once`;
+    return date.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+  };
+
+  const renderRoadmapItem = (r: RoadmapWithProgress, depth: number) => {
+    const percentage = r.total_steps > 0 ? Math.round((r.completed_steps / r.total_steps) * 100) : 0;
+    const hasChildren = r.children.length > 0;
+    const isExpanded = expandedIds.has(r.id);
+
+    return (
+      <div key={r.id}>
+        <button
+          onClick={() => {
+            if (hasChildren) toggleExpand(r.id);
+            else if (onOpenConversation) onOpenConversation(r.id, "roadmap");
+          }}
+          className="w-full text-left rounded-xl p-3.5 transition-all active:scale-[0.98] hover:shadow-md group"
+          style={{
+            background: "var(--bg-card)",
+            border: "1px solid var(--border-primary)",
+            marginLeft: depth * 20,
+            width: `calc(100% - ${depth * 20}px)`,
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0"
+              style={{
+                background: depth === 0 ? "rgba(239, 68, 68, 0.1)" : "rgba(239, 68, 68, 0.06)",
+                color: "#ef4444",
+              }}
+            >
+              <IconRoadmap size={16} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="text-[13px] font-bold truncate" style={{ color: "var(--text-primary)" }}>
+                  {r.title}
+                </h3>
+                {hasChildren && (
+                  <span
+                    className="text-[9px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0"
+                    style={{ background: "rgba(239, 68, 68, 0.08)", color: "#ef4444" }}
+                  >
+                    {r.children.length} alt
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3 mt-1">
+                {r.total_steps > 0 ? (
+                  <>
+                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-tertiary)", maxWidth: 120 }}>
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${percentage}%`,
+                          background: percentage === 100 ? "#10b981" : "#ef4444",
+                        }}
+                      />
+                    </div>
+                    <span className="text-[10px] flex-shrink-0" style={{ color: "var(--text-tertiary)" }}>
+                      {r.completed_steps}/{r.total_steps} ({percentage}%)
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                    Adim yok
+                  </span>
+                )}
+                <span className="text-[10px] flex-shrink-0" style={{ color: "var(--text-tertiary)" }}>
+                  {formatDate(r.updated_at)}
+                </span>
+              </div>
+            </div>
+            {hasChildren ? (
+              <span
+                className="flex-shrink-0 transition-transform"
+                style={{
+                  color: "var(--text-tertiary)",
+                  transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                }}
+              >
+                <IconChevronRight size={14} />
+              </span>
+            ) : (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onOpenConversation) onOpenConversation(r.id, "roadmap");
+                }}
+                className="flex-shrink-0 text-[10px] font-medium px-2.5 py-1 rounded-lg transition-all active:scale-95"
+                style={{ background: "rgba(239, 68, 68, 0.08)", color: "#ef4444" }}
+              >
+                Ac
+              </button>
+            )}
+          </div>
+        </button>
+
+        {/* Children */}
+        {hasChildren && isExpanded && (
+          <div className="space-y-2 mt-2">
+            {r.children.map((child) => renderRoadmapItem(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-4 animate-fade-in">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onBack}
+          className="flex h-8 w-8 items-center justify-center rounded-lg transition-all active:scale-95"
+          style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+        >
+          <IconChevronLeft size={16} />
+        </button>
+        <div>
+          <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Yol Haritalarim</h2>
+          <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>{roadmaps.length} yol haritasi</p>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin mx-auto mb-2" style={{ color: "var(--text-tertiary)" }} />
+          <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>Yukleniyor...</p>
+        </div>
+      ) : roadmaps.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style={{ background: "rgba(239, 68, 68, 0.1)" }}>
+            <IconRoadmap size={24} style={{ color: "#ef4444" }} />
+          </div>
+          <p className="text-sm font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+            Henuz yol haritasi olusturmadiniz
+          </p>
+          <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+            Odak modunda Yol Haritasi secenegi ile olusturabilirsiniz
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {roadmaps.map((r) => renderRoadmapItem(r, 0))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ===== TOOLS PAGE ===== */
-export default function ToolsPage() {
+interface ToolsPageProps {
+  onOpenConversation?: (id: string, type?: string) => void;
+}
+
+export default function ToolsPage({ onOpenConversation }: ToolsPageProps = {}) {
   const { user } = useAuth();
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [notesCount, setNotesCount] = useState(0);
   const [flashcardInfo, setFlashcardInfo] = useState({ decks: 0, cards: 0 });
+  const [roadmapCount, setRoadmapCount] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -752,6 +947,11 @@ export default function ToolsPage() {
     getSavedFlashcards(user.id).then(cards => {
       const uniqueConvs = new Set(cards.map(c => c.conversation_id));
       setFlashcardInfo({ decks: uniqueConvs.size, cards: cards.length });
+    }).catch(() => {});
+    getUserRoadmaps(user.id).then(data => {
+      const countAll = (items: RoadmapWithProgress[]): number =>
+        items.reduce((sum, r) => sum + 1 + countAll(r.children), 0);
+      setRoadmapCount(countAll(data));
     }).catch(() => {});
   }, [user]);
 
@@ -783,6 +983,14 @@ export default function ToolsPage() {
       count: flashcardInfo.cards > 0 ? `${flashcardInfo.cards} kart` : undefined,
     },
     {
+      id: "roadmaps",
+      name: "Yol Haritalarim",
+      description: "Ogrenme yol haritalarini goruntule ve takip et",
+      icon: <IconRoadmap size={20} />,
+      color: "#ef4444",
+      tag: roadmapCount > 0 ? `${roadmapCount} harita` : "Bos",
+    },
+    {
       id: "pomodoro",
       name: "Pomodoro",
       description: "Odakl\u0131 \u00e7al\u0131\u015fma seanslar\u0131 ile verimlili\u011fini art\u0131r",
@@ -812,6 +1020,7 @@ export default function ToolsPage() {
   if (activeTool === "notes") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><NotlarimDetail onBack={() => setActiveTool(null)} /></div></div>;
   if (activeTool === "mindmap") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><MindMapDetail onBack={() => setActiveTool(null)} /></div></div>;
   if (activeTool === "flashcards") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><FlashcardDetail onBack={() => setActiveTool(null)} /></div></div>;
+  if (activeTool === "roadmaps") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><RoadmapDetail onBack={() => setActiveTool(null)} onOpenConversation={onOpenConversation} /></div></div>;
   if (activeTool === "pomodoro") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><PomodoroDetail onBack={() => setActiveTool(null)} /></div></div>;
   if (activeTool === "speedread") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><SpeedReadDetail onBack={() => setActiveTool(null)} /></div></div>;
 

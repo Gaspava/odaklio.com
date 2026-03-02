@@ -7,10 +7,19 @@ import {
   useConversation,
   type ChatMessage,
 } from "@/app/providers/ConversationProvider";
+import {
+  saveRoadmapSteps,
+  getRoadmapSteps,
+  toggleRoadmapStepCompletion,
+  getChildConversations,
+  getConversationBreadcrumb,
+  type Conversation,
+} from "@/lib/db/conversations";
 
 /* ===== TYPES ===== */
 interface RoadmapChatProps {
   isMobile?: boolean;
+  onOpenConversation?: (id: string, type?: string) => void;
 }
 
 interface RoadmapStep {
@@ -155,6 +164,25 @@ function DetailIcon() {
   );
 }
 
+/* ===== BOOK ICON ===== */
+function BookIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+    </svg>
+  );
+}
+
 /* ===== STEP CARD COMPONENT ===== */
 function StepCard({
   step,
@@ -163,6 +191,11 @@ function StepCard({
   onToggleComplete,
   onToggleExpand,
   onAskDetail,
+  onCreateSubRoadmap,
+  onStudyTopic,
+  childRoadmapId,
+  onOpenChild,
+  stepsSaved,
   index,
 }: {
   step: RoadmapStep;
@@ -171,6 +204,11 @@ function StepCard({
   onToggleComplete: () => void;
   onToggleExpand: () => void;
   onAskDetail: () => void;
+  onCreateSubRoadmap: () => void;
+  onStudyTopic: () => void;
+  childRoadmapId: string | null;
+  onOpenChild: (id: string) => void;
+  stepsSaved: boolean;
   index: number;
 }) {
   return (
@@ -267,8 +305,24 @@ function StepCard({
           {step.description}
         </p>
 
+        {/* Child roadmap badge */}
+        {childRoadmapId && (
+          <button
+            onClick={() => onOpenChild(childRoadmapId)}
+            className="flex items-center gap-1.5 mb-3 px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all active:scale-[0.97]"
+            style={{
+              background: "rgba(239, 68, 68, 0.06)",
+              color: "#ef4444",
+              border: "1px solid rgba(239, 68, 68, 0.15)",
+            }}
+          >
+            <IconRoadmap size={10} />
+            Alt yol haritasi mevcut
+          </button>
+        )}
+
         {/* Actions row */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={onToggleComplete}
             className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all active:scale-[0.97]"
@@ -304,9 +358,40 @@ function StepCard({
             <DetailIcon />
             Detay
           </button>
+
+          {/* Sub-roadmap button */}
+          {!childRoadmapId && (
+            <button
+              onClick={onCreateSubRoadmap}
+              disabled={!stepsSaved}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all active:scale-[0.97] disabled:opacity-40"
+              style={{
+                background: "rgba(239, 68, 68, 0.08)",
+                color: "#ef4444",
+                border: "1px solid rgba(239, 68, 68, 0.15)",
+              }}
+            >
+              <IconRoadmap size={11} />
+              Roadmap
+            </button>
+          )}
+
+          {/* Study topic button */}
+          <button
+            onClick={onStudyTopic}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all active:scale-[0.97]"
+            style={{
+              background: "rgba(16, 185, 129, 0.08)",
+              color: "#10b981",
+              border: "1px solid rgba(16, 185, 129, 0.15)",
+            }}
+          >
+            <BookIcon />
+            Bu Konuyu Calis
+          </button>
         </div>
 
-        {/* Expanded detail area (for future use if needed) */}
+        {/* Expanded detail area */}
         {isExpanded && (
           <div
             className="mt-3 pt-3 text-[12px]"
@@ -415,8 +500,53 @@ function AiAvatar() {
   );
 }
 
+/* ===== BREADCRUMB ===== */
+function Breadcrumb({
+  crumbs,
+  onNavigate,
+}: {
+  crumbs: { id: string; title: string }[];
+  onNavigate: (id: string) => void;
+}) {
+  if (crumbs.length <= 1) return null;
+
+  return (
+    <div
+      className="flex items-center gap-1.5 px-4 py-2.5 text-[11px] overflow-x-auto flex-shrink-0"
+      style={{
+        background: "var(--bg-secondary)",
+        borderBottom: "1px solid var(--border-primary)",
+      }}
+    >
+      {crumbs.map((crumb, i) => {
+        const isLast = i === crumbs.length - 1;
+        return (
+          <span key={crumb.id} className="flex items-center gap-1.5 flex-shrink-0">
+            {i > 0 && (
+              <span style={{ color: "var(--text-tertiary)" }}>&#8250;</span>
+            )}
+            {isLast ? (
+              <span className="font-semibold" style={{ color: "#ef4444" }}>
+                {crumb.title}
+              </span>
+            ) : (
+              <button
+                onClick={() => onNavigate(crumb.id)}
+                className="font-medium transition-colors hover:underline"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {crumb.title}
+              </button>
+            )}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ===== MAIN ROADMAP CHAT ===== */
-export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
+export default function RoadmapChat({ isMobile = false, onOpenConversation }: RoadmapChatProps) {
   const {
     activeConversationId,
     saveUserMessage,
@@ -424,6 +554,8 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
     generateTitle,
     refreshConversations,
     loadConversation,
+    createChildRoadmap,
+    createTypedConversation,
   } = useConversation();
 
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
@@ -434,14 +566,17 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
   // Roadmap state
   const [roadmapTitle, setRoadmapTitle] = useState<string | null>(null);
   const [steps, setSteps] = useState<RoadmapStep[]>([]);
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(
-    new Set()
-  );
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
+  const [stepsSaved, setStepsSaved] = useState(false);
 
   // 2-panel layout state
   const [activeTab, setActiveTab] = useState<"roadmap" | "chat">("chat");
   const [detailStep, setDetailStep] = useState<RoadmapStep | null>(null);
+
+  // Hierarchy state
+  const [breadcrumbs, setBreadcrumbs] = useState<{ id: string; title: string }[]>([]);
+  const [childRoadmapMap, setChildRoadmapMap] = useState<Record<number, string>>({});
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -453,23 +588,65 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
     if (activeConversationId) {
       isFirstMessageRef.current = false;
       setIsInitialLoading(true);
-      loadConversation(activeConversationId).then((loaded) => {
+
+      // Load steps from DB, breadcrumb, and children in parallel
+      const loadAll = async () => {
+        const [loaded, dbSteps, crumbs, children] = await Promise.all([
+          loadConversation(activeConversationId),
+          getRoadmapSteps(activeConversationId).catch(() => []),
+          getConversationBreadcrumb(activeConversationId).catch(() => []),
+          getChildConversations(activeConversationId).catch(() => [] as Conversation[]),
+        ]);
+
         if (loaded.length > 0) {
           setMessages([WELCOME_MESSAGE, ...loaded]);
+        }
 
-          // Parse roadmap data from existing messages
+        // Load steps from DB if available, otherwise parse from messages
+        if (dbSteps.length > 0) {
+          const stepsFromDb: RoadmapStep[] = dbSteps.map((s) => ({
+            number: s.step_number,
+            title: s.title,
+            description: s.description,
+            duration: s.duration,
+            completed: s.is_completed,
+          }));
+          setSteps(stepsFromDb);
+          setCompletedSteps(new Set(dbSteps.filter((s) => s.is_completed).map((s) => s.step_number)));
+          setStepsSaved(true);
+        } else {
+          // Fallback: parse from messages
           for (const msg of loaded) {
             if (msg.role === "assistant") {
-              const title = parseRoadmapTitle(msg.content);
-              if (title) setRoadmapTitle(title);
-
               const parsed = parseRoadmapSteps(msg.content);
               if (parsed.length > 0) setSteps(parsed);
             }
           }
         }
+
+        // Parse title from messages
+        for (const msg of loaded) {
+          if (msg.role === "assistant") {
+            const title = parseRoadmapTitle(msg.content);
+            if (title) setRoadmapTitle(title);
+          }
+        }
+
+        setBreadcrumbs(crumbs);
+
+        // Build child roadmap map (stepNumber -> childConversationId)
+        const childMap: Record<number, string> = {};
+        for (const child of children) {
+          if (child.parent_step_number != null) {
+            childMap[child.parent_step_number] = child.id;
+          }
+        }
+        setChildRoadmapMap(childMap);
+
         setIsInitialLoading(false);
-      });
+      };
+
+      loadAll();
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -492,12 +669,14 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
 
   // Parse roadmap from the latest assistant message whenever messages change
   useEffect(() => {
+    // Only parse from messages if steps weren't loaded from DB
+    if (stepsSaved) return;
+
     const assistantMessages = messages.filter(
       (m) => m.role === "assistant" && m.id !== "welcome"
     );
     if (assistantMessages.length === 0) return;
 
-    // Check all assistant messages for roadmap data (latest wins)
     for (const msg of assistantMessages) {
       const title = parseRoadmapTitle(msg.content);
       if (title) setRoadmapTitle(title);
@@ -505,13 +684,12 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
       const parsed = parseRoadmapSteps(msg.content);
       if (parsed.length > 0) setSteps(parsed);
     }
-  }, [messages]);
+  }, [messages, stepsSaved]);
 
   const sendToAI = useCallback(
     async (userContent: string, allMessages: ChatMessage[]) => {
       setIsLoading(true);
 
-      // Save user message to DB
       let conversationId: string;
       let isFirst = isFirstMessageRef.current;
       try {
@@ -574,14 +752,32 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
           } catch (err) {
             console.error("Failed to save assistant message:", err);
           }
+
+          // Persist steps to DB after AI stream completes
+          const parsedSteps = parseRoadmapSteps(fullContent);
+          if (parsedSteps.length > 0 && conversationId) {
+            try {
+              await saveRoadmapSteps(
+                conversationId,
+                parsedSteps.map((s) => ({
+                  stepNumber: s.number,
+                  title: s.title,
+                  description: s.description,
+                  duration: s.duration,
+                  isCompleted: false,
+                }))
+              );
+              setStepsSaved(true);
+            } catch (err) {
+              console.error("Failed to save roadmap steps:", err);
+            }
+          }
         }
 
-        // Generate title on first message
         if (isFirst && fullContent) {
           generateTitle(conversationId, userContent);
         }
 
-        // Refresh sidebar
         refreshConversations();
       } catch (error) {
         const errorMsg =
@@ -644,17 +840,85 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
     [sendToAI, messages, isMobile]
   );
 
-  const toggleStepComplete = useCallback((stepNumber: number) => {
-    setCompletedSteps((prev) => {
-      const next = new Set(prev);
-      if (next.has(stepNumber)) {
-        next.delete(stepNumber);
-      } else {
-        next.add(stepNumber);
+  const toggleStepComplete = useCallback(
+    (stepNumber: number) => {
+      setCompletedSteps((prev) => {
+        const next = new Set(prev);
+        const newState = !next.has(stepNumber);
+        if (newState) {
+          next.add(stepNumber);
+        } else {
+          next.delete(stepNumber);
+        }
+
+        // Persist to DB
+        if (activeConversationId) {
+          toggleRoadmapStepCompletion(activeConversationId, stepNumber, newState).catch((err) =>
+            console.error("Failed to toggle step:", err)
+          );
+        }
+
+        return next;
+      });
+    },
+    [activeConversationId]
+  );
+
+  const handleCreateSubRoadmap = useCallback(
+    async (step: RoadmapStep) => {
+      if (!activeConversationId || !onOpenConversation) return;
+      try {
+        const childId = await createChildRoadmap(activeConversationId, step.number);
+        setChildRoadmapMap((prev) => ({ ...prev, [step.number]: childId }));
+
+        // Auto-send message to child roadmap
+        const msg = `${step.title} konusunda detayli yol haritasi olustur`;
+        await saveUserMessage.call(null, msg, null, "roadmap");
+
+        onOpenConversation(childId, "roadmap");
+      } catch (err) {
+        console.error("Failed to create sub-roadmap:", err);
       }
-      return next;
-    });
-  }, []);
+    },
+    [activeConversationId, createChildRoadmap, onOpenConversation, saveUserMessage]
+  );
+
+  const handleStudyTopic = useCallback(
+    async (step: RoadmapStep) => {
+      if (!onOpenConversation) return;
+      try {
+        const convId = await createTypedConversation("standard");
+        const contextMsg = `${roadmapTitle || "Yol haritasi"} yol haritasinda '${step.title}' konusunu calisiyorum. Aciklama: ${step.description}. Lutfen bu konuyu bana detayli ogret.`;
+
+        // We need to save the user message for the new conversation
+        // The createTypedConversation already set it as active, so saveUserMessage will use it
+        await saveUserMessage(contextMsg, null, "standard");
+
+        onOpenConversation(convId, "standard");
+      } catch (err) {
+        console.error("Failed to create study conversation:", err);
+      }
+    },
+    [onOpenConversation, createTypedConversation, saveUserMessage, roadmapTitle]
+  );
+
+  const handleBreadcrumbNavigate = useCallback(
+    (id: string) => {
+      if (onOpenConversation) {
+        onOpenConversation(id, "roadmap");
+      }
+    },
+    [onOpenConversation]
+  );
+
+  const handleOpenChild = useCallback(
+    (id: string) => {
+      if (onOpenConversation) {
+        onOpenConversation(id, "roadmap");
+      }
+    },
+    [onOpenConversation]
+  );
 
   const handleQuickPrompt = useCallback((text: string) => {
     setInput(text);
@@ -677,6 +941,9 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
   if (!hasRoadmap) {
     return (
       <div className="flex flex-col h-full" style={{ background: "var(--bg-primary)" }}>
+        {/* Breadcrumb */}
+        <Breadcrumb crumbs={breadcrumbs} onNavigate={handleBreadcrumbNavigate} />
+
         {/* Main scrollable area */}
         <div
           ref={scrollContainerRef}
@@ -859,375 +1126,383 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
 
   /* ===== 2-PANEL MODE (after roadmap generated) ===== */
   return (
-    <div className="flex h-full relative" style={{ background: "var(--bg-primary)" }}>
-      {/* Mobile tab bar - only when hasRoadmap && isMobile */}
-      {isMobile && (
-        <div
-          className="absolute top-0 left-0 right-0 z-10 flex"
-          style={{
-            borderBottom: "1px solid var(--border-primary)",
-            background: "var(--bg-secondary)",
-          }}
-        >
-          <button
-            onClick={() => setActiveTab("roadmap")}
-            className="flex-1 py-2.5 text-xs font-semibold transition-colors"
-            style={{
-              color: activeTab === "roadmap" ? "#ef4444" : "var(--text-tertiary)",
-              borderBottom: activeTab === "roadmap" ? "2px solid #ef4444" : "2px solid transparent",
-            }}
-          >
-            Harita
-          </button>
-          <button
-            onClick={() => setActiveTab("chat")}
-            className="flex-1 py-2.5 text-xs font-semibold transition-colors"
-            style={{
-              color: activeTab === "chat" ? "#ef4444" : "var(--text-tertiary)",
-              borderBottom: activeTab === "chat" ? "2px solid #ef4444" : "2px solid transparent",
-            }}
-          >
-            Sohbet
-          </button>
-        </div>
-      )}
+    <div className="flex flex-col h-full" style={{ background: "var(--bg-primary)" }}>
+      {/* Breadcrumb */}
+      <Breadcrumb crumbs={breadcrumbs} onNavigate={handleBreadcrumbNavigate} />
 
-      {/* LEFT PANEL: Roadmap timeline */}
-      <div
-        style={{
-          width: isMobile ? "100%" : "45%",
-          display: isMobile && activeTab !== "roadmap" ? "none" : "flex",
-          flexDirection: "column",
-          borderRight: isMobile ? "none" : "1px solid var(--border-primary)",
-          background: "var(--bg-secondary)",
-          transition: "width 0.3s ease",
-        }}
-        className="overflow-y-auto"
-      >
-        <div
-          className="p-4 sm:p-6"
-          style={{ paddingTop: isMobile ? 52 : undefined }}
-        >
-          {/* Roadmap Title */}
-          {roadmapTitle && (
-            <div className="text-center mb-6 animate-msg-in">
-              <h1
-                className="text-xl sm:text-2xl font-bold mb-2"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #ef4444, #f97316, #ef4444)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
-                {roadmapTitle}
-              </h1>
-              <p
-                className="text-xs"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                {steps.length} adimlik ogrenme plani
-              </p>
-            </div>
-          )}
-
-          {/* Progress Bar */}
-          <ProgressBar
-            completed={completedSteps.size}
-            total={steps.length}
-          />
-
-          {/* Timeline */}
-          <div className="relative">
-            {/* Vertical timeline line */}
-            <div
-              className="absolute"
-              style={{
-                left: 11,
-                top: 28,
-                bottom: 16,
-                width: 2,
-                background: `linear-gradient(to bottom, #ef4444, var(--border-primary))`,
-                borderRadius: 1,
-              }}
-            />
-
-            {/* Steps */}
-            {steps.map((step, idx) => (
-              <StepCard
-                key={step.number}
-                step={step}
-                isCompleted={completedSteps.has(step.number)}
-                isExpanded={expandedStep === step.number}
-                onToggleComplete={() => toggleStepComplete(step.number)}
-                onToggleExpand={() =>
-                  setExpandedStep(
-                    expandedStep === step.number ? null : step.number
-                  )
-                }
-                onAskDetail={() => handleAskDetail(step)}
-                index={idx}
-              />
-            ))}
-          </div>
-
-          {/* Completion celebration */}
-          {completedSteps.size === steps.length && steps.length > 0 && (
-            <div
-              className="text-center py-6 rounded-xl mt-4 animate-msg-in"
-              style={{
-                background: "rgba(16, 185, 129, 0.08)",
-                border: "1px solid rgba(16, 185, 129, 0.2)",
-              }}
-            >
-              <span className="text-3xl mb-2 block">&#127881;</span>
-              <p
-                className="text-sm font-bold"
-                style={{ color: "#10b981" }}
-              >
-                Tebrikler! Tum adimlari tamamladin!
-              </p>
-              <p
-                className="text-xs mt-1"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                Yeni bir konu kesfetmek icin sohbet panelinden soru sorabilirsin.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* RIGHT PANEL: Chat + Detail */}
-      <div
-        style={{
-          flex: 1,
-          display: isMobile && activeTab !== "chat" ? "none" : "flex",
-          flexDirection: "column",
-          minWidth: 0,
-        }}
-      >
-        {/* Mobile top padding for tab bar */}
-        {isMobile && <div style={{ height: 42, flexShrink: 0 }} />}
-
-        {/* Detail step card - shown at top when a step detail is active */}
-        {detailStep && (
+      <div className="flex flex-1 min-h-0 relative">
+        {/* Mobile tab bar - only when hasRoadmap && isMobile */}
+        {isMobile && (
           <div
-            className="flex-shrink-0 p-3"
+            className="absolute top-0 left-0 right-0 z-10 flex"
             style={{
               borderBottom: "1px solid var(--border-primary)",
               background: "var(--bg-secondary)",
             }}
           >
-            <div
-              className="rounded-xl p-3"
+            <button
+              onClick={() => setActiveTab("chat")}
+              className="flex-1 py-2.5 text-xs font-semibold transition-colors"
               style={{
-                background: "rgba(239, 68, 68, 0.04)",
-                border: "1px solid rgba(239, 68, 68, 0.15)",
+                color: activeTab === "chat" ? "#ef4444" : "var(--text-tertiary)",
+                borderBottom: activeTab === "chat" ? "2px solid #ef4444" : "2px solid transparent",
               }}
             >
-              <div className="flex items-center gap-2 mb-1.5">
-                <span
-                  className="flex items-center justify-center rounded-lg text-[10px] font-bold"
-                  style={{
-                    width: 22,
-                    height: 22,
-                    background: "#ef4444",
-                    color: "white",
-                  }}
-                >
-                  {detailStep.number}
-                </span>
-                <span
-                  className="font-semibold text-sm flex-1"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  {detailStep.title}
-                </span>
-                <span
-                  className="text-[10px] px-2 py-0.5 rounded-full"
-                  style={{
-                    background: "var(--bg-tertiary)",
-                    color: "var(--text-tertiary)",
-                  }}
-                >
-                  {detailStep.duration}
-                </span>
-                <button
-                  onClick={() => setDetailStep(null)}
-                  className="ml-1 text-xs rounded-md p-1 transition-colors hover:opacity-70"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  &#10005;
-                </button>
-              </div>
-              <p
-                className="text-[11px]"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                {detailStep.description}
-              </p>
-            </div>
+              Sohbet
+            </button>
+            <button
+              onClick={() => setActiveTab("roadmap")}
+              className="flex-1 py-2.5 text-xs font-semibold transition-colors"
+              style={{
+                color: activeTab === "roadmap" ? "#ef4444" : "var(--text-tertiary)",
+                borderBottom: activeTab === "roadmap" ? "2px solid #ef4444" : "2px solid transparent",
+              }}
+            >
+              Harita
+            </button>
           </div>
         )}
 
-        {/* Messages area - scrollable */}
+        {/* LEFT PANEL: Chat + Detail */}
         <div
-          ref={scrollContainerRef}
-          className={`flex-1 overflow-y-auto p-4 sm:p-6 ${isMobile ? "pb-2" : ""}`}
+          style={{
+            flex: 1,
+            display: isMobile && activeTab !== "chat" ? "none" : "flex",
+            flexDirection: "column",
+            minWidth: 0,
+          }}
         >
-          <div className="space-y-5 sm:space-y-6">
-            {messages.map((msg, idx) => {
-              // Hide welcome message in 2-panel mode (roadmap panel replaces it)
-              if (msg.id === "welcome") return null;
+          {/* Mobile top padding for tab bar */}
+          {isMobile && <div style={{ height: 42, flexShrink: 0 }} />}
 
-              // For assistant messages that contain roadmap data, render a compact note
-              const isRoadmapData =
-                msg.role === "assistant" &&
-                (parseRoadmapSteps(msg.content).length > 0 ||
-                  parseRoadmapTitle(msg.content) !== null);
+          {/* Detail step card - shown at top when a step detail is active */}
+          {detailStep && (
+            <div
+              className="flex-shrink-0 p-3"
+              style={{
+                borderBottom: "1px solid var(--border-primary)",
+                background: "var(--bg-secondary)",
+              }}
+            >
+              <div
+                className="rounded-xl p-3"
+                style={{
+                  background: "rgba(239, 68, 68, 0.04)",
+                  border: "1px solid rgba(239, 68, 68, 0.15)",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span
+                    className="flex items-center justify-center rounded-lg text-[10px] font-bold"
+                    style={{
+                      width: 22,
+                      height: 22,
+                      background: "#ef4444",
+                      color: "white",
+                    }}
+                  >
+                    {detailStep.number}
+                  </span>
+                  <span
+                    className="font-semibold text-sm flex-1"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {detailStep.title}
+                  </span>
+                  <span
+                    className="text-[10px] px-2 py-0.5 rounded-full"
+                    style={{
+                      background: "var(--bg-tertiary)",
+                      color: "var(--text-tertiary)",
+                    }}
+                  >
+                    {detailStep.duration}
+                  </span>
+                  <button
+                    onClick={() => setDetailStep(null)}
+                    className="ml-1 text-xs rounded-md p-1 transition-colors hover:opacity-70"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    &#10005;
+                  </button>
+                </div>
+                <p
+                  className="text-[11px]"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  {detailStep.description}
+                </p>
+              </div>
+            </div>
+          )}
 
-              if (isRoadmapData && msg.content.length > 0) {
+          {/* Messages area - scrollable */}
+          <div
+            ref={scrollContainerRef}
+            className={`flex-1 overflow-y-auto p-4 sm:p-6 ${isMobile ? "pb-2" : ""}`}
+          >
+            <div className="space-y-5 sm:space-y-6">
+              {messages.map((msg, idx) => {
+                if (msg.id === "welcome") return null;
+
+                const isRoadmapData =
+                  msg.role === "assistant" &&
+                  (parseRoadmapSteps(msg.content).length > 0 ||
+                    parseRoadmapTitle(msg.content) !== null);
+
+                if (isRoadmapData && msg.content.length > 0) {
+                  return (
+                    <div
+                      id={`roadmap-msg-${msg.id}`}
+                      key={msg.id}
+                      className="flex justify-start animate-msg-in"
+                      style={{
+                        animationDelay: `${Math.min(idx * 0.05, 0.3)}s`,
+                      }}
+                    >
+                      <AiAvatar />
+                      <div className="group relative max-w-[92%] sm:max-w-[88%]">
+                        <div className="px-3.5 py-3 sm:px-4 sm:py-3.5 msg-ai">
+                          <div className="flex items-center gap-2 text-[12px]" style={{ color: "var(--text-tertiary)" }}>
+                            <IconRoadmap size={12} style={{ color: "#ef4444" }} />
+                            <span>Yol haritasi olusturuldu - sol panelde goruntuleniyor</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     id={`roadmap-msg-${msg.id}`}
                     key={msg.id}
-                    className="flex justify-start animate-msg-in"
+                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-msg-in`}
                     style={{
                       animationDelay: `${Math.min(idx * 0.05, 0.3)}s`,
                     }}
                   >
-                    <AiAvatar />
-                    <div className="group relative max-w-[92%] sm:max-w-[88%]">
-                      <div className="px-3.5 py-3 sm:px-4 sm:py-3.5 msg-ai">
-                        <div className="flex items-center gap-2 text-[12px]" style={{ color: "var(--text-tertiary)" }}>
-                          <IconRoadmap size={12} style={{ color: "#ef4444" }} />
-                          <span>Yol haritasi olusturuldu - sol panelde goruntuleniyor</span>
-                        </div>
+                    {msg.role === "assistant" && <AiAvatar />}
+
+                    <div
+                      className={`group relative ${
+                        msg.role === "user"
+                          ? "max-w-[85%] sm:max-w-[70%]"
+                          : "max-w-[92%] sm:max-w-[88%]"
+                      }`}
+                    >
+                      <div
+                        className={`px-3.5 py-3 sm:px-4 sm:py-3.5 ${
+                          msg.role === "user" ? "msg-user" : "msg-ai"
+                        }`}
+                      >
+                        {msg.role === "assistant" ? (
+                          <>
+                            {msg.content ? (
+                              <ChatMessageRenderer content={msg.content} />
+                            ) : (
+                              isLoading &&
+                              msg.id ===
+                                messages[messages.length - 1]?.id && (
+                                <TypingIndicator />
+                              )
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-[13px] sm:text-sm leading-relaxed">
+                            {msg.content}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
                 );
-              }
+              })}
+            </div>
+          </div>
 
-              return (
-                <div
-                  id={`roadmap-msg-${msg.id}`}
-                  key={msg.id}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-msg-in`}
-                  style={{
-                    animationDelay: `${Math.min(idx * 0.05, 0.3)}s`,
-                  }}
-                >
-                  {msg.role === "assistant" && <AiAvatar />}
+          {/* Input Bar */}
+          <div
+            className={`flex-shrink-0 p-3 sm:p-4`}
+            style={{ borderTop: "1px solid var(--border-primary)" }}
+          >
+            <div
+              className="flex items-center gap-2 rounded-2xl px-3 py-2.5 sm:px-4 transition-all"
+              style={{
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-primary)",
+                boxShadow: input.trim()
+                  ? "0 0 12px rgba(239, 68, 68, 0.15)"
+                  : "var(--shadow-md)",
+                borderColor: input.trim()
+                  ? "rgba(239, 68, 68, 0.25)"
+                  : "var(--border-primary)",
+              }}
+            >
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                placeholder={
+                  isLoading
+                    ? "Yanit bekleniyor..."
+                    : "Adimlar hakkinda soru sor..."
+                }
+                disabled={isLoading}
+                className="flex-1 bg-transparent text-[13px] sm:text-sm outline-none disabled:opacity-50"
+                style={{ color: "var(--text-primary)" }}
+              />
 
-                  <div
-                    className={`group relative ${
-                      msg.role === "user"
-                        ? "max-w-[85%] sm:max-w-[70%]"
-                        : "max-w-[92%] sm:max-w-[88%]"
-                    }`}
-                  >
-                    <div
-                      className={`px-3.5 py-3 sm:px-4 sm:py-3.5 ${
-                        msg.role === "user" ? "msg-user" : "msg-ai"
-                      }`}
-                    >
-                      {msg.role === "assistant" ? (
-                        <>
-                          {msg.content ? (
-                            <ChatMessageRenderer content={msg.content} />
-                          ) : (
-                            isLoading &&
-                            msg.id ===
-                              messages[messages.length - 1]?.id && (
-                              <TypingIndicator />
-                            )
-                          )}
-                        </>
-                      ) : (
-                        <p className="text-[13px] sm:text-sm leading-relaxed">
-                          {msg.content}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleSend}
+                disabled={!input.trim() || isLoading}
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
+                style={{
+                  background:
+                    input.trim() && !isLoading
+                      ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                      : "var(--bg-tertiary)",
+                  color:
+                    input.trim() && !isLoading
+                      ? "white"
+                      : "var(--text-tertiary)",
+                  boxShadow:
+                    input.trim() && !isLoading
+                      ? "0 0 12px rgba(239, 68, 68, 0.3)"
+                      : "none",
+                }}
+              >
+                <IconSend size={14} />
+              </button>
+            </div>
+
+            {!isMobile && (
+              <p
+                className="text-center text-[10px] mt-2.5 flex items-center justify-center gap-1.5"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                <span style={{ color: "#ef4444", opacity: 0.6 }}>&#9679;</span>
+                Adimlari tamamla isaretiyle takip et &#183; Detay butonu ile
+                derinlemesine ogren
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Input Bar */}
+        {/* RIGHT PANEL: Roadmap timeline */}
         <div
-          className={`flex-shrink-0 p-3 sm:p-4`}
-          style={{ borderTop: "1px solid var(--border-primary)" }}
+          style={{
+            width: isMobile ? "100%" : "45%",
+            display: isMobile && activeTab !== "roadmap" ? "none" : "flex",
+            flexDirection: "column",
+            borderLeft: isMobile ? "none" : "1px solid var(--border-primary)",
+            background: "var(--bg-secondary)",
+            transition: "width 0.3s ease",
+          }}
+          className="overflow-y-auto"
         >
           <div
-            className="flex items-center gap-2 rounded-2xl px-3 py-2.5 sm:px-4 transition-all"
-            style={{
-              background: "var(--bg-card)",
-              border: "1px solid var(--border-primary)",
-              boxShadow: input.trim()
-                ? "0 0 12px rgba(239, 68, 68, 0.15)"
-                : "var(--shadow-md)",
-              borderColor: input.trim()
-                ? "rgba(239, 68, 68, 0.25)"
-                : "var(--border-primary)",
-            }}
+            className="p-4 sm:p-6"
+            style={{ paddingTop: isMobile ? 52 : undefined }}
           >
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder={
-                isLoading
-                  ? "Yanit bekleniyor..."
-                  : "Adimlar hakkinda soru sor..."
-              }
-              disabled={isLoading}
-              className="flex-1 bg-transparent text-[13px] sm:text-sm outline-none disabled:opacity-50"
-              style={{ color: "var(--text-primary)" }}
+            {/* Roadmap Title */}
+            {roadmapTitle && (
+              <div className="text-center mb-6 animate-msg-in">
+                <h1
+                  className="text-xl sm:text-2xl font-bold mb-2"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #ef4444, #f97316, #ef4444)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  {roadmapTitle}
+                </h1>
+                <p
+                  className="text-xs"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  {steps.length} adimlik ogrenme plani
+                </p>
+              </div>
+            )}
+
+            {/* Progress Bar */}
+            <ProgressBar
+              completed={completedSteps.size}
+              total={steps.length}
             />
 
-            <button
-              type="button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
-              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
-              style={{
-                background:
-                  input.trim() && !isLoading
-                    ? "linear-gradient(135deg, #ef4444, #dc2626)"
-                    : "var(--bg-tertiary)",
-                color:
-                  input.trim() && !isLoading
-                    ? "white"
-                    : "var(--text-tertiary)",
-                boxShadow:
-                  input.trim() && !isLoading
-                    ? "0 0 12px rgba(239, 68, 68, 0.3)"
-                    : "none",
-              }}
-            >
-              <IconSend size={14} />
-            </button>
-          </div>
+            {/* Timeline */}
+            <div className="relative">
+              {/* Vertical timeline line */}
+              <div
+                className="absolute"
+                style={{
+                  left: 11,
+                  top: 28,
+                  bottom: 16,
+                  width: 2,
+                  background: `linear-gradient(to bottom, #ef4444, var(--border-primary))`,
+                  borderRadius: 1,
+                }}
+              />
 
-          {!isMobile && (
-            <p
-              className="text-center text-[10px] mt-2.5 flex items-center justify-center gap-1.5"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              <span style={{ color: "#ef4444", opacity: 0.6 }}>&#9679;</span>
-              Adimlari tamamla isaretiyle takip et &#183; Detay butonu ile
-              derinlemesine ogren
-            </p>
-          )}
+              {/* Steps */}
+              {steps.map((step, idx) => (
+                <StepCard
+                  key={step.number}
+                  step={step}
+                  isCompleted={completedSteps.has(step.number)}
+                  isExpanded={expandedStep === step.number}
+                  onToggleComplete={() => toggleStepComplete(step.number)}
+                  onToggleExpand={() =>
+                    setExpandedStep(
+                      expandedStep === step.number ? null : step.number
+                    )
+                  }
+                  onAskDetail={() => handleAskDetail(step)}
+                  onCreateSubRoadmap={() => handleCreateSubRoadmap(step)}
+                  onStudyTopic={() => handleStudyTopic(step)}
+                  childRoadmapId={childRoadmapMap[step.number] || null}
+                  onOpenChild={handleOpenChild}
+                  stepsSaved={stepsSaved}
+                  index={idx}
+                />
+              ))}
+            </div>
+
+            {/* Completion celebration */}
+            {completedSteps.size === steps.length && steps.length > 0 && (
+              <div
+                className="text-center py-6 rounded-xl mt-4 animate-msg-in"
+                style={{
+                  background: "rgba(16, 185, 129, 0.08)",
+                  border: "1px solid rgba(16, 185, 129, 0.2)",
+                }}
+              >
+                <span className="text-3xl mb-2 block">&#127881;</span>
+                <p
+                  className="text-sm font-bold"
+                  style={{ color: "#10b981" }}
+                >
+                  Tebrikler! Tum adimlari tamamladin!
+                </p>
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Yeni bir konu kesfetmek icin sohbet panelinden soru sorabilirsin.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
