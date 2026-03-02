@@ -21,12 +21,14 @@ function PeriodSelector({ period, onChange }: { period: string; onChange: (p: st
   ];
 
   return (
-    <div className="flex rounded-lg p-0.5" style={{ background: "var(--bg-tertiary)" }}>
+    <div className="flex rounded-xl p-0.5" style={{ background: "var(--bg-tertiary)" }}>
       {periods.map((p) => (
         <button
           key={p.id}
           onClick={() => onChange(p.id)}
-          className="px-3 py-1.5 rounded-md text-[10px] font-semibold transition-all"
+          className={`px-3 py-1.5 rounded-lg text-[11px] transition-all ${
+            period === p.id ? "font-bold" : "font-semibold"
+          }`}
           style={{
             background: period === p.id ? "var(--bg-card)" : "transparent",
             color: period === p.id ? "var(--accent-primary)" : "var(--text-tertiary)",
@@ -58,19 +60,19 @@ function StatCard({
 }) {
   return (
     <div
-      className="rounded-xl p-4 transition-all"
+      className="rounded-2xl p-5 transition-all"
       style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
     >
       <div className="flex items-center justify-between mb-3">
         <div
-          className="flex h-9 w-9 items-center justify-center rounded-xl"
+          className="flex h-10 w-10 items-center justify-center rounded-xl"
           style={{ background: `${color}15`, color }}
         >
           {icon}
         </div>
         {trend && (
           <span
-            className="flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+            className="flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-lg"
             style={{ background: "var(--accent-success-light)", color: "var(--accent-success)" }}
           >
             <IconTrendingUp size={10} />
@@ -78,10 +80,10 @@ function StatCard({
           </span>
         )}
       </div>
-      <div className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
+      <div className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
         {value}
       </div>
-      <div className="text-[11px] font-medium" style={{ color: "var(--text-tertiary)" }}>
+      <div className="text-xs font-semibold" style={{ color: "var(--text-tertiary)" }}>
         {label}
       </div>
       <div className="text-[10px] mt-0.5" style={{ color: "var(--text-tertiary)" }}>
@@ -109,18 +111,18 @@ function WeeklyActivity() {
 
   return (
     <div
-      className="rounded-xl p-5 transition-all"
+      className="rounded-2xl p-6 transition-all"
       style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <div
-            className="flex h-6 w-6 items-center justify-center rounded-lg"
+            className="flex h-7 w-7 items-center justify-center rounded-lg"
             style={{ background: "var(--accent-primary-light)", color: "var(--accent-primary)" }}
           >
             <IconTrendingUp size={14} />
           </div>
-          <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+          <h3 className="text-[15px] font-bold" style={{ color: "var(--text-primary)" }}>
             Günlük Çalışma Süresi
           </h3>
         </div>
@@ -170,14 +172,14 @@ function WeeklyActivity() {
       </div>
 
       {/* Target line legend */}
-      <div className="flex items-center gap-4 pt-2" style={{ borderTop: "1px solid var(--border-secondary)" }}>
+      <div className="flex items-center gap-4 pt-3" style={{ borderTop: "1px solid var(--border-secondary)" }}>
         <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded" style={{ background: "var(--accent-primary)" }} />
-          <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>Hedef üstü</span>
+          <div className="w-2.5 h-2.5 rounded-md" style={{ background: "var(--accent-primary)" }} />
+          <span className="text-[10px] font-medium" style={{ color: "var(--text-tertiary)" }}>Hedef üstü</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded" style={{ background: "var(--bg-tertiary)" }} />
-          <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>Hedef altı ({target}s)</span>
+          <div className="w-2.5 h-2.5 rounded-md" style={{ background: "var(--bg-tertiary)" }} />
+          <span className="text-[10px] font-medium" style={{ color: "var(--text-tertiary)" }}>Hedef altı ({target}s)</span>
         </div>
       </div>
     </div>
@@ -197,17 +199,17 @@ function SubjectProgress() {
 
   return (
     <div
-      className="rounded-xl p-5 transition-all"
+      className="rounded-2xl p-6 transition-all"
       style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
     >
       <div className="flex items-center gap-2 mb-4">
         <div
-          className="flex h-6 w-6 items-center justify-center rounded-lg"
+          className="flex h-7 w-7 items-center justify-center rounded-lg"
           style={{ background: "var(--accent-secondary-light)", color: "var(--accent-secondary)" }}
         >
           <IconBrain size={14} />
         </div>
-        <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+        <h3 className="text-[15px] font-bold" style={{ color: "var(--text-primary)" }}>
           Ders Bazlı İlerleme
         </h3>
       </div>
@@ -217,7 +219,7 @@ function SubjectProgress() {
           <div key={subject.name}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full" style={{ background: subject.color }} />
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: subject.color }} />
                 <span className="text-[12px] font-semibold" style={{ color: "var(--text-primary)" }}>
                   {subject.name}
                 </span>
@@ -234,7 +236,7 @@ function SubjectProgress() {
                 </span>
               </div>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: "var(--bg-tertiary)" }}>
+            <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: "var(--bg-tertiary)" }}>
               <div
                 className="h-full rounded-full transition-all duration-700 ease-out"
                 style={{ width: `${subject.progress}%`, background: subject.color }}
@@ -269,18 +271,18 @@ function ActivityHeatmap() {
 
   return (
     <div
-      className="rounded-xl p-5 transition-all"
+      className="rounded-2xl p-6 transition-all"
       style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <div
-            className="flex h-6 w-6 items-center justify-center rounded-lg"
+            className="flex h-7 w-7 items-center justify-center rounded-lg"
             style={{ background: "var(--accent-success-light)", color: "var(--accent-success)" }}
           >
             <IconStar size={14} />
           </div>
-          <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+          <h3 className="text-[15px] font-bold" style={{ color: "var(--text-primary)" }}>
             Çalışma Haritası
           </h3>
         </div>
@@ -298,7 +300,7 @@ function ActivityHeatmap() {
         {days.map((day, i) => (
           <div
             key={i}
-            className="aspect-square rounded-sm transition-all hover:scale-110"
+            className="aspect-square rounded-md transition-all hover:scale-125"
             style={{
               background: levelColors[day.level],
               border: day.level > 0 ? "none" : "1px solid var(--border-secondary)",
@@ -313,7 +315,7 @@ function ActivityHeatmap() {
         {levelColors.map((color, i) => (
           <div
             key={i}
-            className="w-3 h-3 rounded-sm"
+            className="w-3 h-3 rounded-md"
             style={{ background: color, border: i === 0 ? "1px solid var(--border-secondary)" : "none" }}
           />
         ))}
@@ -347,17 +349,17 @@ function RecentSessions() {
 
   return (
     <div
-      className="rounded-xl p-5 transition-all"
+      className="rounded-2xl p-6 transition-all"
       style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
     >
       <div className="flex items-center gap-2 mb-4">
         <div
-          className="flex h-6 w-6 items-center justify-center rounded-lg"
+          className="flex h-7 w-7 items-center justify-center rounded-lg"
           style={{ background: "var(--accent-warning-light)", color: "var(--accent-warning)" }}
         >
           <IconClock size={14} />
         </div>
-        <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+        <h3 className="text-[15px] font-bold" style={{ color: "var(--text-primary)" }}>
           Son Çalışma Oturumları
         </h3>
       </div>
@@ -366,10 +368,10 @@ function RecentSessions() {
         {sessions.map((session, i) => (
           <div
             key={i}
-            className="flex items-center gap-3 rounded-lg p-2.5 transition-all"
+            className="flex items-center gap-3 rounded-xl p-3 transition-all"
             style={{ background: "var(--bg-tertiary)" }}
           >
-            <div className="w-1 h-8 rounded-full flex-shrink-0" style={{ background: session.color }} />
+            <div className="w-1.5 h-8 rounded-full flex-shrink-0" style={{ background: session.color }} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-[12px] font-semibold truncate" style={{ color: "var(--text-primary)" }}>
@@ -412,23 +414,23 @@ function StreakAndAchievements() {
 
   return (
     <div
-      className="rounded-xl p-5 transition-all"
+      className="rounded-2xl p-6 transition-all"
       style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
     >
       <div className="flex items-center gap-2 mb-4">
         <div
-          className="flex h-6 w-6 items-center justify-center rounded-lg"
+          className="flex h-7 w-7 items-center justify-center rounded-lg"
           style={{ background: "var(--accent-danger-light)", color: "var(--accent-danger)" }}
         >
           <IconLightning size={14} />
         </div>
-        <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+        <h3 className="text-[15px] font-bold" style={{ color: "var(--text-primary)" }}>
           Streak & Başarımlar
         </h3>
       </div>
 
       <div
-        className="rounded-xl p-4 mb-3 flex items-center gap-4"
+        className="rounded-2xl p-5 mb-3 flex items-center gap-4"
         style={{ background: "var(--bg-tertiary)" }}
       >
         <span className="text-3xl">🔥</span>
@@ -446,13 +448,13 @@ function StreakAndAchievements() {
         {achievements.map((a) => (
           <div
             key={a.name}
-            className="flex flex-col items-center gap-1 rounded-xl py-3 transition-all"
+            className="flex flex-col items-center gap-1 rounded-2xl py-4 transition-all"
             style={{
               background: "var(--bg-tertiary)",
               opacity: a.earned ? 1 : 0.35,
             }}
           >
-            <span className="text-lg">{a.emoji}</span>
+            <span className="text-xl">{a.emoji}</span>
             <span className="text-[8px] font-semibold text-center px-1" style={{ color: "var(--text-secondary)" }}>
               {a.name}
             </span>
@@ -469,17 +471,24 @@ export default function AnalysisPage() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-2xl mx-auto p-4 sm:p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h1 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
-              Analiz
-            </h1>
-            <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-              Öğrenme performansın ve istatistiklerin
-            </p>
+      <div className="max-w-2xl mx-auto p-4 sm:p-6 space-y-5">
+        <div className="relative">
+          {/* Subtle gradient glow behind header */}
+          <div
+            className="absolute -inset-4 rounded-3xl opacity-30 blur-2xl pointer-events-none"
+            style={{ background: "var(--gradient-primary)" }}
+          />
+          <div className="relative flex items-center justify-between">
+            <div className="space-y-1">
+              <h1 className="text-xl font-black" style={{ color: "var(--text-primary)" }}>
+                Analiz
+              </h1>
+              <p className="text-sm leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
+                Öğrenme performansın ve istatistiklerin
+              </p>
+            </div>
+            <PeriodSelector period={period} onChange={setPeriod} />
           </div>
-          <PeriodSelector period={period} onChange={setPeriod} />
         </div>
 
         {/* Quick Stats */}

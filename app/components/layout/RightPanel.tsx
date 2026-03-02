@@ -43,18 +43,21 @@ function MentorTips() {
     tip: {
       bg: "var(--accent-primary-light)",
       color: "var(--accent-primary)",
+      borderColor: "var(--accent-primary)",
       label: "İpucu",
       icon: <IconLightning size={10} />,
     },
     question: {
       bg: "var(--accent-secondary-light)",
       color: "var(--accent-secondary)",
+      borderColor: "var(--accent-secondary)",
       label: "Soru",
       icon: <IconHelp size={10} />,
     },
     encouragement: {
       bg: "var(--accent-success-light)",
       color: "var(--accent-success)",
+      borderColor: "var(--accent-success)",
       label: "Motivasyon",
       icon: <IconStar size={10} />,
     },
@@ -62,35 +65,49 @@ function MentorTips() {
 
   return (
     <div
-      className="rounded-xl p-4 transition-all"
+      className="rounded-2xl p-5 transition-all group relative overflow-hidden"
       style={{
         background: "var(--bg-card)",
         border: "1px solid var(--border-primary)",
       }}
     >
-      <div className="flex items-center gap-2 mb-3">
+      {/* Subtle hover gradient overlay */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+        style={{
+          background: "linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, rgba(34, 197, 94, 0.02) 100%)",
+        }}
+      />
+
+      <div className="flex items-center gap-2.5 mb-4 relative z-10">
         <div
-          className="flex h-5 w-5 items-center justify-center rounded-md"
-          style={{ background: "var(--accent-success-light)", color: "var(--accent-success)" }}
+          className="flex h-7 w-7 items-center justify-center rounded-xl"
+          style={{
+            background: "linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%)",
+            color: "var(--accent-success)",
+          }}
         >
-          <IconMentor size={11} />
+          <IconMentor size={14} />
         </div>
         <h3
-          className="text-[11px] font-bold uppercase tracking-wider"
+          className="text-xs font-bold uppercase tracking-wider"
           style={{ color: "var(--text-tertiary)" }}
         >
           Mentor
         </h3>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2.5 relative z-10">
         {tips.map((tip, i) => {
           const s = typeStyles[tip.type];
           return (
             <div
               key={i}
-              className="rounded-lg p-3 transition-all hover:scale-[1.01]"
-              style={{ background: "var(--bg-tertiary)" }}
+              className="rounded-xl p-3 transition-all hover:scale-[1.01]"
+              style={{
+                background: "var(--bg-tertiary)",
+                borderLeft: `3px solid ${s.borderColor}`,
+              }}
             >
               <span
                 className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold mb-1.5"
@@ -107,17 +124,22 @@ function MentorTips() {
         })}
       </div>
 
-      <div className="flex items-center gap-1.5 mt-3">
+      <div className="flex items-center gap-1.5 mt-4 relative z-10">
         <input
           type="text"
           value={mentorInput}
           onChange={(e) => setMentorInput(e.target.value)}
           placeholder="Mentora sor..."
           className="input"
-          style={{ height: 36, fontSize: 12, padding: "0 10px" }}
+          style={{
+            height: 36,
+            fontSize: 12,
+            padding: "0 12px",
+            borderRadius: "var(--radius-lg)",
+          }}
         />
         <button
-          className="flex h-9 w-9 sm:h-[30px] sm:w-[30px] flex-shrink-0 items-center justify-center rounded-lg text-white transition-all active:scale-95"
+          className="flex h-9 w-9 sm:h-[30px] sm:w-[30px] flex-shrink-0 items-center justify-center rounded-xl text-white transition-all active:scale-95 hover:shadow-lg"
           style={{
             background: "var(--gradient-primary)",
             boxShadow: "var(--shadow-glow-sm)",
@@ -145,25 +167,36 @@ function FlashcardMini() {
 
   return (
     <div
-      className="rounded-xl p-4 transition-all"
+      className="rounded-2xl p-5 transition-all group relative overflow-hidden"
       style={{
         background: "var(--bg-card)",
         border: "1px solid var(--border-primary)",
       }}
     >
-      <div className="flex items-center gap-2 mb-3">
+      {/* Subtle hover gradient overlay */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+        style={{
+          background: "linear-gradient(135deg, rgba(245, 158, 11, 0.03) 0%, rgba(251, 191, 36, 0.02) 100%)",
+        }}
+      />
+
+      <div className="flex items-center gap-2.5 mb-4 relative z-10">
         <div
-          className="flex h-5 w-5 items-center justify-center rounded-md"
-          style={{ background: "var(--accent-warning-light)", color: "var(--accent-warning)" }}
+          className="flex h-7 w-7 items-center justify-center rounded-xl"
+          style={{
+            background: "linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%)",
+            color: "var(--accent-warning)",
+          }}
         >
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <rect x="2" y="4" width="20" height="16" rx="2" />
             <path d="M12 8v8" />
             <path d="M8 12h8" />
           </svg>
         </div>
         <h3
-          className="text-[11px] font-bold uppercase tracking-wider"
+          className="text-xs font-bold uppercase tracking-wider"
           style={{ color: "var(--text-tertiary)" }}
         >
           Flashcard
@@ -171,7 +204,7 @@ function FlashcardMini() {
       </div>
 
       <div
-        className="cursor-pointer rounded-xl p-4 text-center transition-all active:scale-[0.98]"
+        className="cursor-pointer rounded-xl p-4 text-center transition-all active:scale-[0.98] relative overflow-hidden"
         onClick={() => setFlipped(!flipped)}
         style={{
           background: flipped ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
@@ -184,32 +217,41 @@ function FlashcardMini() {
           boxShadow: flipped ? "var(--shadow-glow-sm)" : "none",
         }}
       >
+        {/* Premium subtle gradient overlay on card */}
+        <div
+          className="absolute inset-0 pointer-events-none rounded-xl"
+          style={{
+            background: flipped
+              ? "linear-gradient(180deg, rgba(16, 185, 129, 0.06) 0%, transparent 60%)"
+              : "linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 60%)",
+          }}
+        />
         <span
-          className="text-[9px] font-bold uppercase tracking-wider mb-1"
+          className="text-[9px] font-bold uppercase tracking-wider mb-1 relative z-10"
           style={{ color: flipped ? "var(--accent-primary)" : "var(--text-tertiary)" }}
         >
           {flipped ? "Cevap" : "Soru"}
         </span>
         <p
-          className="text-xs font-medium leading-relaxed"
+          className="text-xs font-medium leading-relaxed relative z-10"
           style={{ color: "var(--text-primary)" }}
         >
           {flipped ? card.a : card.q}
         </p>
         {!flipped && (
-          <span className="text-[9px] mt-2" style={{ color: "var(--text-tertiary)" }}>
+          <span className="text-[9px] mt-2 relative z-10" style={{ color: "var(--text-tertiary)" }}>
             Cevap için tıkla
           </span>
         )}
       </div>
 
-      <div className="flex items-center justify-between mt-3">
+      <div className="flex items-center justify-between mt-3 relative z-10">
         <button
           onClick={() => {
             setFlipped(false);
             setCardIndex((cardIndex - 1 + cards.length) % cards.length);
           }}
-          className="flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-lg transition-all active:scale-95"
+          className="flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-xl transition-all active:scale-95 hover:bg-[var(--bg-hover)]"
           style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
         >
           <IconChevronLeft size={12} />
@@ -222,7 +264,7 @@ function FlashcardMini() {
             setFlipped(false);
             setCardIndex((cardIndex + 1) % cards.length);
           }}
-          className="flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-lg transition-all active:scale-95"
+          className="flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-xl transition-all active:scale-95 hover:bg-[var(--bg-hover)]"
           style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
         >
           <IconChevronRight size={12} />
@@ -242,36 +284,47 @@ function RecommendationsCompact() {
 
   return (
     <div
-      className="rounded-xl p-4 transition-all"
+      className="rounded-2xl p-5 transition-all group relative overflow-hidden"
       style={{
         background: "var(--bg-card)",
         border: "1px solid var(--border-primary)",
       }}
     >
-      <div className="flex items-center gap-2 mb-3">
+      {/* Subtle hover gradient overlay */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+        style={{
+          background: "linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(139, 92, 246, 0.02) 100%)",
+        }}
+      />
+
+      <div className="flex items-center gap-2.5 mb-4 relative z-10">
         <div
-          className="flex h-5 w-5 items-center justify-center rounded-md"
-          style={{ background: "var(--accent-secondary-light)", color: "var(--accent-secondary)" }}
+          className="flex h-7 w-7 items-center justify-center rounded-xl"
+          style={{
+            background: "linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0.05) 100%)",
+            color: "var(--accent-secondary)",
+          }}
         >
-          <IconStar size={10} />
+          <IconStar size={14} />
         </div>
         <h3
-          className="text-[11px] font-bold uppercase tracking-wider"
+          className="text-xs font-bold uppercase tracking-wider"
           style={{ color: "var(--text-tertiary)" }}
         >
           Sana Özel
         </h3>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-1.5 relative z-10">
         {items.map((item, i) => (
           <button
             key={i}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 sm:py-2 transition-all active:scale-[0.98] hover:bg-[var(--bg-tertiary)]"
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 sm:py-2 transition-all duration-200 active:scale-[0.98] hover:bg-[var(--bg-tertiary)] hover:translate-x-0.5"
             style={{ color: "var(--text-secondary)" }}
           >
             <span
-              className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg"
+              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-xl"
               style={{ background: `${item.color}12`, color: item.color }}
             >
               {item.icon}
@@ -284,7 +337,7 @@ function RecommendationsCompact() {
                 {item.tag}
               </span>
             </div>
-            <IconChevronRight size={12} className="flex-shrink-0 text-[var(--text-tertiary)]" />
+            <IconChevronRight size={12} className="flex-shrink-0 text-[var(--text-tertiary)] transition-transform duration-200 group-hover:translate-x-0.5" />
           </button>
         ))}
       </div>
@@ -296,18 +349,29 @@ function RecommendationsCompact() {
 function MindMapPreview() {
   return (
     <div
-      className="rounded-xl p-4 transition-all"
+      className="rounded-2xl p-5 transition-all group relative overflow-hidden"
       style={{
         background: "var(--bg-card)",
         border: "1px solid var(--border-primary)",
       }}
     >
-      <div className="flex items-center gap-2 mb-3">
+      {/* Subtle hover gradient overlay */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+        style={{
+          background: "linear-gradient(135deg, rgba(139, 92, 246, 0.03) 0%, rgba(168, 85, 247, 0.02) 100%)",
+        }}
+      />
+
+      <div className="flex items-center gap-2.5 mb-4 relative z-10">
         <div
-          className="flex h-5 w-5 items-center justify-center rounded-md"
-          style={{ background: "var(--accent-purple-light)", color: "var(--accent-purple)" }}
+          className="flex h-7 w-7 items-center justify-center rounded-xl"
+          style={{
+            background: "linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%)",
+            color: "var(--accent-purple)",
+          }}
         >
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3" />
             <circle cx="4" cy="6" r="2" />
             <circle cx="20" cy="18" r="2" />
@@ -316,7 +380,7 @@ function MindMapPreview() {
           </svg>
         </div>
         <h3
-          className="text-[11px] font-bold uppercase tracking-wider"
+          className="text-xs font-bold uppercase tracking-wider"
           style={{ color: "var(--text-tertiary)" }}
         >
           Mind Map
@@ -324,14 +388,20 @@ function MindMapPreview() {
       </div>
 
       <div
-        className="rounded-xl overflow-hidden"
+        className="rounded-xl overflow-hidden relative z-10"
         style={{
           height: 120,
-          background: "var(--bg-tertiary)",
           position: "relative",
         }}
       >
-        <svg width="100%" height="100%" viewBox="0 0 240 120">
+        {/* Subtle gradient background for SVG area */}
+        <div
+          className="absolute inset-0 rounded-xl"
+          style={{
+            background: "linear-gradient(145deg, var(--bg-tertiary) 0%, rgba(139, 92, 246, 0.04) 50%, var(--bg-tertiary) 100%)",
+          }}
+        />
+        <svg width="100%" height="100%" viewBox="0 0 240 120" style={{ position: "relative", zIndex: 1 }}>
           <line x1="120" y1="60" x2="50" y2="25" stroke="var(--accent-primary)" strokeWidth="1.5" strokeOpacity="0.4" />
           <line x1="120" y1="60" x2="190" y2="25" stroke="var(--accent-secondary)" strokeWidth="1.5" strokeOpacity="0.4" />
           <line x1="120" y1="60" x2="50" y2="95" stroke="var(--accent-warning)" strokeWidth="1.5" strokeOpacity="0.4" />
@@ -355,10 +425,9 @@ function MindMapPreview() {
       </div>
 
       <button
-        className="mt-2.5 w-full rounded-xl py-2.5 sm:py-2 text-[11px] font-semibold text-center transition-all active:scale-[0.98]"
+        className="btn-primary mt-3 w-full rounded-xl py-2.5 sm:py-2 text-[11px] font-semibold text-center transition-all active:scale-[0.98] relative z-10"
         style={{
-          background: "var(--accent-primary-light)",
-          color: "var(--accent-primary)",
+          padding: "10px 20px",
         }}
       >
         Mind Map Aç
@@ -370,9 +439,18 @@ function MindMapPreview() {
 /* ===== RIGHT PANEL ===== */
 export default function RightPanel({ onClose, onNewChat, chatStyle }: RightPanelProps) {
   return (
-    <div className="h-full overflow-y-auto p-3 space-y-3 stagger-children">
-      <div className="flex items-center justify-between pb-0.5">
-        <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+    <div className="h-full overflow-y-auto p-3 space-y-3 stagger-children relative">
+      {/* Top accent bar - thin gradient line matching LeftPanel */}
+      <div
+        className="absolute top-0 left-3 right-3 h-[2px] rounded-full"
+        style={{
+          background: "var(--gradient-hero)",
+          opacity: 0.6,
+        }}
+      />
+
+      <div className="pb-0.5 pt-2">
+        <h2 className="text-sm font-bold gradient-text-hero" style={{ WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", background: "var(--gradient-hero)" }}>
           Mentor & Araçlar
         </h2>
       </div>
@@ -381,15 +459,15 @@ export default function RightPanel({ onClose, onNewChat, chatStyle }: RightPanel
       {onNewChat && (
         <button
           onClick={onNewChat}
-          className="flex w-full h-9 items-center justify-center gap-2 rounded-xl transition-all active:scale-95"
+          className="flex w-full h-10 items-center justify-center gap-2 rounded-2xl transition-all active:scale-95 hover:shadow-lg"
           style={{
-            background: chatStyle === "mindmap" ? "var(--accent-purple-light)" : "var(--accent-primary-light)",
-            color: chatStyle === "mindmap" ? "var(--accent-purple)" : "var(--accent-primary)",
-            border: `1px solid ${chatStyle === "mindmap" ? "rgba(139, 92, 246, 0.2)" : "rgba(16, 185, 129, 0.2)"}`,
+            background: chatStyle === "mindmap" ? "var(--gradient-purple, linear-gradient(135deg, #8B5CF6, #A855F7))" : "var(--gradient-primary)",
+            color: "white",
+            boxShadow: "var(--shadow-glow-sm)",
           }}
         >
           <IconPlus size={14} />
-          <span className="text-[11px] font-semibold">Yeni Sohbet</span>
+          <span className="text-[11px] font-bold tracking-wide">Yeni Sohbet</span>
         </button>
       )}
 

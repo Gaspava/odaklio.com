@@ -19,7 +19,7 @@ const personas: Persona[] = [
   {
     id: "coach",
     name: "Ders Koçu",
-    emoji: "🎓",
+    emoji: "\u{1F393}",
     role: "Akademik Danışman",
     color: "#10b981",
     gradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
@@ -29,7 +29,7 @@ const personas: Persona[] = [
   {
     id: "psych",
     name: "Psikolog",
-    emoji: "🧠",
+    emoji: "\u{1F9E0}",
     role: "Ruhsal Destek",
     color: "#8b5cf6",
     gradient: "linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)",
@@ -39,7 +39,7 @@ const personas: Persona[] = [
   {
     id: "buddy",
     name: "Kanka",
-    emoji: "😎",
+    emoji: "\u{1F60E}",
     role: "Çalışma Arkadaşı",
     color: "#f59e0b",
     gradient: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)",
@@ -49,7 +49,7 @@ const personas: Persona[] = [
   {
     id: "expert",
     name: "Uzman",
-    emoji: "🔬",
+    emoji: "\u{1F52C}",
     role: "Konu Uzmanı",
     color: "#3b82f6",
     gradient: "linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)",
@@ -110,25 +110,30 @@ export default function MentorPage() {
     <div className="h-full flex flex-col overflow-hidden">
       {/* Persona Selector */}
       <div
-        className="flex-shrink-0 px-3 sm:px-4 py-3"
-        style={{ borderBottom: "1px solid var(--border-primary)" }}
+        className="flex-shrink-0 glass-heavy px-3 sm:px-5 py-3.5"
+        style={{
+          backgroundImage: `linear-gradient(to right, ${activePersona.color}06, ${activePersona.color}10, ${activePersona.color}06)`,
+        }}
       >
         <div className="max-w-2xl mx-auto">
-          <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+          <div className="flex gap-2.5 overflow-x-auto pb-0.5 scrollbar-none">
             {personas.map((persona) => {
               const isActive = activePersona.id === persona.id;
               return (
                 <button
                   key={persona.id}
                   onClick={() => handlePersonaChange(persona)}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 transition-all active:scale-95 flex-shrink-0"
+                  className="flex items-center gap-2.5 rounded-2xl px-4 py-2.5 transition-all active:scale-95 flex-shrink-0"
                   style={{
                     background: isActive ? `${persona.color}15` : "var(--bg-tertiary)",
                     border: isActive ? `1.5px solid ${persona.color}40` : "1.5px solid transparent",
-                    boxShadow: isActive ? `0 0 12px ${persona.color}15` : "none",
+                    boxShadow: isActive ? `0 0 16px ${persona.color}18` : "none",
+                    borderBottom: isActive
+                      ? `2px solid ${persona.color}`
+                      : "2px solid transparent",
                   }}
                 >
-                  <span className="text-lg">{persona.emoji}</span>
+                  <span className="text-xl">{persona.emoji}</span>
                   <div className="text-left">
                     <span
                       className="text-[11px] font-bold block leading-tight"
@@ -148,33 +153,50 @@ export default function MentorPage() {
       </div>
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4">
-        <div className="max-w-2xl mx-auto space-y-3">
+      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-5">
+        <div className="max-w-2xl mx-auto space-y-4">
           {/* Persona Info Card */}
           <div
-            className="rounded-2xl p-4 mb-4 text-center"
+            className="rounded-3xl p-5 mb-5 text-center relative overflow-hidden"
             style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
           >
-            <span className="text-3xl mb-2 block">{activePersona.emoji}</span>
-            <h3 className="text-base font-bold mb-0.5" style={{ color: "var(--text-primary)" }}>
+            {/* Subtle gradient glow behind emoji */}
+            <div
+              className="absolute left-1/2 top-6 -translate-x-1/2 w-16 h-16 rounded-full blur-2xl opacity-30 pointer-events-none"
+              style={{ background: activePersona.gradient }}
+            />
+            <span className="text-4xl mb-3 block relative">{activePersona.emoji}</span>
+            <h3 className="text-base font-bold mb-1" style={{ color: "var(--text-primary)" }}>
               {activePersona.name}
             </h3>
-            <p className="text-[11px] mb-2" style={{ color: "var(--text-tertiary)" }}>
+            <p className="text-[11px] mb-3" style={{ color: "var(--text-tertiary)" }}>
               {activePersona.role}
             </p>
             <span
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-semibold"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold"
               style={{ background: `${activePersona.color}12`, color: activePersona.color }}
             >
               <span
-                className="w-1.5 h-1.5 rounded-full animate-pulse"
-                style={{ background: activePersona.color }}
+                className="w-2 h-2 rounded-full animate-pulse"
+                style={{
+                  background: activePersona.color,
+                  boxShadow: `0 0 8px ${activePersona.color}60`,
+                }}
               />
               Çevrimiçi
             </span>
-            <p className="text-[10px] mt-2 px-4 leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
-              Tarz: {activePersona.style}
-            </p>
+            <div className="mt-3 px-4">
+              <span
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium"
+                style={{
+                  background: `${activePersona.color}08`,
+                  color: "var(--text-tertiary)",
+                  border: `1px solid ${activePersona.color}18`,
+                }}
+              >
+                Tarz: {activePersona.style}
+              </span>
+            </div>
           </div>
 
           {/* Messages */}
@@ -185,10 +207,10 @@ export default function MentorPage() {
             >
               {msg.role === "mentor" && (
                 <div
-                  className="flex-shrink-0 flex items-end mr-2"
+                  className="flex-shrink-0 flex items-end mr-2.5"
                 >
                   <div
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-xs"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl text-sm"
                     style={{ background: `${activePersona.color}15` }}
                   >
                     {activePersona.emoji}
@@ -196,19 +218,19 @@ export default function MentorPage() {
                 </div>
               )}
               <div
-                className="max-w-[80%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed"
+                className="max-w-[80%] px-4 py-3 text-[13px] leading-relaxed"
                 style={
                   msg.role === "user"
                     ? {
                         background: activePersona.gradient,
                         color: "white",
-                        borderRadius: "20px 20px 4px 20px",
-                        boxShadow: `0 0 12px ${activePersona.color}25`,
+                        borderRadius: "24px 24px 6px 24px",
+                        boxShadow: `0 2px 16px ${activePersona.color}25`,
                       }
                     : {
                         background: "var(--bg-card)",
                         color: "var(--text-primary)",
-                        borderRadius: "4px 20px 20px 20px",
+                        borderRadius: "6px 24px 24px 24px",
                         border: "1px solid var(--border-primary)",
                       }
                 }
@@ -223,28 +245,24 @@ export default function MentorPage() {
 
       {/* Input Bar */}
       <div
-        className="flex-shrink-0 px-3 sm:px-4 py-3"
-        style={{
-          borderTop: "1px solid var(--border-primary)",
-          background: "var(--bg-secondary)",
-        }}
+        className="flex-shrink-0 glass-heavy px-3 sm:px-5 py-3.5"
       >
-        <div className="max-w-2xl mx-auto flex items-center gap-2">
+        <div className="max-w-2xl mx-auto flex items-center gap-2.5">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder={`${activePersona.name}'a bir mesaj yaz...`}
-            className="input"
-            style={{ height: 42, fontSize: 13, padding: "0 14px" }}
+            className="input rounded-2xl"
+            style={{ height: 44, fontSize: 13, padding: "0 16px" }}
           />
           <button
             onClick={handleSend}
-            className="flex h-[42px] w-[42px] flex-shrink-0 items-center justify-center rounded-xl text-white transition-all active:scale-95"
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all active:scale-95"
             style={{
               background: activePersona.gradient,
-              boxShadow: `0 0 12px ${activePersona.color}30`,
+              boxShadow: `0 2px 16px ${activePersona.color}30`,
               opacity: input.trim() ? 1 : 0.5,
             }}
           >

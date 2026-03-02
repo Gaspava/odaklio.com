@@ -32,7 +32,7 @@ function PomodoroMini() {
   const completed = 2;
   const goalProgress = (completed / dailyGoal) * 100;
 
-  const circumference = 2 * Math.PI * 38;
+  const circumference = 2 * Math.PI * 42;
   const totalSeconds = mode === "work" ? 25 * 60 : 5 * 60;
   const elapsed = totalSeconds - (minutes * 60 + seconds);
   const progress = (elapsed / totalSeconds) * 100;
@@ -42,25 +42,37 @@ function PomodoroMini() {
 
   return (
     <div
-      className="rounded-xl p-4 transition-all"
+      className="rounded-2xl p-5 transition-all group relative overflow-hidden"
       style={{
         background: "var(--bg-card)",
         border: "1px solid var(--border-primary)",
       }}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+      {/* Subtle hover gradient overlay */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+        style={{
+          background: "linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, rgba(6, 182, 212, 0.02) 100%)",
+        }}
+      />
+
+      {/* Section Header */}
+      <div className="flex items-center justify-between mb-4 relative z-10">
+        <div className="flex items-center gap-2.5">
           <div
-            className="flex h-5 w-5 items-center justify-center rounded-md"
-            style={{ background: "var(--accent-primary-light)", color: "var(--accent-primary)" }}
+            className="flex h-7 w-7 items-center justify-center rounded-xl"
+            style={{
+              background: "linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)",
+              color: "var(--accent-primary)",
+            }}
           >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="13" r="8" />
               <path d="M12 9v4l2 2" />
             </svg>
           </div>
           <h3
-            className="text-[11px] font-bold uppercase tracking-wider"
+            className="text-xs font-bold uppercase tracking-wider"
             style={{ color: "var(--text-tertiary)" }}
           >
             Pomodoro
@@ -77,17 +89,17 @@ function PomodoroMini() {
       </div>
 
       {/* Timer */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 relative z-10">
         <div className="relative flex-shrink-0">
-          <svg width="88" height="88" className="-rotate-90">
+          <svg width="100" height="100" className="-rotate-90">
             <circle
-              cx="44" cy="44" r="38"
+              cx="50" cy="50" r="42"
               fill="none"
               stroke="var(--bg-tertiary)"
               strokeWidth="4"
             />
             <circle
-              cx="44" cy="44" r="38"
+              cx="50" cy="50" r="42"
               fill="none"
               stroke={modeColor}
               strokeWidth="4"
@@ -110,7 +122,7 @@ function PomodoroMini() {
           </div>
         </div>
 
-        <div className="flex-1 space-y-2">
+        <div className="flex-1 space-y-2.5">
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setIsRunning(!isRunning)}
@@ -137,7 +149,7 @@ function PomodoroMini() {
           </div>
 
           <div
-            className="flex rounded-lg p-0.5"
+            className="flex rounded-xl p-0.5"
             style={{ background: "var(--bg-tertiary)" }}
           >
             {(["work", "break"] as const).map((m) => (
@@ -149,7 +161,7 @@ function PomodoroMini() {
                   setSeconds(0);
                   setIsRunning(false);
                 }}
-                className="flex-1 rounded-md py-1.5 sm:py-1 text-[10px] font-semibold transition-all"
+                className="flex-1 rounded-xl py-1.5 sm:py-1 text-[10px] font-semibold transition-all"
                 style={{
                   background: mode === m ? "var(--bg-card)" : "transparent",
                   color: mode === m ? modeColor : "var(--text-tertiary)",
@@ -164,7 +176,7 @@ function PomodoroMini() {
       </div>
 
       {/* Daily Goal */}
-      <div className="mt-3 pt-3" style={{ borderTop: "1px solid var(--border-secondary)" }}>
+      <div className="mt-4 pt-3 relative z-10" style={{ borderTop: "1px solid var(--border-secondary)" }}>
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-[10px] font-medium" style={{ color: "var(--text-tertiary)" }}>
             Günlük Hedef
@@ -206,33 +218,50 @@ function FocusModesCompact() {
 
   return (
     <div
-      className="rounded-xl p-4 transition-all"
+      className="rounded-2xl p-5 transition-all group relative overflow-hidden"
       style={{
         background: "var(--bg-card)",
         border: "1px solid var(--border-primary)",
       }}
     >
-      <div className="flex items-center gap-2 mb-3">
+      {/* Subtle hover gradient overlay */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+        style={{
+          background: "linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(139, 92, 246, 0.02) 100%)",
+        }}
+      />
+
+      {/* Section Header with subtle gradient */}
+      <div
+        className="flex items-center gap-2.5 mb-4 -mx-5 -mt-5 px-5 pt-4 pb-3 relative z-10 rounded-t-2xl"
+        style={{
+          background: "linear-gradient(180deg, rgba(59, 130, 246, 0.04) 0%, transparent 100%)",
+        }}
+      >
         <div
-          className="flex h-5 w-5 items-center justify-center rounded-md"
-          style={{ background: "var(--accent-secondary-light)", color: "var(--accent-secondary)" }}
+          className="flex h-7 w-7 items-center justify-center rounded-xl"
+          style={{
+            background: "linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(139, 92, 246, 0.08) 100%)",
+            color: "var(--accent-secondary)",
+          }}
         >
-          <IconFocus size={10} />
+          <IconFocus size={14} />
         </div>
         <h3
-          className="text-[11px] font-bold uppercase tracking-wider"
+          className="text-xs font-bold uppercase tracking-wider"
           style={{ color: "var(--text-tertiary)" }}
         >
           Focus Modu
         </h3>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1 relative z-10">
         {modes.map((mode) => (
           <button
             key={mode.id}
             onClick={() => setActiveMode(activeMode === mode.id ? null : mode.id)}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 sm:py-2 transition-all active:scale-[0.98]"
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-3 sm:py-2.5 transition-all active:scale-[0.98]"
             style={{
               background: activeMode === mode.id ? `${mode.color}12` : "transparent",
               color: activeMode === mode.id ? mode.color : "var(--text-secondary)",
@@ -264,34 +293,50 @@ function BackgroundSoundsCompact() {
   const [volume, setVolume] = useState(40);
 
   const sounds = [
-    { id: "rain", emoji: "🌧️", name: "Yağmur" },
-    { id: "forest", emoji: "🌲", name: "Orman" },
-    { id: "ocean", emoji: "🌊", name: "Okyanus" },
-    { id: "fire", emoji: "🔥", name: "Şömine" },
-    { id: "cafe", emoji: "☕", name: "Kafe" },
-    { id: "lofi", emoji: "🎵", name: "Lo-Fi" },
-    { id: "white", emoji: "📡", name: "Beyaz G." },
-    { id: "birds", emoji: "🐦", name: "Kuşlar" },
+    { id: "rain", emoji: "\u{1F327}\u{FE0F}", name: "Yağmur" },
+    { id: "forest", emoji: "\u{1F332}", name: "Orman" },
+    { id: "ocean", emoji: "\u{1F30A}", name: "Okyanus" },
+    { id: "fire", emoji: "\u{1F525}", name: "Şömine" },
+    { id: "cafe", emoji: "\u{2615}", name: "Kafe" },
+    { id: "lofi", emoji: "\u{1F3B5}", name: "Lo-Fi" },
+    { id: "white", emoji: "\u{1F4E1}", name: "Beyaz G." },
+    { id: "birds", emoji: "\u{1F426}", name: "Kuşlar" },
   ];
 
   return (
     <div
-      className="rounded-xl p-4 transition-all"
+      className="rounded-2xl p-5 transition-all group relative overflow-hidden"
       style={{
         background: "var(--bg-card)",
         border: "1px solid var(--border-primary)",
       }}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+      {/* Subtle hover gradient overlay */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+        style={{
+          background: "linear-gradient(135deg, rgba(139, 92, 246, 0.03) 0%, rgba(6, 182, 212, 0.02) 100%)",
+        }}
+      />
+
+      {/* Section Header with subtle gradient */}
+      <div className="flex items-center justify-between mb-4 -mx-5 -mt-5 px-5 pt-4 pb-3 relative z-10 rounded-t-2xl"
+        style={{
+          background: "linear-gradient(180deg, rgba(139, 92, 246, 0.04) 0%, transparent 100%)",
+        }}
+      >
+        <div className="flex items-center gap-2.5">
           <div
-            className="flex h-5 w-5 items-center justify-center rounded-md"
-            style={{ background: "var(--accent-purple-light)", color: "var(--accent-purple)" }}
+            className="flex h-7 w-7 items-center justify-center rounded-xl"
+            style={{
+              background: "linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(6, 182, 212, 0.08) 100%)",
+              color: "var(--accent-purple)",
+            }}
           >
-            <IconHeadphones size={10} />
+            <IconHeadphones size={14} />
           </div>
           <h3
-            className="text-[11px] font-bold uppercase tracking-wider"
+            className="text-xs font-bold uppercase tracking-wider"
             style={{ color: "var(--text-tertiary)" }}
           >
             Arka Plan Sesi
@@ -308,12 +353,12 @@ function BackgroundSoundsCompact() {
         )}
       </div>
 
-      <div className="grid grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-4 gap-2 relative z-10">
         {sounds.map((sound) => (
           <button
             key={sound.id}
             onClick={() => setActiveSound(activeSound === sound.id ? null : sound.id)}
-            className="flex flex-col items-center gap-1 rounded-xl py-2.5 sm:py-2 transition-all active:scale-95"
+            className="flex flex-col items-center gap-1 rounded-2xl py-3 sm:py-2.5 transition-all active:scale-95"
             style={{
               background: activeSound === sound.id ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
               border: activeSound === sound.id ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid transparent",
@@ -334,9 +379,14 @@ function BackgroundSoundsCompact() {
       </div>
 
       {activeSound && (
-        <div className="flex items-center gap-2 mt-3 pt-2" style={{ borderTop: "1px solid var(--border-secondary)" }}>
-          <span style={{ color: "var(--text-tertiary)" }}>
-            <IconVolume size={12} />
+        <div
+          className="flex items-center gap-2.5 mt-4 pt-3 relative z-10 rounded-xl px-3 py-2.5"
+          style={{
+            background: "var(--bg-tertiary)",
+          }}
+        >
+          <span style={{ color: "var(--accent-primary)", opacity: 0.7 }}>
+            <IconVolume size={14} />
           </span>
           <input
             type="range"
@@ -347,7 +397,13 @@ function BackgroundSoundsCompact() {
             className="h-1 flex-1 cursor-pointer appearance-none rounded-full"
             style={{ accentColor: "var(--accent-primary)" }}
           />
-          <span className="text-[10px] font-semibold min-w-[28px] text-right" style={{ color: "var(--text-tertiary)" }}>
+          <span
+            className="text-[10px] font-bold min-w-[32px] text-right tabular-nums px-1.5 py-0.5 rounded-md"
+            style={{
+              color: "var(--accent-primary)",
+              background: "var(--accent-primary-light)",
+            }}
+          >
             {volume}%
           </span>
         </div>
@@ -359,13 +415,33 @@ function BackgroundSoundsCompact() {
 /* ===== LEFT PANEL ===== */
 export default function LeftPanel({ onClose }: LeftPanelProps) {
   return (
-    <div className="h-full overflow-y-auto p-3 space-y-3 stagger-children">
-      <div className="pb-0.5">
-        <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+    <div className="h-full overflow-y-auto p-3 space-y-3 stagger-children relative">
+      {/* Top accent bar - thin green gradient line */}
+      <div
+        className="absolute top-0 left-3 right-3 h-[2px] rounded-full"
+        style={{
+          background: "var(--gradient-hero)",
+          opacity: 0.6,
+        }}
+      />
+
+      <div className="pb-0.5 pt-2">
+        <h2 className="text-sm font-bold gradient-text-hero" style={{ WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", background: "var(--gradient-hero)" }}>
           Araçlar
         </h2>
       </div>
-      <PomodoroMini />
+
+      {/* Pomodoro section with subtle gradient header */}
+      <div className="relative">
+        <div
+          className="absolute -top-0 left-0 right-0 h-12 rounded-t-2xl pointer-events-none"
+          style={{
+            background: "linear-gradient(180deg, rgba(16, 185, 129, 0.04) 0%, transparent 100%)",
+          }}
+        />
+        <PomodoroMini />
+      </div>
+
       <FocusModesCompact />
       <BackgroundSoundsCompact />
     </div>

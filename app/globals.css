@@ -1190,6 +1190,60 @@ body {
   transition: all var(--transition-normal);
 }
 
+/* ===== NAV ITEMS ===== */
+.odak-nav-item {
+  transition: all var(--transition-fast);
+}
+
+.odak-nav-item:hover {
+  color: var(--text-primary) !important;
+  background: var(--bg-card-hover) !important;
+}
+
+/* ===== PAGE HEADER GLOW ===== */
+.odak-page-glow {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 100px;
+  background: var(--gradient-hero);
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.dark .odak-page-glow {
+  opacity: 0.12;
+}
+
+/* ===== PANEL ACCENT LINE ===== */
+.odak-panel-accent {
+  height: 2px;
+  background: var(--gradient-hero);
+  border-radius: 1px;
+  opacity: 0.6;
+}
+
+/* ===== MODERN CARD HOVER ===== */
+.odak-card-hover {
+  transition: all var(--transition-normal);
+}
+
+.odak-card-hover:hover {
+  border-color: rgba(16, 185, 129, 0.15) !important;
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .odak-card-hover:hover {
+    transform: none;
+  }
+}
+
 /* ===== MINDMAP CHAT ===== */
 .mindmap-node {
   background: var(--bg-card);

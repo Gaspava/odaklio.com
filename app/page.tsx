@@ -324,67 +324,36 @@ export default function Home() {
 
       {/* Mobile Bottom Navigation */}
       {isMobile && (
-        <nav className="mobile-bottom-nav">
-          <button
-            onClick={() => handlePageChange("history")}
-            style={{
-              color: activePage === "history" ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: activePage === "history" ? "var(--accent-primary-light)" : "transparent",
-            }}
-          >
-            <svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-            <span style={{ color: "inherit" }}>Geçmiş</span>
-          </button>
-
-          <button
-            onClick={() => handlePageChange("tools")}
-            style={{
-              color: activePage === "tools" ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: activePage === "tools" ? "var(--accent-primary-light)" : "transparent",
-            }}
-          >
-            <IconPomodoro size={19} />
-            <span style={{ color: "inherit" }}>Araçlar</span>
-          </button>
-
-          <button
-            onClick={() => { handlePageChange("focus"); setLeftOpen(false); setRightOpen(false); }}
-            style={{
-              color: activePage === "focus" ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: activePage === "focus" ? "var(--accent-primary-light)" : "transparent",
-            }}
-          >
-            <IconChat size={19} />
-            <span style={{ color: "inherit" }}>Odak</span>
-          </button>
-
-          <button
-            onClick={() => handlePageChange("mentor")}
-            style={{
-              color: activePage === "mentor" ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: activePage === "mentor" ? "var(--accent-primary-light)" : "transparent",
-            }}
-          >
-            <IconMentor size={19} />
-            <span style={{ color: "inherit" }}>Mentor</span>
-          </button>
-
-          <button
-            onClick={() => handlePageChange("analysis")}
-            style={{
-              color: activePage === "analysis" ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: activePage === "analysis" ? "var(--accent-primary-light)" : "transparent",
-            }}
-          >
-            <svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-              <polyline points="17 6 23 6 23 12" />
-            </svg>
-            <span style={{ color: "inherit" }}>Analiz</span>
-          </button>
+        <nav className="mobile-bottom-nav glass-heavy">
+          {([
+            { id: "history" as PageType, label: "Geçmiş", icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg> },
+            { id: "tools" as PageType, label: "Araçlar", icon: <IconPomodoro size={20} /> },
+            { id: "focus" as PageType, label: "Odak", icon: <IconChat size={20} /> },
+            { id: "mentor" as PageType, label: "Mentor", icon: <IconMentor size={20} /> },
+            { id: "analysis" as PageType, label: "Analiz", icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg> },
+          ]).map((item) => {
+            const isActive = activePage === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => { handlePageChange(item.id); if (item.id === "focus") { setLeftOpen(false); setRightOpen(false); } }}
+                className="relative"
+                style={{
+                  color: isActive ? "var(--accent-primary)" : "var(--text-tertiary)",
+                  background: isActive ? "var(--accent-primary-light)" : "transparent",
+                }}
+              >
+                {item.icon}
+                <span style={{ color: "inherit", fontWeight: isActive ? 700 : 600 }}>{item.label}</span>
+                {isActive && (
+                  <span
+                    className="absolute top-0.5 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full"
+                    style={{ background: "var(--accent-primary)" }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </nav>
       )}
 
