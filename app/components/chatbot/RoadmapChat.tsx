@@ -870,16 +870,6 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
           }}
         >
           <button
-            onClick={() => setActiveTab("roadmap")}
-            className="flex-1 py-2.5 text-xs font-semibold transition-colors"
-            style={{
-              color: activeTab === "roadmap" ? "#ef4444" : "var(--text-tertiary)",
-              borderBottom: activeTab === "roadmap" ? "2px solid #ef4444" : "2px solid transparent",
-            }}
-          >
-            Harita
-          </button>
-          <button
             onClick={() => setActiveTab("chat")}
             className="flex-1 py-2.5 text-xs font-semibold transition-colors"
             style={{
@@ -889,117 +879,20 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
           >
             Sohbet
           </button>
+          <button
+            onClick={() => setActiveTab("roadmap")}
+            className="flex-1 py-2.5 text-xs font-semibold transition-colors"
+            style={{
+              color: activeTab === "roadmap" ? "#ef4444" : "var(--text-tertiary)",
+              borderBottom: activeTab === "roadmap" ? "2px solid #ef4444" : "2px solid transparent",
+            }}
+          >
+            Harita
+          </button>
         </div>
       )}
 
-      {/* LEFT PANEL: Roadmap timeline */}
-      <div
-        style={{
-          width: isMobile ? "100%" : "45%",
-          display: isMobile && activeTab !== "roadmap" ? "none" : "flex",
-          flexDirection: "column",
-          borderRight: isMobile ? "none" : "1px solid var(--border-primary)",
-          background: "var(--bg-secondary)",
-          transition: "width 0.3s ease",
-        }}
-        className="overflow-y-auto"
-      >
-        <div
-          className="p-4 sm:p-6"
-          style={{ paddingTop: isMobile ? 52 : undefined }}
-        >
-          {/* Roadmap Title */}
-          {roadmapTitle && (
-            <div className="text-center mb-6 animate-msg-in">
-              <h1
-                className="text-xl sm:text-2xl font-bold mb-2"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #ef4444, #f97316, #ef4444)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
-                {roadmapTitle}
-              </h1>
-              <p
-                className="text-xs"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                {steps.length} adimlik ogrenme plani
-              </p>
-            </div>
-          )}
-
-          {/* Progress Bar */}
-          <ProgressBar
-            completed={completedSteps.size}
-            total={steps.length}
-          />
-
-          {/* Timeline */}
-          <div className="relative">
-            {/* Vertical timeline line */}
-            <div
-              className="absolute"
-              style={{
-                left: 11,
-                top: 28,
-                bottom: 16,
-                width: 2,
-                background: `linear-gradient(to bottom, #ef4444, var(--border-primary))`,
-                borderRadius: 1,
-              }}
-            />
-
-            {/* Steps */}
-            {steps.map((step, idx) => (
-              <StepCard
-                key={step.number}
-                step={step}
-                isCompleted={completedSteps.has(step.number)}
-                isExpanded={expandedStep === step.number}
-                onToggleComplete={() => toggleStepComplete(step.number)}
-                onToggleExpand={() =>
-                  setExpandedStep(
-                    expandedStep === step.number ? null : step.number
-                  )
-                }
-                onAskDetail={() => handleAskDetail(step)}
-                index={idx}
-              />
-            ))}
-          </div>
-
-          {/* Completion celebration */}
-          {completedSteps.size === steps.length && steps.length > 0 && (
-            <div
-              className="text-center py-6 rounded-xl mt-4 animate-msg-in"
-              style={{
-                background: "rgba(16, 185, 129, 0.08)",
-                border: "1px solid rgba(16, 185, 129, 0.2)",
-              }}
-            >
-              <span className="text-3xl mb-2 block">&#127881;</span>
-              <p
-                className="text-sm font-bold"
-                style={{ color: "#10b981" }}
-              >
-                Tebrikler! Tum adimlari tamamladin!
-              </p>
-              <p
-                className="text-xs mt-1"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                Yeni bir konu kesfetmek icin sohbet panelinden soru sorabilirsin.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* RIGHT PANEL: Chat + Detail */}
+      {/* LEFT PANEL: Chat + Detail */}
       <div
         style={{
           flex: 1,
@@ -1227,6 +1120,113 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
               Adimlari tamamla isaretiyle takip et &#183; Detay butonu ile
               derinlemesine ogren
             </p>
+          )}
+        </div>
+      </div>
+
+      {/* RIGHT PANEL: Roadmap timeline */}
+      <div
+        style={{
+          width: isMobile ? "100%" : "45%",
+          display: isMobile && activeTab !== "roadmap" ? "none" : "flex",
+          flexDirection: "column",
+          borderLeft: isMobile ? "none" : "1px solid var(--border-primary)",
+          background: "var(--bg-secondary)",
+          transition: "width 0.3s ease",
+        }}
+        className="overflow-y-auto"
+      >
+        <div
+          className="p-4 sm:p-6"
+          style={{ paddingTop: isMobile ? 52 : undefined }}
+        >
+          {/* Roadmap Title */}
+          {roadmapTitle && (
+            <div className="text-center mb-6 animate-msg-in">
+              <h1
+                className="text-xl sm:text-2xl font-bold mb-2"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #ef4444, #f97316, #ef4444)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                {roadmapTitle}
+              </h1>
+              <p
+                className="text-xs"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                {steps.length} adimlik ogrenme plani
+              </p>
+            </div>
+          )}
+
+          {/* Progress Bar */}
+          <ProgressBar
+            completed={completedSteps.size}
+            total={steps.length}
+          />
+
+          {/* Timeline */}
+          <div className="relative">
+            {/* Vertical timeline line */}
+            <div
+              className="absolute"
+              style={{
+                left: 11,
+                top: 28,
+                bottom: 16,
+                width: 2,
+                background: `linear-gradient(to bottom, #ef4444, var(--border-primary))`,
+                borderRadius: 1,
+              }}
+            />
+
+            {/* Steps */}
+            {steps.map((step, idx) => (
+              <StepCard
+                key={step.number}
+                step={step}
+                isCompleted={completedSteps.has(step.number)}
+                isExpanded={expandedStep === step.number}
+                onToggleComplete={() => toggleStepComplete(step.number)}
+                onToggleExpand={() =>
+                  setExpandedStep(
+                    expandedStep === step.number ? null : step.number
+                  )
+                }
+                onAskDetail={() => handleAskDetail(step)}
+                index={idx}
+              />
+            ))}
+          </div>
+
+          {/* Completion celebration */}
+          {completedSteps.size === steps.length && steps.length > 0 && (
+            <div
+              className="text-center py-6 rounded-xl mt-4 animate-msg-in"
+              style={{
+                background: "rgba(16, 185, 129, 0.08)",
+                border: "1px solid rgba(16, 185, 129, 0.2)",
+              }}
+            >
+              <span className="text-3xl mb-2 block">&#127881;</span>
+              <p
+                className="text-sm font-bold"
+                style={{ color: "#10b981" }}
+              >
+                Tebrikler! Tum adimlari tamamladin!
+              </p>
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                Yeni bir konu kesfetmek icin sohbet panelinden soru sorabilirsin.
+              </p>
+            </div>
           )}
         </div>
       </div>
