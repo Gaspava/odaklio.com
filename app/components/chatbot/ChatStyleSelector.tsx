@@ -2,7 +2,7 @@
 
 import { IconChat, IconMindMap, IconX } from "../icons/Icons";
 
-export type ChatStyle = "standard" | "mindmap";
+export type ChatStyle = "standard" | "mindmap" | "flashcard" | "note" | "roadmap";
 
 interface ChatStyleSelectorProps {
   onSelect: (style: ChatStyle) => void;

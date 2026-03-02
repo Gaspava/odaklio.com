@@ -52,10 +52,12 @@ interface ConversationContextType {
   refreshConversations: () => Promise<void>;
   deleteConversation: (id: string) => Promise<void>;
 
-  saveUserMessage: (content: string, nodeId?: string | null) => Promise<{ conversationId: string; messageId: string }>;
+  saveUserMessage: (content: string, nodeId?: string | null, type?: ConversationType) => Promise<{ conversationId: string; messageId: string }>;
   saveAssistantMessage: (conversationId: string, content: string, nodeId?: string | null) => Promise<string>;
   updateAssistantMessage: (messageId: string, content: string) => Promise<void>;
   generateTitle: (conversationId: string, firstMessage: string) => Promise<void>;
+
+  createTypedConversation: (type: ConversationType) => Promise<string>;
 
   // Mindmap-specific
   createMindmapConversation: () => Promise<string>;
@@ -81,6 +83,7 @@ const ConversationContext = createContext<ConversationContextType>({
   saveAssistantMessage: async () => "",
   updateAssistantMessage: async () => {},
   generateTitle: async () => {},
+  createTypedConversation: async () => "",
   createMindmapConversation: async () => "",
   saveMindmap: async () => {},
   loadMindmap: async () => ({ nodes: [], messages: [], canvasState: null }),
@@ -168,16 +171,16 @@ export default function ConversationProvider({ children }: { children: ReactNode
   }, []);
 
   const saveUserMessage = useCallback(
-    async (content: string, nodeId: string | null = null): Promise<{ conversationId: string; messageId: string }> => {
+    async (content: string, nodeId: string | null = null, type: ConversationType = "standard"): Promise<{ conversationId: string; messageId: string }> => {
       if (!user) throw new Error("Not authenticated");
 
       let convId = activeConversationId;
 
       if (!convId) {
-        const conv = await createConversation(user.id);
+        const conv = await createConversation(user.id, type);
         convId = conv.id;
         setActiveConversationId(convId);
-        setActiveConversationType("standard");
+        setActiveConversationType(type);
       }
 
       const msg = await insertMessage(convId, "user", content, {}, nodeId);
@@ -228,6 +231,14 @@ export default function ConversationProvider({ children }: { children: ReactNode
     const conv = await createConversation(user.id, "mindmap");
     setActiveConversationId(conv.id);
     setActiveConversationType("mindmap");
+    return conv.id;
+  }, [user]);
+
+  const createTypedConversation = useCallback(async (type: ConversationType): Promise<string> => {
+    if (!user) throw new Error("Not authenticated");
+    const conv = await createConversation(user.id, type);
+    setActiveConversationId(conv.id);
+    setActiveConversationType(type);
     return conv.id;
   }, [user]);
 
@@ -298,6 +309,7 @@ export default function ConversationProvider({ children }: { children: ReactNode
         saveAssistantMessage,
         updateAssistantMessage,
         generateTitle,
+        createTypedConversation,
         createMindmapConversation,
         saveMindmap: saveMindmapData,
         loadMindmap: loadMindmapData,
