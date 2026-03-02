@@ -6,19 +6,13 @@ import TextSelectionPopup from "./TextSelectionPopup";
 import SpeedReadingOverlay from "../speed-reading/SpeedReadingOverlay";
 import QuickLearnOverlay from "./QuickLearnOverlay";
 import ChatMessageRenderer from "./ChatMessageRenderer";
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-}
+import { useConversation, type ChatMessage } from "@/app/providers/ConversationProvider";
 
 interface MainChatProps {
   isMobile?: boolean;
 }
 
-const welcomeMessage: Message = {
+const welcomeMessage: ChatMessage = {
   id: "welcome",
   role: "assistant",
   content:
@@ -116,7 +110,17 @@ function AiAvatar() {
 }
 
 export default function MainChat({ isMobile = false }: MainChatProps) {
-  const [messages, setMessages] = useState<Message[]>([welcomeMessage]);
+  const {
+    activeConversationId,
+    isLoadingConversation,
+    saveUserMessage,
+    saveAssistantMessage,
+    generateTitle,
+    refreshConversations,
+    loadConversation,
+  } = useConversation();
+
+  const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -132,12 +136,30 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastAiMsgIdRef = useRef<string | null>(null);
+  const isFirstMessageRef = useRef(true);
+  const currentConvIdRef = useRef<string | null>(null);
 
-  // Scroll to the START of the last AI message (not the bottom)
+  // Track active conversation changes — load messages or reset
+  useEffect(() => {
+    if (activeConversationId && activeConversationId !== currentConvIdRef.current) {
+      currentConvIdRef.current = activeConversationId;
+      isFirstMessageRef.current = false;
+      loadConversation(activeConversationId).then((loaded) => {
+        if (loaded.length > 0) {
+          setMessages([welcomeMessage, ...loaded]);
+        }
+      });
+    } else if (!activeConversationId && currentConvIdRef.current !== null) {
+      currentConvIdRef.current = null;
+      isFirstMessageRef.current = true;
+      setMessages([welcomeMessage]);
+    }
+  }, [activeConversationId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Scroll to the START of the last AI message
   useEffect(() => {
     const lastMsg = messages[messages.length - 1];
     if (!lastMsg || lastMsg.role !== "assistant") return;
-    // Only scroll when a NEW AI message appears, not on every chunk
     if (lastAiMsgIdRef.current === lastMsg.id) return;
     lastAiMsgIdRef.current = lastMsg.id;
 
@@ -178,7 +200,6 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   useEffect(() => {
     const onMouseDown = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // Don't clear popup when clicking popup buttons
       if (target.closest("[data-selection-popup]")) return;
       isMouseDownRef.current = true;
       setSelectionPopup(null);
@@ -196,11 +217,26 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   }, [handleTextSelection]);
 
   const sendToAI = useCallback(
-    async (userContent: string, allMessages: Message[]) => {
+    async (userContent: string, allMessages: ChatMessage[]) => {
       setIsLoading(true);
 
+      // Save user message to DB
+      let conversationId: string;
+      let isFirst = isFirstMessageRef.current;
+      try {
+        const result = await saveUserMessage(userContent);
+        conversationId = result.conversationId;
+        if (isFirst) {
+          isFirstMessageRef.current = false;
+        }
+      } catch (err) {
+        console.error("Failed to save user message:", err);
+        setIsLoading(false);
+        return;
+      }
+
       const aiMsgId = (Date.now() + 1).toString();
-      const aiMsg: Message = {
+      const aiMsg: ChatMessage = {
         id: aiMsgId,
         role: "assistant",
         content: "",
@@ -213,10 +249,13 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
         .map((m) => ({ role: m.role, content: m.content }));
       apiMessages.push({ role: "user", content: userContent });
 
+      let fullContent = "";
+
       try {
         await streamChat(
           apiMessages,
           (text) => {
+            fullContent += text;
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === aiMsgId ? { ...m, content: m.content + text } : m
@@ -236,6 +275,23 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
             setIsLoading(false);
           }
         );
+
+        // Save completed assistant message to DB
+        if (fullContent) {
+          try {
+            await saveAssistantMessage(conversationId, fullContent);
+          } catch (err) {
+            console.error("Failed to save assistant message:", err);
+          }
+        }
+
+        // Generate title on first message
+        if (isFirst && fullContent) {
+          generateTitle(conversationId, userContent);
+        }
+
+        // Refresh sidebar
+        refreshConversations();
       } catch (error) {
         const errorMsg =
           error instanceof Error ? error.message : "Bilinmeyen hata";
@@ -252,14 +308,14 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
         setIsLoading(false);
       }
     },
-    []
+    [saveUserMessage, saveAssistantMessage, generateTitle, refreshConversations]
   );
 
   const handleSend = useCallback(() => {
     if (!input.trim() || isLoading) return;
 
     const userContent = input;
-    const userMsg: Message = {
+    const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
       content: userContent,
@@ -295,7 +351,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
 
     // "what-is-this" — continue in same chat
     const userContent = `"${selectedText}" nedir? Kısaca tanımla ve örnekle açıkla.`;
-    const userMsg: Message = {
+    const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
       content: userContent,
@@ -318,6 +374,17 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
         { text: "Newton yasalarını açıkla", icon: "🍎" },
         { text: "Hücre bölünmesi nedir?", icon: "🧬" },
       ];
+
+  if (isLoadingConversation) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center gap-3">
+        <div className="auth-spinner" style={{ width: 28, height: 28 }} />
+        <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+          Sohbet yükleniyor...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -367,7 +434,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                       onClick={() => {
                         const userContent =
                           "Bu açıklamayı anlamadım, daha basit anlatır mısın?";
-                        const userMsg: Message = {
+                        const userMsg: ChatMessage = {
                           id: Date.now().toString(),
                           role: "user",
                           content: userContent,

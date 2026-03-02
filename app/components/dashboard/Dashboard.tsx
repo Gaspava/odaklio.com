@@ -21,6 +21,7 @@ import {
   IconMoon,
 } from "../icons/Icons";
 import { useTheme } from "@/app/providers/ThemeProvider";
+import { useConversation } from "@/app/providers/ConversationProvider";
 
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(false);
@@ -37,17 +38,19 @@ function useIsMobile(breakpoint = 768) {
 
 interface DashboardProps {
   onLogout: () => void;
+  initialPage?: PageType;
 }
 
-export default function Dashboard({ onLogout }: DashboardProps) {
+export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
   const [chatStyle, setChatStyle] = useState<ChatStyle>("standard");
   const [showStyleSelector, setShowStyleSelector] = useState(false);
   const [chatKey, setChatKey] = useState(0);
-  const [activePage, setActivePage] = useState<PageType>("focus");
+  const [activePage, setActivePage] = useState<PageType>(initialPage || "focus");
   const isMobile = useIsMobile();
   const { theme, toggleTheme } = useTheme();
+  const { loadConversation, startNewConversation } = useConversation();
 
   // Prevent body scroll when dashboard is active
   useEffect(() => {
@@ -136,6 +139,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   };
 
   const handleNewChat = () => {
+    startNewConversation();
     setShowStyleSelector(true);
   };
 
@@ -153,12 +157,27 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     }
   };
 
+  const handleOpenConversation = useCallback((id: string) => {
+    if (id) {
+      loadConversation(id);
+    } else {
+      startNewConversation();
+    }
+    setChatStyle("standard");
+    setChatKey((k) => k + 1);
+    setActivePage("focus");
+    if (isMobile) {
+      setLeftOpen(false);
+      setRightOpen(false);
+    }
+  }, [loadConversation, startNewConversation, isMobile]);
+
   const showSidePanels = activePage === "focus";
 
   const renderPageContent = () => {
     switch (activePage) {
       case "history":
-        return <ChatHistoryPage />;
+        return <ChatHistoryPage onOpenConversation={handleOpenConversation} />;
       case "tools":
         return <ToolsPage />;
       case "focus":
@@ -262,7 +281,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               background: "var(--bg-secondary)",
             }}
           >
-            <LeftPanel onClose={() => setLeftOpen(false)} />
+            <LeftPanel
+              onClose={() => setLeftOpen(false)}
+              onOpenConversation={handleOpenConversation}
+            />
             {!isMobile && leftOpen && (
               <button
                 onClick={() => setLeftOpen(false)}

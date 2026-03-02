@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import ThemeProvider from "./providers/ThemeProvider";
 import AuthProvider from "./providers/AuthProvider";
+import ConversationProvider from "./providers/ConversationProvider";
 
 export const metadata: Metadata = {
   title: "Odaklio - Akıllı Öğrenme Platformu",
@@ -30,7 +31,9 @@ export default function RootLayout({
     <html lang="tr" className="dark" suppressHydrationWarning>
       <body className="antialiased">
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <ConversationProvider>{children}</ConversationProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

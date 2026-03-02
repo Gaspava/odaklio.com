@@ -1,110 +1,102 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { IconSearch, IconChat, IconX } from "../icons/Icons";
+import { useAuth } from "@/app/providers/AuthProvider";
+import { getUserConversations, type ConversationWithPreview } from "@/lib/db/conversations";
+import { useConversation } from "@/app/providers/ConversationProvider";
 
-interface ChatHistoryItem {
-  id: string;
-  title: string;
-  preview: string;
-  date: string;
-  messageCount: number;
-  tags: string[];
+interface ChatHistoryPageProps {
+  onOpenConversation?: (id: string) => void;
 }
 
-const mockChats: ChatHistoryItem[] = [
-  {
-    id: "1",
-    title: "Newton Yasaları ve Hareket",
-    preview: "Newton'un üç hareket yasasını detaylı olarak inceledik...",
-    date: "Bugün, 14:30",
-    messageCount: 12,
-    tags: ["Fizik", "Mekanik"],
-  },
-  {
-    id: "2",
-    title: "İntegral Hesaplama Teknikleri",
-    preview: "Belirli ve belirsiz integral arasındaki farkları ele aldık...",
-    date: "Bugün, 10:15",
-    messageCount: 8,
-    tags: ["Matematik"],
-  },
-  {
-    id: "3",
-    title: "Hücre Bölünmesi: Mitoz vs Mayoz",
-    preview: "Mitoz ve mayoz bölünme arasındaki temel farklar...",
-    date: "Dün, 19:45",
-    messageCount: 15,
-    tags: ["Biyoloji"],
-  },
-  {
-    id: "4",
-    title: "Osmanlı İmparatorluğu Kuruluş Dönemi",
-    preview: "Osmanlı İmparatorluğu'nun kuruluş dönemini kronolojik olarak...",
-    date: "Dün, 16:20",
-    messageCount: 10,
-    tags: ["Tarih"],
-  },
-  {
-    id: "5",
-    title: "Kimyasal Bağlar ve Molekül Yapıları",
-    preview: "İyonik, kovalent ve metalik bağları karşılaştırdık...",
-    date: "2 gün önce",
-    messageCount: 7,
-    tags: ["Kimya"],
-  },
-  {
-    id: "6",
-    title: "İngilizce Tense Yapıları",
-    preview: "Present Perfect ve Past Simple arasındaki kullanım farklarını...",
-    date: "3 gün önce",
-    messageCount: 20,
-    tags: ["İngilizce"],
-  },
-  {
-    id: "7",
-    title: "Python Temel Programlama",
-    preview: "Değişkenler, döngüler ve fonksiyonlar üzerine çalıştık...",
-    date: "4 gün önce",
-    messageCount: 18,
-    tags: ["Programlama"],
-  },
-  {
-    id: "8",
-    title: "Dalga Mekaniği ve Optik",
-    preview: "Işığın dalga ve parçacık doğasını inceledik...",
-    date: "1 hafta önce",
-    messageCount: 14,
-    tags: ["Fizik", "Optik"],
-  },
-];
+function relativeTime(dateStr: string): string {
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHour = Math.floor(diffMs / 3600000);
+  const diffDay = Math.floor(diffMs / 86400000);
 
-const tagColors: Record<string, string> = {
-  Fizik: "var(--accent-primary)",
-  Mekanik: "var(--accent-cyan)",
-  Matematik: "var(--accent-secondary)",
-  Biyoloji: "var(--accent-success)",
-  Tarih: "var(--accent-warning)",
-  Kimya: "var(--accent-danger)",
-  İngilizce: "var(--accent-purple)",
-  Programlama: "var(--accent-info)",
-  Optik: "var(--accent-cyan)",
-};
+  if (diffMin < 1) return "Az önce";
+  if (diffMin < 60) return `${diffMin} dk önce`;
+  if (diffHour < 24) return `${diffHour} saat önce`;
+  if (diffDay === 1) return "Dün";
+  if (diffDay < 7) return `${diffDay} gün önce`;
+  if (diffDay < 30) return `${Math.floor(diffDay / 7)} hafta önce`;
+  return date.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+}
 
-export default function ChatHistoryPage() {
+function groupByDate(convs: ConversationWithPreview[]): Record<string, ConversationWithPreview[]> {
+  const groups: Record<string, ConversationWithPreview[]> = {};
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today.getTime() - 86400000);
+  const weekAgo = new Date(today.getTime() - 7 * 86400000);
+
+  for (const conv of convs) {
+    const d = new Date(conv.updated_at);
+    let key: string;
+    if (d >= today) key = "Bugün";
+    else if (d >= yesterday) key = "Dün";
+    else if (d >= weekAgo) key = "Bu Hafta";
+    else key = "Daha Eski";
+
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(conv);
+  }
+  return groups;
+}
+
+export default function ChatHistoryPage({ onOpenConversation }: ChatHistoryPageProps) {
+  const { user } = useAuth();
+  const { deleteConversation } = useConversation();
+  const [conversations, setConversations] = useState<ConversationWithPreview[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const allTags = Array.from(new Set(mockChats.flatMap((c) => c.tags)));
+  const loadConversations = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const data = await getUserConversations(user.id, 100);
+      setConversations(data);
+    } catch (err) {
+      console.error("Failed to load conversations:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
-  const filteredChats = mockChats.filter((chat) => {
-    const matchesSearch =
-      !searchQuery ||
-      chat.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      chat.preview.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = !selectedFilter || chat.tags.includes(selectedFilter);
-    return matchesSearch && matchesFilter;
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeletingId(id);
+    try {
+      await deleteConversation(id);
+      setConversations((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      console.error("Failed to delete:", err);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const filteredChats = conversations.filter((chat) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      chat.title.toLowerCase().includes(q) ||
+      (chat.messages?.[0]?.content || "").toLowerCase().includes(q)
+    );
   });
+
+  const grouped = groupByDate(filteredChats);
+  const groupOrder = ["Bugün", "Dün", "Bu Hafta", "Daha Eski"];
 
   return (
     <div className="h-full overflow-y-auto">
@@ -152,94 +144,103 @@ export default function ChatHistoryPage() {
           )}
         </div>
 
-        {/* Tag Filters */}
-        <div className="flex flex-wrap gap-1.5">
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => setSelectedFilter(selectedFilter === tag ? null : tag)}
-              className="px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all active:scale-95"
-              style={{
-                background: selectedFilter === tag ? `${tagColors[tag]}20` : "var(--bg-tertiary)",
-                color: selectedFilter === tag ? tagColors[tag] : "var(--text-tertiary)",
-                border: selectedFilter === tag ? `1px solid ${tagColors[tag]}30` : "1px solid transparent",
-              }}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
+        {/* Loading */}
+        {loading && (
+          <div className="flex justify-center py-12">
+            <div className="auth-spinner" style={{ width: 28, height: 28 }} />
+          </div>
+        )}
 
-        {/* Chat List */}
-        <div className="space-y-2">
-          {filteredChats.map((chat, i) => (
-            <button
-              key={chat.id}
-              className="w-full text-left rounded-xl p-3.5 transition-all active:scale-[0.99] hover:shadow-md"
-              style={{
-                background: "var(--bg-card)",
-                border: "1px solid var(--border-primary)",
-                animationDelay: `${i * 0.05}s`,
-              }}
-            >
-              <div className="flex items-start gap-3">
-                <div
-                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg mt-0.5"
-                  style={{
-                    background: `${tagColors[chat.tags[0]] || "var(--accent-primary)"}15`,
-                    color: tagColors[chat.tags[0]] || "var(--accent-primary)",
-                  }}
-                >
-                  <IconChat size={16} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3
-                      className="text-sm font-semibold truncate"
-                      style={{ color: "var(--text-primary)" }}
-                    >
-                      {chat.title}
-                    </h3>
-                    <span
-                      className="text-[10px] font-medium flex-shrink-0"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
-                      {chat.date}
-                    </span>
-                  </div>
-                  <p
-                    className="text-[11px] mt-0.5 truncate"
-                    style={{ color: "var(--text-tertiary)" }}
+        {/* Chat List Grouped */}
+        {!loading && groupOrder.map((group) => {
+          const items = grouped[group];
+          if (!items || items.length === 0) return null;
+
+          return (
+            <div key={group}>
+              <h2
+                className="text-[11px] font-bold uppercase tracking-wider mb-2 mt-2"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                {group}
+              </h2>
+              <div className="space-y-2">
+                {items.map((chat, i) => (
+                  <button
+                    key={chat.id}
+                    onClick={() => onOpenConversation?.(chat.id)}
+                    className="w-full text-left rounded-xl p-3.5 transition-all active:scale-[0.99] hover:shadow-md group"
+                    style={{
+                      background: "var(--bg-card)",
+                      border: "1px solid var(--border-primary)",
+                      animationDelay: `${i * 0.05}s`,
+                    }}
                   >
-                    {chat.preview}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    {chat.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-2 py-0.5 rounded-full text-[9px] font-semibold"
+                    <div className="flex items-start gap-3">
+                      <div
+                        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg mt-0.5"
                         style={{
-                          background: `${tagColors[tag]}15`,
-                          color: tagColors[tag],
+                          background: "var(--accent-primary-light)",
+                          color: "var(--accent-primary)",
                         }}
                       >
-                        {tag}
-                      </span>
-                    ))}
-                    <span
-                      className="text-[9px] font-medium ml-auto"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
-                      {chat.messageCount} mesaj
-                    </span>
-                  </div>
-                </div>
+                        <IconChat size={16} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <h3
+                            className="text-sm font-semibold truncate"
+                            style={{ color: "var(--text-primary)" }}
+                          >
+                            {chat.title}
+                          </h3>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span
+                              className="text-[10px] font-medium"
+                              style={{ color: "var(--text-tertiary)" }}
+                            >
+                              {relativeTime(chat.updated_at)}
+                            </span>
+                            <button
+                              onClick={(e) => handleDelete(chat.id, e)}
+                              disabled={deletingId === chat.id}
+                              className="opacity-0 group-hover:opacity-100 flex items-center justify-center w-6 h-6 rounded-md transition-all active:scale-90"
+                              style={{
+                                background: "var(--bg-tertiary)",
+                                color: "var(--accent-danger)",
+                              }}
+                              title="Sohbeti sil"
+                            >
+                              {deletingId === chat.id ? (
+                                <div className="auth-spinner" style={{ width: 10, height: 10 }} />
+                              ) : (
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                        {chat.messages?.[0]?.content && (
+                          <p
+                            className="text-[11px] mt-0.5 truncate"
+                            style={{ color: "var(--text-tertiary)" }}
+                          >
+                            {chat.messages[0].content.slice(0, 100)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                ))}
               </div>
-            </button>
-          ))}
-        </div>
+            </div>
+          );
+        })}
 
-        {filteredChats.length === 0 && (
+        {/* Empty State */}
+        {!loading && filteredChats.length === 0 && (
           <div
             className="text-center py-12 rounded-xl"
             style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
@@ -248,13 +249,15 @@ export default function ChatHistoryPage() {
               className="flex h-12 w-12 items-center justify-center rounded-xl mx-auto mb-3"
               style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
             >
-              <IconSearch size={20} />
+              {searchQuery ? <IconSearch size={20} /> : <IconChat size={20} />}
             </div>
             <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
-              Sonuç bulunamadı
+              {searchQuery ? "Sonuç bulunamadı" : "Henüz sohbet yok"}
             </p>
             <p className="text-xs mt-1" style={{ color: "var(--text-tertiary)" }}>
-              Farklı bir arama terimi deneyin
+              {searchQuery
+                ? "Farklı bir arama terimi deneyin"
+                : "Odak sayfasından ilk sohbetini başlat"}
             </p>
           </div>
         )}
