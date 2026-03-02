@@ -2539,3 +2539,199 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ===== FOCUS MODE COMPONENTS ===== */
+
+/* Flashcard Flip Animation */
+.flashcard-container {
+  perspective: 1000px;
+}
+
+.flashcard-inner {
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.flashcard-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.flashcard-front,
+.flashcard-back {
+  backface-visibility: hidden;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  border-radius: var(--radius-xl);
+}
+
+.flashcard-back {
+  transform: rotateY(180deg);
+}
+
+/* Note Block Styles */
+.note-display {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.note-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid transparent;
+  border-image: linear-gradient(90deg, var(--accent-secondary), var(--accent-cyan)) 1;
+}
+
+.note-section-header {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 20px;
+  margin-bottom: 8px;
+  padding-left: 12px;
+  border-left: 3px solid var(--accent-secondary);
+}
+
+.note-highlight {
+  background: rgba(59, 130, 246, 0.06);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  margin: 8px 0;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.note-key {
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  margin: 8px 0;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+/* Roadmap Timeline */
+.roadmap-timeline {
+  position: relative;
+  padding-left: 40px;
+}
+
+.roadmap-timeline::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  background: var(--border-primary);
+}
+
+.roadmap-step {
+  position: relative;
+  margin-bottom: 16px;
+  animation: fadeInUp 0.4s ease-out both;
+}
+
+.roadmap-step-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border-primary);
+  position: absolute;
+  left: -40px;
+  top: 16px;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 1;
+}
+
+.roadmap-step-dot.completed {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+.roadmap-step-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-xl);
+  padding: 16px;
+  transition: all var(--transition-normal) ease;
+  cursor: pointer;
+}
+
+.roadmap-step-card:hover {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.roadmap-step-card.completed {
+  opacity: 0.85;
+  background: rgba(16, 185, 129, 0.03);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.roadmap-duration-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--bg-tertiary);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+/* Mode Selector Card */
+.mode-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-xl);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  transition: all var(--transition-normal) ease;
+  cursor: pointer;
+}
+
+.mode-card:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.mode-card:active {
+  transform: scale(0.97);
+}
+
+/* Fade in up animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out both;
+}
