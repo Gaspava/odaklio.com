@@ -8,6 +8,7 @@ export type PageType = "history" | "tools" | "focus" | "mentor" | "analysis";
 interface HeaderProps {
   activePage: PageType;
   onPageChange: (page: PageType) => void;
+  onLogout?: () => void;
 }
 
 const pages: { id: PageType; label: string; icon: React.ReactNode }[] = [
@@ -69,6 +70,7 @@ const pages: { id: PageType; label: string; icon: React.ReactNode }[] = [
 export default function Header({
   activePage,
   onPageChange,
+  onLogout,
 }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
 
@@ -161,14 +163,20 @@ export default function Header({
           {theme === "dark" ? <IconSun size={15} /> : <IconMoon size={15} />}
         </button>
 
-        <div
-          className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-white cursor-pointer transition-all hover:scale-105"
-          style={{
-            background: "var(--gradient-primary)",
-            boxShadow: "var(--shadow-glow-sm)",
-          }}
-        >
-          U
+        <div className="tooltip-trigger">
+          <button
+            onClick={onLogout}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-white cursor-pointer transition-all hover:scale-105"
+            style={{
+              background: "var(--gradient-primary)",
+              boxShadow: "var(--shadow-glow-sm)",
+              border: "none",
+            }}
+            title="Çıkış Yap"
+          >
+            A
+          </button>
+          <span className="tooltip-content">Çıkış Yap</span>
         </div>
       </div>
     </header>
