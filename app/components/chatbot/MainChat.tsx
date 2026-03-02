@@ -357,11 +357,8 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
     <>
       <div className="flex flex-col h-full" ref={chatAreaRef}>
         {/* Messages */}
-        <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto py-4 sm:py-6 ${isMobile ? "pb-2" : ""}`}>
-          <div className={`flex min-h-full ${pinnedItems.length > 0 && !isMobile ? "" : ""}`}>
-            {/* Messages Column */}
-            <div className="flex-1 min-w-0 px-3 sm:px-4">
-              <div className={`${pinnedItems.length > 0 && !isMobile ? "max-w-[720px] ml-auto mr-0 sm:mx-auto" : "max-w-[720px] mx-auto"} space-y-5 sm:space-y-6`}>
+        <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-4 py-4 sm:py-6 ${isMobile ? "pb-2" : ""}`}>
+          <div className="max-w-[720px] mx-auto space-y-5 sm:space-y-6 relative">
             {messages.map((msg, idx) => (
               <div
                 id={`msg-${msg.id}`}
@@ -431,58 +428,30 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
               </div>
             ))}
             <div />
-              </div>
 
-          {/* Quick Prompts */}
-          {messages.length <= 1 && (
-            <div className="max-w-[720px] mx-auto mt-8 sm:mt-10 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-              <div className="text-center mb-6">
-                <div
-                  className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 animate-float"
-                  style={{
-                    background: "var(--accent-primary-light)",
-                    boxShadow: "var(--shadow-glow-sm)",
-                  }}
-                >
-                  <span className="text-2xl">🎓</span>
-                </div>
-                <h2 className="text-base font-bold mb-1" style={{ color: "var(--text-primary)" }}>
-                  Ne öğrenmek istiyorsun?
-                </h2>
-                <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                  Bir konu seç ya da kendi sorunu yaz
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-2.5">
-                {quickPrompts.map((prompt, i) => (
-                  <button
-                    key={prompt.text}
-                    onClick={() => setInput(prompt.text)}
-                    className="flex items-center gap-2 rounded-xl px-3.5 py-3 sm:px-4 sm:py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md stagger-children"
+            {/* Desktop Pinned Cards - absolutely positioned to the right of messages */}
+            {pinnedItems.length > 0 && !isMobile && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: "calc(100% + 12px)",
+                  top: 0,
+                  bottom: 0,
+                  width: 260,
+                  pointerEvents: "none",
+                }}
+              >
+                {pinnedItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="mb-3"
                     style={{
-                      background: "var(--bg-card)",
-                      border: "1px solid var(--border-primary)",
-                      color: "var(--text-secondary)",
-                      animationDelay: `${0.4 + i * 0.08}s`,
+                      position: item.isFixed ? "sticky" : "relative",
+                      top: item.isFixed ? 16 : undefined,
+                      pointerEvents: "auto",
                     }}
                   >
-                    <span className="text-sm">{prompt.icon}</span>
-                    <span>{prompt.text}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-            </div>
-
-            {/* Pinned Cards Column - Sticky sidebar to the right of chat */}
-            {pinnedItems.length > 0 && !isMobile && (
-              <div className="w-[260px] flex-shrink-0 pr-3 pl-2">
-                <div className="sticky top-4 space-y-3">
-                  {pinnedItems.map((item) => (
                     <div
-                      key={item.id}
                       className="animate-slide-right rounded-xl overflow-hidden"
                       style={{
                         background: "var(--bg-card)",
@@ -579,82 +548,124 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                         </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Mobile Pinned Cards - floating at bottom */}
-            {pinnedItems.length > 0 && isMobile && (
-              <div className="fixed bottom-16 left-2 right-2 z-[90] space-y-2">
-                {pinnedItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="animate-slide-up rounded-xl overflow-hidden"
-                    style={{
-                      background: "var(--bg-card)",
-                      border: item.isFixed
-                        ? "1.5px solid var(--accent-warning)"
-                        : "1px solid var(--border-primary)",
-                      boxShadow: "var(--shadow-xl)",
-                    }}
-                  >
-                    <div
-                      className="flex items-center justify-between px-3 py-2"
-                      style={{ borderBottom: "1px solid var(--border-primary)" }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="flex h-5 w-5 items-center justify-center rounded-md"
-                          style={{
-                            background: "var(--accent-warning-light)",
-                            color: "var(--accent-warning)",
-                          }}
-                        >
-                          <IconBrain size={10} />
-                        </div>
-                        <span className="text-[10px] font-semibold" style={{ color: "var(--text-primary)" }}>
-                          Hızlı Öğren
-                        </span>
-                        {item.isFixed && (
-                          <span
-                            className="text-[8px] font-bold px-1 py-0.5 rounded-full"
-                            style={{ background: "var(--accent-warning-light)", color: "var(--accent-warning)" }}
-                          >
-                            SABİT
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleToggleFixed(item.id)}
-                          className="flex h-5 w-5 items-center justify-center rounded-md transition-all"
-                          style={{
-                            background: item.isFixed ? "var(--accent-warning)" : "var(--bg-tertiary)",
-                            color: item.isFixed ? "white" : "var(--text-tertiary)",
-                          }}
-                        >
-                          <IconPin size={10} />
-                        </button>
-                        <button
-                          onClick={() => handleUnpin(item.id)}
-                          className="flex h-5 w-5 items-center justify-center rounded-md transition-colors"
-                          style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
-                        >
-                          <IconX size={10} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="px-3 py-2">
-                      <p className="text-[10px] leading-relaxed line-clamp-3" style={{ color: "var(--text-primary)" }}>
-                        {item.summary.length > 120 ? item.summary.slice(0, 120) + "..." : item.summary}
-                      </p>
-                    </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
+
+          {/* Quick Prompts */}
+          {messages.length <= 1 && (
+            <div className="max-w-[720px] mx-auto mt-8 sm:mt-10 animate-fade-in" style={{ animationDelay: "0.3s" }}>
+              <div className="text-center mb-6">
+                <div
+                  className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 animate-float"
+                  style={{
+                    background: "var(--accent-primary-light)",
+                    boxShadow: "var(--shadow-glow-sm)",
+                  }}
+                >
+                  <span className="text-2xl">🎓</span>
+                </div>
+                <h2 className="text-base font-bold mb-1" style={{ color: "var(--text-primary)" }}>
+                  Ne öğrenmek istiyorsun?
+                </h2>
+                <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                  Bir konu seç ya da kendi sorunu yaz
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-2.5">
+                {quickPrompts.map((prompt, i) => (
+                  <button
+                    key={prompt.text}
+                    onClick={() => setInput(prompt.text)}
+                    className="flex items-center gap-2 rounded-xl px-3.5 py-3 sm:px-4 sm:py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md stagger-children"
+                    style={{
+                      background: "var(--bg-card)",
+                      border: "1px solid var(--border-primary)",
+                      color: "var(--text-secondary)",
+                      animationDelay: `${0.4 + i * 0.08}s`,
+                    }}
+                  >
+                    <span className="text-sm">{prompt.icon}</span>
+                    <span>{prompt.text}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Mobile Pinned Cards - floating at bottom */}
+          {pinnedItems.length > 0 && isMobile && (
+            <div className="fixed bottom-16 left-2 right-2 z-[90] space-y-2">
+              {pinnedItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="animate-slide-up rounded-xl overflow-hidden"
+                  style={{
+                    background: "var(--bg-card)",
+                    border: item.isFixed
+                      ? "1.5px solid var(--accent-warning)"
+                      : "1px solid var(--border-primary)",
+                    boxShadow: "var(--shadow-xl)",
+                  }}
+                >
+                  <div
+                    className="flex items-center justify-between px-3 py-2"
+                    style={{ borderBottom: "1px solid var(--border-primary)" }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="flex h-5 w-5 items-center justify-center rounded-md"
+                        style={{
+                          background: "var(--accent-warning-light)",
+                          color: "var(--accent-warning)",
+                        }}
+                      >
+                        <IconBrain size={10} />
+                      </div>
+                      <span className="text-[10px] font-semibold" style={{ color: "var(--text-primary)" }}>
+                        Hızlı Öğren
+                      </span>
+                      {item.isFixed && (
+                        <span
+                          className="text-[8px] font-bold px-1 py-0.5 rounded-full"
+                          style={{ background: "var(--accent-warning-light)", color: "var(--accent-warning)" }}
+                        >
+                          SABİT
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleToggleFixed(item.id)}
+                        className="flex h-5 w-5 items-center justify-center rounded-md transition-all"
+                        style={{
+                          background: item.isFixed ? "var(--accent-warning)" : "var(--bg-tertiary)",
+                          color: item.isFixed ? "white" : "var(--text-tertiary)",
+                        }}
+                      >
+                        <IconPin size={10} />
+                      </button>
+                      <button
+                        onClick={() => handleUnpin(item.id)}
+                        className="flex h-5 w-5 items-center justify-center rounded-md transition-colors"
+                        style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+                      >
+                        <IconX size={10} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="px-3 py-2">
+                    <p className="text-[10px] leading-relaxed line-clamp-3" style={{ color: "var(--text-primary)" }}>
+                      {item.summary.length > 120 ? item.summary.slice(0, 120) + "..." : item.summary}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Input Bar */}
