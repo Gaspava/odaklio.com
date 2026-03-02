@@ -197,7 +197,7 @@ function FocusModesCompact() {
   const [activeMode, setActiveMode] = useState<string | null>(null);
 
   const modes = [
-    { id: "deep", name: "Derin Odak", icon: <IconBrain size={14} />, color: "#10b981", desc: "Derin konsantrasyon" },
+    { id: "deep", name: "Derin Odak", icon: <IconBrain size={14} />, color: "#3b82f6", desc: "Derin konsantrasyon" },
     { id: "reading", name: "Okuma", icon: <IconEye size={14} />, color: "#3b82f6", desc: "Hızlı okuma modu" },
     { id: "creative", name: "Yaratıcı", icon: <IconLightning size={14} />, color: "#f59e0b", desc: "Beyin fırtınası" },
     { id: "night", name: "Gece", icon: <IconMoon size={14} />, color: "#8b5cf6", desc: "Göz koruma" },
@@ -316,7 +316,7 @@ function BackgroundSoundsCompact() {
             className="flex flex-col items-center gap-1 rounded-xl py-2.5 sm:py-2 transition-all active:scale-95"
             style={{
               background: activeSound === sound.id ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
-              border: activeSound === sound.id ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid transparent",
+              border: activeSound === sound.id ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid transparent",
               boxShadow: activeSound === sound.id ? "var(--shadow-glow-sm)" : "none",
             }}
           >

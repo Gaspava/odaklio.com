@@ -91,7 +91,7 @@ export default function GirisPage() {
         <Link href="/" className="flex items-center gap-2.5 no-underline">
           <div
             className="flex h-9 w-9 items-center justify-center rounded-xl text-white text-sm font-bold"
-            style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow-sm)" }}
+            style={{ background: "linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)", boxShadow: "var(--shadow-glow-sm)" }}
           >
             O
           </div>

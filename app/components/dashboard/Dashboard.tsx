@@ -212,7 +212,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             <div
               className="mobile-logo"
               style={{
-                background: "var(--gradient-primary)",
+                background: "linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)",
                 boxShadow: "var(--shadow-glow-sm)",
               }}
             >

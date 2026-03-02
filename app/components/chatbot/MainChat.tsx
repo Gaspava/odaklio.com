@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { IconSend, IconMic, IconHelp } from "../icons/Icons";
+import { IconSend, IconHelp } from "../icons/Icons";
 import TextSelectionPopup from "./TextSelectionPopup";
 import SpeedReadingOverlay from "../speed-reading/SpeedReadingOverlay";
 import QuickLearnOverlay from "./QuickLearnOverlay";
@@ -89,9 +89,9 @@ async function streamChat(
 function TypingIndicator() {
   return (
     <div className="flex items-center gap-1.5 px-1 py-1">
-      <div className="typing-dot w-2 h-2 rounded-full" style={{ background: "var(--accent-primary)" }} />
-      <div className="typing-dot w-2 h-2 rounded-full" style={{ background: "var(--accent-primary)" }} />
-      <div className="typing-dot w-2 h-2 rounded-full" style={{ background: "var(--accent-primary)" }} />
+      <div className="typing-dot w-2 h-2 rounded-full" style={{ background: "#3b82f6" }} />
+      <div className="typing-dot w-2 h-2 rounded-full" style={{ background: "#06b6d4" }} />
+      <div className="typing-dot w-2 h-2 rounded-full" style={{ background: "#3b82f6" }} />
     </div>
   );
 }
@@ -101,13 +101,13 @@ function AiAvatar() {
   return (
     <div
       className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg mr-2.5 mt-1 text-white text-[11px] font-bold relative"
-      style={{ background: "var(--gradient-primary)" }}
+      style={{ background: "linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)" }}
     >
       O
       <div
         className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
         style={{
-          background: "var(--accent-success)",
+          background: "#3b82f6",
           borderColor: "var(--bg-primary)",
         }}
       />
@@ -119,7 +119,6 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   const [messages, setMessages] = useState<Message[]>([welcomeMessage]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isListening, setIsListening] = useState(false);
   const [selectionPopup, setSelectionPopup] = useState<{
     x: number;
     y: number;
@@ -396,25 +395,12 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
             <div />
           </div>
 
-          {/* Quick Prompts */}
+          {/* Welcome + Quick Prompts */}
           {messages.length <= 1 && (
             <div className="max-w-[720px] mx-auto mt-8 sm:mt-10 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-              <div className="text-center mb-6">
-                <div
-                  className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 animate-float"
-                  style={{
-                    background: "var(--accent-primary-light)",
-                    boxShadow: "var(--shadow-glow-sm)",
-                  }}
-                >
-                  <span className="text-2xl">🎓</span>
-                </div>
-                <h2 className="text-base font-bold mb-1" style={{ color: "var(--text-primary)" }}>
-                  Ne öğrenmek istiyorsun?
-                </h2>
-                <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                  Bir konu seç ya da kendi sorunu yaz
-                </p>
+              <div className="welcome-center">
+                <div className="welcome-logo">Odaklio</div>
+                <div className="welcome-logo-sub">AI</div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-2.5">
@@ -440,29 +426,8 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
         </div>
 
         {/* Input Bar */}
-        <div className={`flex-shrink-0 px-3 sm:px-4 ${isMobile ? "pb-2" : "pb-4"}`}>
-          <div
-            className="max-w-[720px] mx-auto flex items-center gap-2 rounded-2xl px-3 py-2.5 sm:px-4 transition-all"
-            style={{
-              background: "var(--bg-card)",
-              border: "1px solid var(--border-primary)",
-              boxShadow: input.trim() ? "var(--shadow-glow-sm)" : "var(--shadow-md)",
-              borderColor: input.trim() ? "rgba(16, 185, 129, 0.2)" : "var(--border-primary)",
-            }}
-          >
-            <button
-              onClick={() => setIsListening(!isListening)}
-              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl transition-all"
-              style={{
-                background: isListening
-                  ? "var(--accent-danger)"
-                  : "var(--bg-tertiary)",
-                color: isListening ? "white" : "var(--text-tertiary)",
-              }}
-            >
-              <IconMic size={14} />
-            </button>
-
+        <div className={`flex-shrink-0 px-3 sm:px-6 ${isMobile ? "pb-2" : "pb-5"}`}>
+          <div className="max-w-[720px] mx-auto chat-input-bar">
             <input
               ref={inputRef}
               type="text"
@@ -472,13 +437,9 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
               placeholder={
                 isLoading
                   ? "Yanıt bekleniyor..."
-                  : isMobile
-                  ? "Mesajını yaz..."
-                  : "Mesajını yaz veya sesli konuş..."
+                  : "Bana bir şey sor..."
               }
               disabled={isLoading}
-              className="flex-1 bg-transparent text-[13px] sm:text-sm outline-none disabled:opacity-50"
-              style={{ color: "var(--text-primary)" }}
             />
 
             <button
@@ -486,23 +447,9 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
               onMouseDown={(e) => e.preventDefault()}
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
-              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
-              style={{
-                background:
-                  input.trim() && !isLoading
-                    ? "var(--gradient-primary)"
-                    : "var(--bg-tertiary)",
-                color:
-                  input.trim() && !isLoading
-                    ? "white"
-                    : "var(--text-tertiary)",
-                boxShadow:
-                  input.trim() && !isLoading
-                    ? "var(--shadow-glow-sm)"
-                    : "none",
-              }}
+              className="chat-send-btn active:scale-95"
             >
-              <IconSend size={14} />
+              <IconSend size={15} />
             </button>
           </div>
 

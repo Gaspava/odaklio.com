@@ -114,7 +114,7 @@ export default function Header({
         <div
           className="flex h-8 w-8 items-center justify-center rounded-xl text-white text-xs font-bold relative"
           style={{
-            background: "var(--gradient-primary)",
+            background: "linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)",
             boxShadow: "var(--shadow-glow-sm)",
           }}
         >
@@ -196,7 +196,7 @@ export default function Header({
             onClick={() => setMenuOpen(!menuOpen)}
             className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-white cursor-pointer transition-all hover:scale-105"
             style={{
-              background: "var(--gradient-primary)",
+              background: "linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)",
               boxShadow: "var(--shadow-glow-sm)",
               border: "none",
             }}

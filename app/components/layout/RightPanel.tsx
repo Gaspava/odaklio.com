@@ -119,7 +119,7 @@ function MentorTips() {
         <button
           className="flex h-9 w-9 sm:h-[30px] sm:w-[30px] flex-shrink-0 items-center justify-center rounded-lg text-white transition-all active:scale-95"
           style={{
-            background: "var(--gradient-primary)",
+            background: "linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)",
             boxShadow: "var(--shadow-glow-sm)",
           }}
         >
@@ -175,7 +175,7 @@ function FlashcardMini() {
         onClick={() => setFlipped(!flipped)}
         style={{
           background: flipped ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
-          border: flipped ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid var(--border-secondary)",
+          border: flipped ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid var(--border-secondary)",
           minHeight: 80,
           display: "flex",
           flexDirection: "column",
@@ -385,7 +385,7 @@ export default function RightPanel({ onClose, onNewChat, chatStyle }: RightPanel
           style={{
             background: chatStyle === "mindmap" ? "var(--accent-purple-light)" : "var(--accent-primary-light)",
             color: chatStyle === "mindmap" ? "var(--accent-purple)" : "var(--accent-primary)",
-            border: `1px solid ${chatStyle === "mindmap" ? "rgba(139, 92, 246, 0.2)" : "rgba(16, 185, 129, 0.2)"}`,
+            border: `1px solid ${chatStyle === "mindmap" ? "rgba(139, 92, 246, 0.2)" : "rgba(59, 130, 246, 0.2)"}`,
           }}
         >
           <IconPlus size={14} />

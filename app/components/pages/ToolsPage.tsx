@@ -251,7 +251,7 @@ function FlashcardDetail({ onBack }: { onBack: () => void }) {
           onClick={() => setFlipped(!flipped)}
           style={{
             background: flipped ? "var(--accent-primary-light)" : "var(--bg-card)",
-            border: flipped ? "2px solid rgba(16, 185, 129, 0.3)" : "2px solid var(--border-primary)",
+            border: flipped ? "2px solid rgba(59, 130, 246, 0.3)" : "2px solid var(--border-primary)",
             minHeight: 180,
             display: "flex",
             flexDirection: "column",
@@ -559,7 +559,7 @@ export default function ToolsPage() {
       name: "Notlar\u0131m",
       description: "Ders notlar\u0131n\u0131 olu\u015ftur, d\u00fczenle ve organize et",
       icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
-      color: "#10b981",
+      color: "#3b82f6",
       tag: "5 not",
       count: "Son: Bug\u00fcn",
     },

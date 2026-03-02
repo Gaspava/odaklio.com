@@ -187,9 +187,9 @@ function WeeklyActivity() {
 /* ===== SUBJECT PROGRESS ===== */
 function SubjectProgress() {
   const subjects = [
-    { name: "Fizik", progress: 72, color: "#10b981", topics: 18, total: 25, time: "12.5s" },
-    { name: "Matematik", progress: 58, color: "#3b82f6", topics: 14, total: 24, time: "10.2s" },
-    { name: "Biyoloji", progress: 85, color: "#059669", topics: 17, total: 20, time: "8.4s" },
+    { name: "Fizik", progress: 72, color: "#3b82f6", topics: 18, total: 25, time: "12.5s" },
+    { name: "Matematik", progress: 58, color: "#06b6d4", topics: 14, total: 24, time: "10.2s" },
+    { name: "Biyoloji", progress: 85, color: "#10b981", topics: 17, total: 20, time: "8.4s" },
     { name: "Kimya", progress: 45, color: "#f59e0b", topics: 9, total: 20, time: "6.1s" },
     { name: "Tarih", progress: 63, color: "#8b5cf6", topics: 12, total: 19, time: "5.8s" },
     { name: "İngilizce", progress: 90, color: "#06b6d4", topics: 18, total: 20, time: "5.5s" },
@@ -261,10 +261,10 @@ function ActivityHeatmap() {
 
   const levelColors = [
     "var(--bg-tertiary)",
-    "rgba(16, 185, 129, 0.15)",
-    "rgba(16, 185, 129, 0.35)",
-    "rgba(16, 185, 129, 0.55)",
-    "rgba(16, 185, 129, 0.8)",
+    "rgba(59, 130, 246, 0.15)",
+    "rgba(59, 130, 246, 0.35)",
+    "rgba(59, 130, 246, 0.55)",
+    "rgba(59, 130, 246, 0.8)",
   ];
 
   return (
@@ -326,9 +326,9 @@ function ActivityHeatmap() {
 /* ===== RECENT SESSIONS ===== */
 function RecentSessions() {
   const sessions = [
-    { subject: "Fizik", topic: "Newton Yasaları", duration: "45 dk", date: "Bugün, 14:30", type: "chat", color: "#10b981" },
-    { subject: "Matematik", topic: "İntegral Hesaplama", duration: "30 dk", date: "Bugün, 10:15", type: "pomodoro", color: "#3b82f6" },
-    { subject: "Biyoloji", topic: "Hücre Bölünmesi", duration: "55 dk", date: "Dün, 19:45", type: "chat", color: "#059669" },
+    { subject: "Fizik", topic: "Newton Yasaları", duration: "45 dk", date: "Bugün, 14:30", type: "chat", color: "#3b82f6" },
+    { subject: "Matematik", topic: "İntegral Hesaplama", duration: "30 dk", date: "Bugün, 10:15", type: "pomodoro", color: "#06b6d4" },
+    { subject: "Biyoloji", topic: "Hücre Bölünmesi", duration: "55 dk", date: "Dün, 19:45", type: "chat", color: "#10b981" },
     { subject: "İngilizce", topic: "Tense Pratik", duration: "20 dk", date: "Dün, 16:20", type: "flashcard", color: "#06b6d4" },
     { subject: "Tarih", topic: "Osmanlı Dönemi", duration: "40 dk", date: "2 gün önce", type: "chat", color: "#8b5cf6" },
   ];

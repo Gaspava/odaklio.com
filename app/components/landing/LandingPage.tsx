@@ -15,8 +15,8 @@ const features = [
     ),
     title: "AI Sohbet",
     desc: "Gemini destekli akıllı asistan ile her konuda derinlemesine sohbet et. Sorularını sor, anında detaylı cevaplar al.",
-    color: "var(--accent-primary)",
-    gradient: "var(--gradient-primary)",
+    color: "#3b82f6",
+    gradient: "linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)",
   },
   {
     icon: (
@@ -136,7 +136,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <div
               className="flex h-9 w-9 items-center justify-center rounded-xl text-white text-sm font-bold"
-              style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow-sm)" }}
+              style={{ background: "linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)", boxShadow: "var(--shadow-glow-sm)" }}
             >
               O
             </div>
@@ -233,7 +233,7 @@ export default function LandingPage() {
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ background: "#ef4444" }} />
                   <div className="w-3 h-3 rounded-full" style={{ background: "#f59e0b" }} />
-                  <div className="w-3 h-3 rounded-full" style={{ background: "#10b981" }} />
+                  <div className="w-3 h-3 rounded-full" style={{ background: "#22c55e" }} />
                 </div>
                 <span style={{ color: "var(--text-tertiary)", fontSize: 11 }}>Odaklio AI Chat</span>
               </div>
@@ -404,7 +404,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-3">
               <div
                 className="flex h-8 w-8 items-center justify-center rounded-xl text-white text-xs font-bold"
-                style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow-sm)" }}
+                style={{ background: "linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)", boxShadow: "var(--shadow-glow-sm)" }}
               >
                 O
               </div>
