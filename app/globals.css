@@ -1257,6 +1257,39 @@ body {
   flex-shrink: 0;
 }
 
+/* ===== MINDMAP MOBILE ===== */
+.mindmap-node-mobile {
+  border-width: 1.5px;
+}
+
+.mindmap-node-mobile .mindmap-node-header {
+  padding: 8px 12px;
+}
+
+.mindmap-node-mobile .mindmap-node-messages {
+  padding: 10px 12px;
+  gap: 8px;
+}
+
+.mindmap-node-mobile .mindmap-msg {
+  max-width: 95%;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.mindmap-node-mobile .mindmap-node-input {
+  padding: 8px 10px;
+  gap: 6px;
+}
+
+.mindmap-node-mobile .mindmap-node-input input {
+  font-size: 13px;
+}
+
+.mindmap-node-mobile .msg-ai-content {
+  font-size: 13px;
+}
+
 /* ===== LANDING PAGE ===== */
 
 .landing-page {

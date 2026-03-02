@@ -43,8 +43,10 @@ interface MindmapChatProps {
 }
 
 /* ===== CONSTANTS ===== */
-const NODE_WIDTH = 680;
-const NODE_HEIGHT = 520;
+const NODE_WIDTH_DESKTOP = 680;
+const NODE_HEIGHT_DESKTOP = 520;
+const NODE_WIDTH_MOBILE = 320;
+const NODE_HEIGHT_MOBILE = 420;
 const NODE_GAP_X = 120;
 const NODE_GAP_Y = 80;
 
@@ -118,6 +120,9 @@ function ChatNodeComponent({
   onClose,
   isMain,
   scale,
+  nodeWidth,
+  nodeHeight,
+  isMobile,
 }: {
   node: ChatNode;
   isActive: boolean;
@@ -127,6 +132,9 @@ function ChatNodeComponent({
   onClose: () => void;
   isMain: boolean;
   scale: number;
+  nodeWidth: number;
+  nodeHeight: number;
+  isMobile: boolean;
 }) {
   const [input, setInput] = useState("");
   const [selectedText, setSelectedText] = useState("");
@@ -195,10 +203,10 @@ function ChatNodeComponent({
   return (
     <div
       ref={nodeRef}
-      className="mindmap-node"
+      className={`mindmap-node${isMobile ? " mindmap-node-mobile" : ""}`}
       style={{
-        width: NODE_WIDTH,
-        height: NODE_HEIGHT,
+        width: nodeWidth,
+        height: nodeHeight,
         borderColor: isActive
           ? isMain
             ? "var(--accent-primary)"
@@ -214,8 +222,8 @@ function ChatNodeComponent({
         e.stopPropagation();
         onActivate();
       }}
-      onMouseUp={handleMouseUp}
-      onMouseDown={handleMouseDown}
+      onMouseUp={!isMobile ? handleMouseUp : undefined}
+      onMouseDown={!isMobile ? handleMouseDown : undefined}
     >
       {/* Node Header */}
       <div className="mindmap-node-header">
@@ -407,15 +415,20 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
     refreshConversations,
   } = useConversation();
 
+  // Dynamic node dimensions
+  const NODE_WIDTH = isMobile ? NODE_WIDTH_MOBILE : NODE_WIDTH_DESKTOP;
+  const NODE_HEIGHT = isMobile ? NODE_HEIGHT_MOBILE : NODE_HEIGHT_DESKTOP;
+
   // Canvas state
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(isMobile ? 0.85 : 1);
   const [isPanning, setIsPanning] = useState(false);
   const panStart = useRef({ x: 0, y: 0 });
   const panOffsetStart = useRef({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
   const scaleRef = useRef(scale);
   const offsetRef = useRef(offset);
+  const lastTouchDistance = useRef<number | null>(null);
 
   // Keep refs in sync
   useEffect(() => {
@@ -609,6 +622,70 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
       window.removeEventListener("mouseup", handleCanvasMouseUp);
     };
   }, [handleCanvasMouseMove, handleCanvasMouseUp]);
+
+  /* ===== TOUCH HANDLERS (MOBILE) ===== */
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if ((e.target as HTMLElement).closest(".mindmap-node")) return;
+      if (e.touches.length === 1) {
+        setIsPanning(true);
+        panStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        panOffsetStart.current = { ...offsetRef.current };
+      } else if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        lastTouchDistance.current = Math.hypot(dx, dy);
+      }
+    },
+    []
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (e.touches.length === 1 && isPanning) {
+        const dx = e.touches[0].clientX - panStart.current.x;
+        const dy = e.touches[0].clientY - panStart.current.y;
+        const newOffset = {
+          x: panOffsetStart.current.x + dx,
+          y: panOffsetStart.current.y + dy,
+        };
+        setOffset(newOffset);
+        offsetRef.current = newOffset;
+      } else if (e.touches.length === 2 && lastTouchDistance.current !== null) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.hypot(dx, dy);
+        const scaleDelta = (dist - lastTouchDistance.current) * 0.003;
+        lastTouchDistance.current = dist;
+
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+
+        const oldScale = scaleRef.current;
+        const newScale = Math.min(Math.max(oldScale + scaleDelta, 0.25), 2.5);
+        const oldOff = offsetRef.current;
+        const newOffset = {
+          x: cx - (cx - oldOff.x) * (newScale / oldScale),
+          y: cy - (cy - oldOff.y) * (newScale / oldScale),
+        };
+
+        scaleRef.current = newScale;
+        offsetRef.current = newOffset;
+        setScale(newScale);
+        setOffset(newOffset);
+      }
+    },
+    [isPanning]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    setIsPanning(false);
+    lastTouchDistance.current = null;
+  }, []);
 
   /* ===== ZOOM TO CURSOR ===== */
   const handleWheel = useCallback((e: WheelEvent) => {
@@ -965,8 +1042,12 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
         style={{
           background: "var(--bg-primary)",
           cursor: isPanning ? "grabbing" : "grab",
+          touchAction: "none",
         }}
         onMouseDown={handleCanvasMouseDown}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         {/* Grid Background */}
         <div
@@ -1027,6 +1108,9 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
                 onClose={() => handleCloseNode(node.id)}
                 isMain={node.id === "main"}
                 scale={scale}
+                nodeWidth={NODE_WIDTH}
+                nodeHeight={NODE_HEIGHT}
+                isMobile={isMobile}
               />
             </div>
           ))}
@@ -1034,7 +1118,9 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
 
         {/* Help Hint */}
         <div
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full pointer-events-none"
+          className={`absolute left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full pointer-events-none ${
+            isMobile ? "bottom-2 px-3 py-1.5 max-w-[90%]" : "bottom-4 px-4 py-2"
+          }`}
           style={{
             background: "var(--bg-glass-heavy)",
             border: "1px solid var(--border-primary)",
@@ -1042,12 +1128,13 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
           }}
         >
           <span
-            className="text-[10px] font-medium"
+            className="text-[10px] font-medium text-center"
             style={{ color: "var(--text-tertiary)" }}
           >
-            Metin seç &rarr; &quot;Yeni Yol Oluştur&quot; ile paralel sohbet
-            oluştur &bull; Boş alana tıkla ve sürükle &bull; Scroll ile
-            yakınlaştır
+            {isMobile
+              ? "Parmakla sürükle \u2022 Çimdikle yakınlaştır"
+              : <>Metin seç &rarr; &quot;Yeni Yol Oluştur&quot; ile paralel sohbet oluştur &bull; Boş alana tıkla ve sürükle &bull; Scroll ile yakınlaştır</>
+            }
           </span>
         </div>
       </div>
