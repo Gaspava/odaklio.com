@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 
-export type ConversationType = "standard" | "mindmap" | "flashcard" | "note" | "roadmap";
+export type ConversationType = "standard" | "mindmap" | "flashcard" | "note" | "roadmap" | "mentor";
 
 export interface Conversation {
   id: string;
@@ -515,4 +515,48 @@ export async function getUserRoadmaps(userId: string): Promise<RoadmapWithProgre
   }
 
   return roots;
+}
+
+/* ===== MENTOR CONVERSATIONS ===== */
+
+export async function getMentorConversation(
+  userId: string,
+  mentorId: string
+): Promise<Conversation | null> {
+  const { data, error } = await supabase
+    .from("conversations")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("type", "mentor")
+    .eq("title", mentorId)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .single();
+  if (error) {
+    if (error.code === "PGRST116") return null;
+    throw error;
+  }
+  return data;
+}
+
+export async function createMentorConversation(
+  userId: string,
+  mentorId: string
+): Promise<Conversation> {
+  const { data, error } = await supabase
+    .from("conversations")
+    .insert({ user_id: userId, type: "mentor", title: mentorId })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getOrCreateMentorConversation(
+  userId: string,
+  mentorId: string
+): Promise<Conversation> {
+  const existing = await getMentorConversation(userId, mentorId);
+  if (existing) return existing;
+  return createMentorConversation(userId, mentorId);
 }
