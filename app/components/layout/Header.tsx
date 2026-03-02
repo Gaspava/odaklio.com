@@ -1,25 +1,74 @@
 "use client";
 
 import { useTheme } from "@/app/providers/ThemeProvider";
-import { IconSun, IconMoon, IconHeadphones, IconPlus } from "../icons/Icons";
-import type { ChatStyle } from "../chatbot/ChatStyleSelector";
+import { IconSun, IconMoon } from "../icons/Icons";
+
+export type PageType = "history" | "tools" | "focus" | "mentor" | "analysis";
 
 interface HeaderProps {
-  onToggleLeft: () => void;
-  onToggleRight: () => void;
-  leftOpen: boolean;
-  rightOpen: boolean;
-  onNewChat: () => void;
-  chatStyle: ChatStyle;
+  activePage: PageType;
+  onPageChange: (page: PageType) => void;
 }
 
+const pages: { id: PageType; label: string; icon: React.ReactNode }[] = [
+  {
+    id: "history",
+    label: "Geçmiş",
+    icon: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    ),
+  },
+  {
+    id: "tools",
+    label: "Araçlar",
+    icon: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+        <rect x="14" y="3" width="7" height="7" rx="1.5" />
+        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      </svg>
+    ),
+  },
+  {
+    id: "focus",
+    label: "Odak",
+    icon: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+  },
+  {
+    id: "mentor",
+    label: "Mentor",
+    icon: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+  },
+  {
+    id: "analysis",
+    label: "Analiz",
+    icon: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+        <polyline points="17 6 23 6 23 12" />
+      </svg>
+    ),
+  },
+];
+
 export default function Header({
-  onToggleLeft,
-  onToggleRight,
-  leftOpen,
-  rightOpen,
-  onNewChat,
-  chatStyle,
+  activePage,
+  onPageChange,
 }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
 
@@ -31,96 +80,76 @@ export default function Header({
         borderBottom: "1px solid var(--border-primary)",
       }}
     >
-      {/* Left */}
-      <div className="flex items-center gap-2.5 sm:gap-3">
-        <button
-          onClick={onToggleLeft}
-          className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg transition-all"
+      {/* Left - Logo */}
+      <div className="flex items-center gap-2.5">
+        <div
+          className="flex h-8 w-8 items-center justify-center rounded-xl text-white text-xs font-bold relative"
           style={{
-            background: leftOpen ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
-            color: leftOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
+            background: "var(--gradient-primary)",
+            boxShadow: "var(--shadow-glow-sm)",
           }}
-          title="Araçlar"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1.5" />
-            <rect x="14" y="3" width="7" height="7" rx="1.5" />
-            <rect x="3" y="14" width="7" height="7" rx="1.5" />
-            <rect x="14" y="14" width="7" height="7" rx="1.5" />
-          </svg>
-        </button>
-
-        <div className="flex items-center gap-2.5">
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-white text-xs font-bold relative"
-            style={{
-              background: "var(--gradient-primary)",
-              boxShadow: "var(--shadow-glow-sm)",
-            }}
+          O
+        </div>
+        <div className="hidden sm:flex flex-col">
+          <span
+            className="text-sm font-bold tracking-tight leading-tight"
+            style={{ color: "var(--text-primary)" }}
           >
-            O
-          </div>
-          <div className="flex flex-col">
-            <span
-              className="text-sm font-bold tracking-tight leading-tight"
-              style={{ color: "var(--text-primary)" }}
-            >
-              Odaklio
-            </span>
-            <span
-              className="hidden sm:block text-[9px] font-medium leading-tight"
-              style={{ color: "var(--accent-primary)", opacity: 0.8 }}
-            >
-              AI Learning
-            </span>
-          </div>
+            Odaklio
+          </span>
+          <span
+            className="text-[9px] font-medium leading-tight"
+            style={{ color: "var(--accent-primary)", opacity: 0.8 }}
+          >
+            AI Learning
+          </span>
         </div>
       </div>
 
-      {/* Center status indicator */}
+      {/* Center - Page Navigation Switch */}
       <div
-        className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full"
+        className="flex items-center rounded-full p-0.5 gap-0.5"
         style={{
-          background: "var(--accent-primary-muted)",
-          border: "1px solid rgba(16, 185, 129, 0.08)",
+          background: "var(--bg-tertiary)",
+          border: "1px solid var(--border-primary)",
         }}
       >
-        <div
-          className="w-1.5 h-1.5 rounded-full animate-pulse"
-          style={{ background: "var(--accent-success)" }}
-        />
-        <span className="text-[11px] font-medium" style={{ color: "var(--text-tertiary)" }}>
-          Akıllı Öğrenme Aktif
-        </span>
+        {pages.map((page) => {
+          const isActive = activePage === page.id;
+          return (
+            <button
+              key={page.id}
+              onClick={() => onPageChange(page.id)}
+              className="flex items-center gap-1.5 rounded-full px-2 sm:px-3 py-1.5 transition-all active:scale-95 relative"
+              style={{
+                background: isActive ? "var(--bg-card)" : "transparent",
+                color: isActive ? "var(--accent-primary)" : "var(--text-tertiary)",
+                boxShadow: isActive ? "var(--shadow-sm)" : "none",
+              }}
+              title={page.label}
+            >
+              <span className="flex-shrink-0" style={{ opacity: isActive ? 1 : 0.7 }}>
+                {page.icon}
+              </span>
+              <span
+                className="hidden sm:inline text-[11px] font-semibold whitespace-nowrap"
+              >
+                {page.label}
+              </span>
+              {isActive && page.id === "focus" && (
+                <span
+                  className="hidden sm:block w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ background: "var(--accent-success)" }}
+                />
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Right */}
+      {/* Right - Theme + Avatar */}
       <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* New Chat Button */}
-        <button
-          onClick={onNewChat}
-          className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 transition-all active:scale-95"
-          style={{
-            background: chatStyle === "mindmap" ? "var(--accent-purple-light)" : "var(--accent-primary-light)",
-            color: chatStyle === "mindmap" ? "var(--accent-purple)" : "var(--accent-primary)",
-            border: `1px solid ${chatStyle === "mindmap" ? "rgba(139, 92, 246, 0.2)" : "rgba(16, 185, 129, 0.2)"}`,
-          }}
-        >
-          <IconPlus size={14} />
-          <span className="hidden sm:inline text-[11px] font-semibold">Yeni Sohbet</span>
-        </button>
-
-        <button
-          className="hidden sm:flex h-8 items-center gap-1.5 rounded-lg px-2.5 transition-all hover:bg-[var(--bg-card-hover)]"
-          style={{
-            background: "var(--bg-tertiary)",
-            color: "var(--text-tertiary)",
-          }}
-        >
-          <IconHeadphones size={14} />
-          <span className="text-[11px] font-medium">Ses</span>
-        </button>
-
         <button
           onClick={toggleTheme}
           className="flex h-8 w-8 items-center justify-center rounded-lg transition-all active:scale-95"
@@ -130,23 +159,6 @@ export default function Header({
           }}
         >
           {theme === "dark" ? <IconSun size={15} /> : <IconMoon size={15} />}
-        </button>
-
-        <button
-          onClick={onToggleRight}
-          className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg transition-all"
-          style={{
-            background: rightOpen ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
-            color: rightOpen ? "var(--accent-primary)" : "var(--text-tertiary)",
-          }}
-          title="Mentor & Araçlar"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
         </button>
 
         <div

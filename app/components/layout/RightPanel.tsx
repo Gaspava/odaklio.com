@@ -10,11 +10,14 @@ import {
   IconHelp,
   IconSend,
   IconMentor,
-  IconX,
+  IconPlus,
 } from "../icons/Icons";
+import type { ChatStyle } from "../chatbot/ChatStyleSelector";
 
 interface RightPanelProps {
   onClose?: () => void;
+  onNewChat?: () => void;
+  chatStyle?: ChatStyle;
 }
 
 /* ===== MENTOR TIPS ===== */
@@ -365,23 +368,31 @@ function MindMapPreview() {
 }
 
 /* ===== RIGHT PANEL ===== */
-export default function RightPanel({ onClose }: RightPanelProps) {
+export default function RightPanel({ onClose, onNewChat, chatStyle }: RightPanelProps) {
   return (
     <div className="h-full overflow-y-auto p-3 space-y-3 stagger-children">
-      {onClose && (
-        <div className="flex items-center justify-between pb-1">
-          <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-            Mentor & Araçlar
-          </h2>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg transition-all active:scale-95"
-            style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
-          >
-            <IconX size={16} />
-          </button>
-        </div>
+      <div className="flex items-center justify-between pb-0.5">
+        <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+          Mentor & Araçlar
+        </h2>
+      </div>
+
+      {/* Yeni Sohbet Button - moved from header */}
+      {onNewChat && (
+        <button
+          onClick={onNewChat}
+          className="flex w-full h-9 items-center justify-center gap-2 rounded-xl transition-all active:scale-95"
+          style={{
+            background: chatStyle === "mindmap" ? "var(--accent-purple-light)" : "var(--accent-primary-light)",
+            color: chatStyle === "mindmap" ? "var(--accent-purple)" : "var(--accent-primary)",
+            border: `1px solid ${chatStyle === "mindmap" ? "rgba(139, 92, 246, 0.2)" : "rgba(16, 185, 129, 0.2)"}`,
+          }}
+        >
+          <IconPlus size={14} />
+          <span className="text-[11px] font-semibold">Yeni Sohbet</span>
+        </button>
       )}
+
       <MentorTips />
       <FlashcardMini />
       <RecommendationsCompact />

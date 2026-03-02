@@ -14,7 +14,6 @@ import {
   IconVolume,
   IconChevronRight,
   IconTrendingUp,
-  IconX,
 } from "../icons/Icons";
 import Link from "next/link";
 
@@ -361,20 +360,11 @@ function BackgroundSoundsCompact() {
 export default function LeftPanel({ onClose }: LeftPanelProps) {
   return (
     <div className="h-full overflow-y-auto p-3 space-y-3 stagger-children">
-      {onClose && (
-        <div className="flex items-center justify-between pb-1">
-          <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-            Araçlar
-          </h2>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg transition-all active:scale-95"
-            style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
-          >
-            <IconX size={16} />
-          </button>
-        </div>
-      )}
+      <div className="pb-0.5">
+        <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+          Araçlar
+        </h2>
+      </div>
       <PomodoroMini />
       <FocusModesCompact />
       <BackgroundSoundsCompact />
