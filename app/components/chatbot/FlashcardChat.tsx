@@ -19,7 +19,7 @@ interface Flashcard {
 
 /* ===== FLASHCARD PARSER ===== */
 function parseFlashcards(content: string): Flashcard[] {
-  const regex = /\[FLASHCARD\](.*?)\|(.*?)\[\/FLASHCARD\]/gs;
+  const regex = /\[FLASHCARD\]([\s\S]*?)\|([\s\S]*?)\[\/FLASHCARD\]/g;
   const cards: Flashcard[] = [];
   let match;
   while ((match = regex.exec(content)) !== null) {
@@ -818,7 +818,7 @@ export default function FlashcardChat({
                       >
                         {/* Strip flashcard tags for display */}
                         {msg.content
-                          .replace(/\[FLASHCARD\].*?\[\/FLASHCARD\]/gs, "")
+                          .replace(/\[FLASHCARD\][\s\S]*?\[\/FLASHCARD\]/g, "")
                           .trim() || "Kartlar hazir!"}
                       </p>
                     ) : (

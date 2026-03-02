@@ -87,7 +87,7 @@ function parseRoadmapTitle(content: string): string | null {
 }
 
 function parseRoadmapSteps(content: string): RoadmapStep[] {
-  const regex = /\[STEP\](\d+)\|(.*?)\|(.*?)\|(.*?)\[\/STEP\]/gs;
+  const regex = /\[STEP\](\d+)\|([\s\S]*?)\|([\s\S]*?)\|([\s\S]*?)\[\/STEP\]/g;
   const steps: RoadmapStep[] = [];
   let match;
   while ((match = regex.exec(content)) !== null) {
