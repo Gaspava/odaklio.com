@@ -50,6 +50,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const [rightOpen, setRightOpen] = useState(false);
   const [chatStyle, setChatStyle] = useState<ChatStyle>("standard");
   const [showStyleSelector, setShowStyleSelector] = useState(false);
+  const [showModeSelector, setShowModeSelector] = useState(true);
   const [chatKey, setChatKey] = useState(0);
   const [activePage, setActivePage] = useState<PageType>(initialPage || "focus");
   const isMobile = useIsMobile();
@@ -152,13 +153,16 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
 
   const handleNewChat = () => {
     startNewConversation();
-    setShowStyleSelector(true);
+    setShowModeSelector(true);
+    setChatStyle("standard");
+    setChatKey((k) => k + 1);
   };
 
   const handleSelectStyle = (style: ChatStyle) => {
     setChatStyle(style);
     setChatKey((k) => k + 1);
     setShowStyleSelector(false);
+    setShowModeSelector(false);
     // Hide right panel when entering a focused mode
     if (style !== "standard") {
       setRightOpen(false);
@@ -176,7 +180,6 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const handleOpenConversation = useCallback((id: string, type?: string) => {
     if (id) {
       loadConversation(id).then(() => {
-        // Set chat style based on conversation type
         const convType = type || conversations.find((c) => c.id === id)?.type;
         const typeToStyle: Record<string, ChatStyle> = {
           standard: "standard",
@@ -187,6 +190,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
         };
         setChatStyle(typeToStyle[convType || "standard"] || "standard");
         setChatKey((k) => k + 1);
+        setShowModeSelector(false);
         setActivePage("focus");
         if (isMobile) {
           setLeftOpen(false);
@@ -195,6 +199,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       });
     } else {
       startNewConversation();
+      setShowModeSelector(true);
       setChatStyle("standard");
       setChatKey((k) => k + 1);
       setActivePage("focus");
@@ -214,7 +219,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       case "tools":
         return <ToolsPage />;
       case "focus":
-        if (!activeConversationId && chatStyle === "standard") {
+        if (!activeConversationId && showModeSelector) {
           return <ModeSelector onSelectMode={(mode) => handleSelectStyle(mode as ChatStyle)} />;
         }
         switch (chatStyle) {

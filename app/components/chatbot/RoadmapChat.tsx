@@ -518,8 +518,7 @@ export default function RoadmapChat({ isMobile = false }: RoadmapChatProps) {
         }
       } catch (err) {
         console.error("Failed to save user message:", err);
-        setIsLoading(false);
-        return;
+        conversationId = "";
       }
 
       const aiMsgId = (Date.now() + 1).toString();

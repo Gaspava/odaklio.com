@@ -390,8 +390,8 @@ export default function FlashcardChat({
         }
       } catch (err) {
         console.error("Failed to save user message:", err);
-        setIsLoading(false);
-        return;
+        // Still try to get AI response even if DB save fails
+        conversationId = "";
       }
 
       const aiMsgId = (Date.now() + 1).toString();

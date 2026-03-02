@@ -354,8 +354,7 @@ export default function NoteChat({ isMobile = false }: NoteChatProps) {
         }
       } catch (err) {
         console.error("Failed to save user message:", err);
-        setIsLoading(false);
-        return;
+        conversationId = "";
       }
 
       const aiMsgId = (Date.now() + 1).toString();
