@@ -6,9 +6,12 @@ import LeftPanel from "../layout/LeftPanel";
 import RightPanel from "../layout/RightPanel";
 import MainChat from "../chatbot/MainChat";
 import MindmapChat from "../chatbot/MindmapChat";
+import FlashcardChat from "../chatbot/FlashcardChat";
+import RoadmapChat from "../chatbot/RoadmapChat";
 import ChatStyleSelector, {
   type ChatStyle,
 } from "../chatbot/ChatStyleSelector";
+import ModeSelector from "./ModeSelector";
 import ChatHistoryPage from "../pages/ChatHistoryPage";
 import ToolsPage from "../pages/ToolsPage";
 import MentorPage from "../pages/MentorPage";
@@ -22,6 +25,7 @@ import {
 } from "../icons/Icons";
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { useConversation } from "@/app/providers/ConversationProvider";
+import NoteSelectionPopup from "../notes/NoteSelectionPopup";
 
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(false);
@@ -46,16 +50,17 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const [rightOpen, setRightOpen] = useState(false);
   const [chatStyle, setChatStyle] = useState<ChatStyle>("standard");
   const [showStyleSelector, setShowStyleSelector] = useState(false);
+  const [showModeSelector, setShowModeSelector] = useState(true);
   const [chatKey, setChatKey] = useState(0);
   const [activePage, setActivePage] = useState<PageType>(initialPage || "focus");
   const isMobile = useIsMobile();
   const { theme, toggleTheme } = useTheme();
-  const { loadConversation, startNewConversation, conversations, activeConversationType } = useConversation();
+  const { loadConversation, startNewConversation, conversations, activeConversationType, activeConversationId } = useConversation();
 
   // Sync chatStyle with conversation type (for /chat/[id] URL loads)
   useEffect(() => {
-    if (activeConversationType === "mindmap" && chatStyle !== "mindmap") {
-      setChatStyle("mindmap");
+    if (activeConversationType && activeConversationType !== chatStyle) {
+      setChatStyle(activeConversationType as ChatStyle);
       setChatKey((k) => k + 1);
     }
   }, [activeConversationType]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -148,13 +153,20 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
 
   const handleNewChat = () => {
     startNewConversation();
-    setShowStyleSelector(true);
+    setShowModeSelector(true);
+    setChatStyle("standard");
+    setChatKey((k) => k + 1);
   };
 
   const handleSelectStyle = (style: ChatStyle) => {
     setChatStyle(style);
     setChatKey((k) => k + 1);
     setShowStyleSelector(false);
+    setShowModeSelector(false);
+    // Hide right panel when entering a focused mode
+    if (style !== "standard") {
+      setRightOpen(false);
+    }
   };
 
   const handlePageChange = (page: PageType) => {
@@ -168,10 +180,17 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const handleOpenConversation = useCallback((id: string, type?: string) => {
     if (id) {
       loadConversation(id).then(() => {
-        // Set chat style based on conversation type
         const convType = type || conversations.find((c) => c.id === id)?.type;
-        setChatStyle(convType === "mindmap" ? "mindmap" : "standard");
+        const typeToStyle: Record<string, ChatStyle> = {
+          standard: "standard",
+          mindmap: "mindmap",
+          flashcard: "flashcard",
+          note: "standard",
+          roadmap: "roadmap",
+        };
+        setChatStyle(typeToStyle[convType || "standard"] || "standard");
         setChatKey((k) => k + 1);
+        setShowModeSelector(false);
         setActivePage("focus");
         if (isMobile) {
           setLeftOpen(false);
@@ -180,6 +199,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       });
     } else {
       startNewConversation();
+      setShowModeSelector(true);
       setChatStyle("standard");
       setChatKey((k) => k + 1);
       setActivePage("focus");
@@ -199,11 +219,19 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       case "tools":
         return <ToolsPage />;
       case "focus":
-        return chatStyle === "standard" ? (
-          <MainChat key={chatKey} isMobile={isMobile} />
-        ) : (
-          <MindmapChat key={chatKey} isMobile={isMobile} />
-        );
+        if (!activeConversationId && showModeSelector) {
+          return <ModeSelector onSelectMode={(mode) => handleSelectStyle(mode as ChatStyle)} />;
+        }
+        switch (chatStyle) {
+          case "mindmap":
+            return <MindmapChat key={chatKey} isMobile={isMobile} />;
+          case "flashcard":
+            return <FlashcardChat key={chatKey} isMobile={isMobile} />;
+          case "roadmap":
+            return <RoadmapChat key={chatKey} isMobile={isMobile} />;
+          default:
+            return <MainChat key={chatKey} isMobile={isMobile} />;
+        }
       case "mentor":
         return <MentorPage />;
       case "analysis":
@@ -302,6 +330,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
             <LeftPanel
               onClose={() => setLeftOpen(false)}
               onOpenConversation={handleOpenConversation}
+              onSelectMode={(mode) => handleSelectStyle(mode as ChatStyle)}
             />
             {!isMobile && leftOpen && (
               <button
@@ -359,7 +388,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           {renderPageContent()}
         </div>
 
-        {showSidePanels && !isMobile && !rightOpen && (
+        {showSidePanels && !["flashcard", "roadmap"].includes(chatStyle) && !isMobile && !rightOpen && (
           <button
             onClick={toggleRight}
             className="flex-shrink-0 flex items-center justify-center transition-all hover:opacity-100 self-start mt-3"
@@ -382,7 +411,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           </button>
         )}
 
-        {showSidePanels && (!isMobile || rightOpen) && (
+        {showSidePanels && !["flashcard", "roadmap"].includes(chatStyle) && (!isMobile || rightOpen) && (
           <div
             className={`flex-shrink-0 overflow-visible transition-all duration-300 ease-in-out relative ${
               isMobile ? "panel-mobile-overlay panel-right" : ""
@@ -497,6 +526,8 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           onClose={() => setShowStyleSelector(false)}
         />
       )}
+
+      <NoteSelectionPopup />
     </div>
   );
 }

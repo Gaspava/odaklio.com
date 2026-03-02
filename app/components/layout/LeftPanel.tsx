@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   IconPlay,
   IconPause,
@@ -16,6 +16,10 @@ import {
   IconTrendingUp,
   IconChat,
   IconGitBranch,
+  IconFlashcard,
+  IconEdit,
+  IconRoadmap,
+  IconMindMap,
 } from "../icons/Icons";
 import Link from "next/link";
 import { useConversation } from "@/app/providers/ConversationProvider";
@@ -24,6 +28,7 @@ import type { Conversation } from "@/lib/db/conversations";
 interface LeftPanelProps {
   onClose?: () => void;
   onOpenConversation?: (id: string, type?: string) => void;
+  onSelectMode?: (mode: string) => void;
 }
 
 /* ===== RELATIVE TIME ===== */
@@ -98,29 +103,32 @@ function ChatHistorySidebar({ onOpenConversation }: { onOpenConversation?: (id: 
         <div className="space-y-0.5 max-h-[280px] overflow-y-auto">
           {conversations.map((conv: Conversation) => {
             const isActive = activeConversationId === conv.id;
-            const isMindmap = conv.type === "mindmap";
+            const typeConfig: Record<string, { icon: React.ReactNode; color: string }> = {
+              standard: { icon: <IconChat size={10} />, color: "var(--accent-primary)" },
+              mindmap: { icon: <IconGitBranch size={10} />, color: "var(--accent-purple)" },
+              flashcard: { icon: <IconFlashcard size={10} />, color: "#f59e0b" },
+              note: { icon: <IconEdit size={10} />, color: "var(--accent-secondary)" },
+              roadmap: { icon: <IconRoadmap size={10} />, color: "#ef4444" },
+            };
+            const config = typeConfig[conv.type] || typeConfig.standard;
             return (
               <button
                 key={conv.id}
                 onClick={() => onOpenConversation?.(conv.id, conv.type)}
                 className="w-full text-left flex items-center gap-2 rounded-lg px-2 py-2 transition-all active:scale-[0.98]"
                 style={{
-                  background: isActive
-                    ? isMindmap ? "rgba(139, 92, 246, 0.1)" : "var(--accent-primary-light)"
-                    : "transparent",
-                  color: isActive
-                    ? isMindmap ? "var(--accent-purple)" : "var(--accent-primary)"
-                    : "var(--text-secondary)",
+                  background: isActive ? `${config.color}10` : "transparent",
+                  color: isActive ? config.color : "var(--text-secondary)",
                 }}
               >
                 <div
                   className="flex h-5 w-5 items-center justify-center rounded-md flex-shrink-0"
                   style={{
-                    background: isMindmap ? "rgba(139, 92, 246, 0.12)" : "var(--accent-primary-light)",
-                    color: isMindmap ? "var(--accent-purple)" : "var(--accent-primary)",
+                    background: isActive ? `${config.color}15` : `${config.color}12`,
+                    color: config.color,
                   }}
                 >
-                  {isMindmap ? <IconGitBranch size={10} /> : <IconChat size={10} />}
+                  {config.icon}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] font-medium truncate">{conv.title}</p>
@@ -131,7 +139,7 @@ function ChatHistorySidebar({ onOpenConversation }: { onOpenConversation?: (id: 
                 {isActive && (
                   <div
                     className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                    style={{ background: isMindmap ? "var(--accent-purple)" : "var(--accent-primary)" }}
+                    style={{ background: config.color }}
                   />
                 )}
               </button>
@@ -315,15 +323,12 @@ function PomodoroMini() {
 }
 
 /* ===== FOCUS MODES COMPACT ===== */
-function FocusModesCompact() {
-  const [activeMode, setActiveMode] = useState<string | null>(null);
-
+function FocusModesCompact({ onSelectMode }: { onSelectMode?: (mode: string) => void }) {
   const modes = [
-    { id: "deep", name: "Derin Odak", icon: <IconBrain size={14} />, color: "#10b981", desc: "Derin konsantrasyon" },
-    { id: "reading", name: "Okuma", icon: <IconEye size={14} />, color: "#3b82f6", desc: "Hızlı okuma modu" },
-    { id: "creative", name: "Yaratıcı", icon: <IconLightning size={14} />, color: "#f59e0b", desc: "Beyin fırtınası" },
-    { id: "night", name: "Gece", icon: <IconMoon size={14} />, color: "#8b5cf6", desc: "Göz koruma" },
-    { id: "zen", name: "Zen", icon: <IconFocus size={14} />, color: "#64748b", desc: "Minimal dikkat" },
+    { id: "standard", name: "Standart", icon: <IconChat size={14} />, color: "#10b981" },
+    { id: "mindmap", name: "Mindmap", icon: <IconMindMap size={14} />, color: "#8b5cf6" },
+    { id: "flashcard", name: "Flashcard", icon: <IconFlashcard size={14} />, color: "#f59e0b" },
+    { id: "roadmap", name: "Roadmap", icon: <IconRoadmap size={14} />, color: "#ef4444" },
   ];
 
   return (
@@ -345,7 +350,7 @@ function FocusModesCompact() {
           className="text-[11px] font-bold uppercase tracking-wider"
           style={{ color: "var(--text-tertiary)" }}
         >
-          Focus Modu
+          Odak Modları
         </h3>
       </div>
 
@@ -353,26 +358,31 @@ function FocusModesCompact() {
         {modes.map((mode) => (
           <button
             key={mode.id}
-            onClick={() => setActiveMode(activeMode === mode.id ? null : mode.id)}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 sm:py-2 transition-all active:scale-[0.98]"
+            onClick={() => onSelectMode?.(mode.id)}
+            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 sm:py-2 transition-all active:scale-[0.98] hover:opacity-90"
             style={{
-              background: activeMode === mode.id ? `${mode.color}12` : "transparent",
-              color: activeMode === mode.id ? mode.color : "var(--text-secondary)",
+              background: "transparent",
+              color: "var(--text-secondary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = `${mode.color}12`;
+              e.currentTarget.style.color = mode.color;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "var(--text-secondary)";
             }}
           >
-            <span style={{ opacity: activeMode === mode.id ? 1 : 0.7 }}>{mode.icon}</span>
-            <div className="flex-1 text-left">
-              <span className="text-xs font-semibold block">{mode.name}</span>
-              {activeMode === mode.id && (
-                <span className="text-[9px] block" style={{ color: "var(--text-tertiary)" }}>{mode.desc}</span>
-              )}
+            <div
+              className="flex h-6 w-6 items-center justify-center rounded-md"
+              style={{ background: `${mode.color}15`, color: mode.color }}
+            >
+              {mode.icon}
             </div>
-            {activeMode === mode.id && (
-              <div
-                className="h-2 w-2 rounded-full animate-pulse"
-                style={{ background: mode.color, boxShadow: `0 0 8px ${mode.color}` }}
-              />
-            )}
+            <span className="text-xs font-semibold">{mode.name}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-auto opacity-40">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
           </button>
         ))}
       </div>
@@ -479,7 +489,7 @@ function BackgroundSoundsCompact() {
 }
 
 /* ===== LEFT PANEL ===== */
-export default function LeftPanel({ onClose, onOpenConversation }: LeftPanelProps) {
+export default function LeftPanel({ onClose, onOpenConversation, onSelectMode }: LeftPanelProps) {
   return (
     <div className="h-full overflow-y-auto p-3 space-y-3 stagger-children">
       <div className="pb-0.5">
@@ -489,7 +499,7 @@ export default function LeftPanel({ onClose, onOpenConversation }: LeftPanelProp
       </div>
       <ChatHistorySidebar onOpenConversation={onOpenConversation} />
       <PomodoroMini />
-      <FocusModesCompact />
+      <FocusModesCompact onSelectMode={onSelectMode} />
       <BackgroundSoundsCompact />
     </div>
   );
