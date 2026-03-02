@@ -21,8 +21,7 @@ interface MainChatProps {
 const welcomeMessage: Message = {
   id: "welcome",
   role: "assistant",
-  content:
-    "Merhaba! Ben **Odaklio AI**, senin kişisel öğrenme asistanınım.\n\nHerhangi bir konuda soru sorabilir, metin seçerek hızlı okuma yapabilir veya derinlemesine anlayış isteyebilirsin.\n\n[!tip] Nasıl Kullanılır?\nMetin seç → Hızlı Öğren · Bu nedir? · Hızlı Oku seçeneklerini kullan.\n\nBugün ne öğrenmek istiyorsun?",
+  content: "",
   timestamp: new Date(),
 };
 
@@ -306,153 +305,268 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
     setSelectionPopup(null);
   };
 
+  const isWelcome = messages.length <= 1;
+
   const quickPrompts = isMobile
     ? [
-        { text: "Kuantum fiziği", icon: "⚛️" },
-        { text: "İntegral çöz", icon: "∫" },
-        { text: "Newton yasaları", icon: "🍎" },
+        { text: "Kuantum fiziği", icon: "⚛️", desc: "Parçacık dünyası", gradient: "linear-gradient(135deg, #06b6d4, #3b82f6)" },
+        { text: "İntegral çöz", icon: "∫", desc: "Matematik problemleri", gradient: "linear-gradient(135deg, #8b5cf6, #6366f1)" },
+        { text: "Newton yasaları", icon: "🍎", desc: "Fizik temelleri", gradient: "linear-gradient(135deg, #f59e0b, #ef4444)" },
+        { text: "Hücre bölünmesi", icon: "🧬", desc: "Biyoloji", gradient: "linear-gradient(135deg, #10b981, #059669)" },
       ]
     : [
-        { text: "Kuantum fiziği hakkında bilgi ver", icon: "⚛️" },
-        { text: "İntegral nasıl çözülür?", icon: "∫" },
-        { text: "Newton yasalarını açıkla", icon: "🍎" },
-        { text: "Hücre bölünmesi nedir?", icon: "🧬" },
+        { text: "Kuantum fiziği hakkında bilgi ver", icon: "⚛️", desc: "Parçacık dünyasını keşfet", gradient: "linear-gradient(135deg, #06b6d4, #3b82f6)" },
+        { text: "İntegral nasıl çözülür?", icon: "∫", desc: "Adım adım matematik", gradient: "linear-gradient(135deg, #8b5cf6, #6366f1)" },
+        { text: "Newton yasalarını açıkla", icon: "🍎", desc: "Fizik temelleri", gradient: "linear-gradient(135deg, #f59e0b, #ef4444)" },
+        { text: "Hücre bölünmesi nedir?", icon: "🧬", desc: "Biyolojinin yapı taşları", gradient: "linear-gradient(135deg, #10b981, #059669)" },
       ];
+
+  const featureChips = [
+    { label: "Hızlı Okuma", icon: "📖" },
+    { label: "Mind Map", icon: "🧠" },
+    { label: "Flashcard", icon: "🃏" },
+    { label: "Pomodoro", icon: "⏱️" },
+  ];
 
   return (
     <>
       <div className="flex flex-col h-full" ref={chatAreaRef}>
-        {/* Messages */}
+        {/* Messages / Welcome */}
         <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 ${isMobile ? "pb-2" : ""}`}>
-          <div className="max-w-[720px] mx-auto space-y-5 sm:space-y-6">
-            {messages.map((msg, idx) => (
-              <div
-                id={`msg-${msg.id}`}
-                key={msg.id}
-                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-msg-in`}
-                style={{ animationDelay: `${Math.min(idx * 0.05, 0.3)}s` }}
-              >
-                {msg.role === "assistant" && <AiAvatar />}
 
-                <div
-                  className={`group relative ${
-                    msg.role === "user"
-                      ? "max-w-[85%] sm:max-w-[70%]"
-                      : "max-w-[92%] sm:max-w-[88%]"
-                  }`}
-                >
+          {/* Modern Welcome Screen */}
+          {isWelcome ? (
+            <div className="flex flex-col items-center justify-center min-h-full px-2">
+              {/* Ambient glow background */}
+              <div className="odak-hero-glow" />
+
+              {/* Logo + Brand */}
+              <div className="animate-fade-in flex flex-col items-center mb-6 sm:mb-8 relative z-10">
+                <div className="odak-hero-logo mb-5">
                   <div
-                    className={`px-3.5 py-3 sm:px-4 sm:py-3.5 ${
-                      msg.role === "user" ? "msg-user" : "msg-ai"
-                    }`}
+                    className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-3xl text-white text-2xl sm:text-3xl font-black relative"
+                    style={{
+                      background: "var(--gradient-primary)",
+                      boxShadow: "0 0 40px rgba(16, 185, 129, 0.3), 0 0 80px rgba(16, 185, 129, 0.1)",
+                    }}
                   >
-                    {msg.role === "assistant" ? (
-                      <>
-                        {msg.content ? (
-                          <ChatMessageRenderer content={msg.content} />
-                        ) : (
-                          isLoading && msg.id === messages[messages.length - 1]?.id && (
-                            <TypingIndicator />
-                          )
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-[13px] sm:text-sm leading-relaxed">{msg.content}</p>
-                    )}
-                  </div>
-
-                  {/* "Anlamadım" button on AI messages */}
-                  {msg.role === "assistant" && msg.id !== "welcome" && msg.content && (
-                    <button
-                      onClick={() => {
-                        const userContent =
-                          "Bu açıklamayı anlamadım, daha basit anlatır mısın?";
-                        const userMsg: Message = {
-                          id: Date.now().toString(),
-                          role: "user",
-                          content: userContent,
-                          timestamp: new Date(),
-                        };
-                        setMessages((prev) => [...prev, userMsg]);
-                        sendToAI(userContent, messages);
-                      }}
-                      className={`absolute -bottom-2.5 right-4 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold transition-all ${
-                        isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                      }`}
+                    O
+                    <div
+                      className="absolute -bottom-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full border-[3px] flex items-center justify-center"
                       style={{
-                        background: "var(--bg-card)",
-                        border: "1px solid var(--border-primary)",
-                        color: "var(--accent-warning)",
-                        boxShadow: "var(--shadow-md)",
+                        background: "var(--accent-success)",
+                        borderColor: "var(--bg-primary)",
                       }}
                     >
-                      <IconHelp size={10} />
-                      Anlamadım
-                    </button>
-                  )}
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
-            <div />
-          </div>
 
-          {/* Quick Prompts */}
-          {messages.length <= 1 && (
-            <div className="max-w-[720px] mx-auto mt-8 sm:mt-10 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-              <div className="text-center mb-6">
-                <div
-                  className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 animate-float"
-                  style={{
-                    background: "var(--accent-primary-light)",
-                    boxShadow: "var(--shadow-glow-sm)",
-                  }}
+                <h1
+                  className="text-2xl sm:text-4xl font-black tracking-tight text-center mb-2 sm:mb-3"
+                  style={{ color: "var(--text-primary)" }}
                 >
-                  <span className="text-2xl">🎓</span>
-                </div>
-                <h2 className="text-base font-bold mb-1" style={{ color: "var(--text-primary)" }}>
-                  Ne öğrenmek istiyorsun?
-                </h2>
-                <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                  Bir konu seç ya da kendi sorunu yaz
+                  Bugün ne{" "}
+                  <span className="gradient-text-hero">öğrenmek</span>
+                  {" "}istiyorsun?
+                </h1>
+                <p
+                  className="text-sm sm:text-base text-center max-w-md leading-relaxed"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Odaklio AI ile konuşarak öğren, keşfet ve ustalaş
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-2.5">
-                {quickPrompts.map((prompt, i) => (
-                  <button
-                    key={prompt.text}
-                    onClick={() => setInput(prompt.text)}
-                    className="flex items-center gap-2 rounded-xl px-3.5 py-3 sm:px-4 sm:py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md stagger-children"
+              {/* Feature Chips */}
+              <div
+                className="flex flex-wrap justify-center gap-2 mb-8 sm:mb-10 animate-fade-in relative z-10"
+                style={{ animationDelay: "0.15s" }}
+              >
+                {featureChips.map((chip) => (
+                  <span
+                    key={chip.label}
+                    className="odak-feature-chip flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium"
                     style={{
                       background: "var(--bg-card)",
                       border: "1px solid var(--border-primary)",
                       color: "var(--text-secondary)",
-                      animationDelay: `${0.4 + i * 0.08}s`,
                     }}
                   >
-                    <span className="text-sm">{prompt.icon}</span>
-                    <span>{prompt.text}</span>
+                    <span className="text-xs">{chip.icon}</span>
+                    {chip.label}
+                  </span>
+                ))}
+              </div>
+
+              {/* Quick Prompt Cards */}
+              <div
+                className="w-full max-w-[640px] grid grid-cols-2 gap-2.5 sm:gap-3 animate-fade-in relative z-10"
+                style={{ animationDelay: "0.25s" }}
+              >
+                {quickPrompts.map((prompt, i) => (
+                  <button
+                    key={prompt.text}
+                    onClick={() => setInput(prompt.text)}
+                    className="odak-prompt-card group flex flex-col items-start gap-2 sm:gap-3 rounded-2xl p-3.5 sm:p-4 text-left transition-all active:scale-[0.97]"
+                    style={{
+                      background: "var(--bg-card)",
+                      border: "1px solid var(--border-primary)",
+                      animationDelay: `${0.3 + i * 0.06}s`,
+                    }}
+                  >
+                    <div
+                      className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl text-lg sm:text-xl transition-transform group-hover:scale-110"
+                      style={{
+                        background: prompt.gradient,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      }}
+                    >
+                      <span className="drop-shadow-sm">{prompt.icon}</span>
+                    </div>
+                    <div>
+                      <span
+                        className="text-xs sm:text-[13px] font-semibold block mb-0.5 leading-snug"
+                        style={{ color: "var(--text-primary)" }}
+                      >
+                        {prompt.text}
+                      </span>
+                      <span
+                        className="text-[10px] sm:text-[11px] font-medium"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        {prompt.desc}
+                      </span>
+                    </div>
+                    <div
+                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                        <polyline points="12 5 19 12 12 19" />
+                      </svg>
+                    </div>
                   </button>
                 ))}
               </div>
+
+              {/* Tip text */}
+              {!isMobile && (
+                <p
+                  className="mt-8 text-[11px] flex items-center gap-2 animate-fade-in"
+                  style={{ color: "var(--text-tertiary)", animationDelay: "0.5s" }}
+                >
+                  <span
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                    style={{ background: "var(--accent-primary-light)", color: "var(--accent-primary)" }}
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                    </svg>
+                    PRO
+                  </span>
+                  Metni seç ve Hızlı Öğren, Bu Nedir veya Hızlı Oku ile etkileşime geç
+                </p>
+              )}
+            </div>
+          ) : (
+            /* Chat Messages */
+            <div className="max-w-[720px] mx-auto space-y-5 sm:space-y-6">
+              {messages.filter(m => m.id !== "welcome").map((msg, idx) => (
+                <div
+                  id={`msg-${msg.id}`}
+                  key={msg.id}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-msg-in`}
+                  style={{ animationDelay: `${Math.min(idx * 0.05, 0.3)}s` }}
+                >
+                  {msg.role === "assistant" && <AiAvatar />}
+
+                  <div
+                    className={`group relative ${
+                      msg.role === "user"
+                        ? "max-w-[85%] sm:max-w-[70%]"
+                        : "max-w-[92%] sm:max-w-[88%]"
+                    }`}
+                  >
+                    <div
+                      className={`px-3.5 py-3 sm:px-4 sm:py-3.5 ${
+                        msg.role === "user" ? "msg-user" : "msg-ai"
+                      }`}
+                    >
+                      {msg.role === "assistant" ? (
+                        <>
+                          {msg.content ? (
+                            <ChatMessageRenderer content={msg.content} />
+                          ) : (
+                            isLoading && msg.id === messages[messages.length - 1]?.id && (
+                              <TypingIndicator />
+                            )
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-[13px] sm:text-sm leading-relaxed">{msg.content}</p>
+                      )}
+                    </div>
+
+                    {/* "Anlamadım" button on AI messages */}
+                    {msg.role === "assistant" && msg.id !== "welcome" && msg.content && (
+                      <button
+                        onClick={() => {
+                          const userContent =
+                            "Bu açıklamayı anlamadım, daha basit anlatır mısın?";
+                          const userMsg: Message = {
+                            id: Date.now().toString(),
+                            role: "user",
+                            content: userContent,
+                            timestamp: new Date(),
+                          };
+                          setMessages((prev) => [...prev, userMsg]);
+                          sendToAI(userContent, messages);
+                        }}
+                        className={`absolute -bottom-2.5 right-4 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold transition-all ${
+                          isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                        }`}
+                        style={{
+                          background: "var(--bg-card)",
+                          border: "1px solid var(--border-primary)",
+                          color: "var(--accent-warning)",
+                          boxShadow: "var(--shadow-md)",
+                        }}
+                      >
+                        <IconHelp size={10} />
+                        Anlamadım
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              <div />
             </div>
           )}
         </div>
 
         {/* Input Bar */}
-        <div className={`flex-shrink-0 px-3 sm:px-4 ${isMobile ? "pb-2" : "pb-4"}`}>
+        <div className={`flex-shrink-0 px-3 sm:px-5 ${isMobile ? "pb-2" : "pb-5"} relative z-10`}>
           <div
-            className="max-w-[720px] mx-auto flex items-center gap-2 rounded-2xl px-3 py-2.5 sm:px-4 transition-all"
+            className={`max-w-[640px] mx-auto flex items-center gap-2.5 px-3 sm:px-4 transition-all ${
+              isWelcome ? "odak-input-hero rounded-2xl py-3" : "rounded-2xl py-2.5"
+            }`}
             style={{
               background: "var(--bg-card)",
-              border: "1px solid var(--border-primary)",
-              boxShadow: input.trim() ? "var(--shadow-glow-sm)" : "var(--shadow-md)",
-              borderColor: input.trim() ? "rgba(16, 185, 129, 0.2)" : "var(--border-primary)",
+              border: `1px solid ${input.trim() ? "rgba(16, 185, 129, 0.25)" : "var(--border-primary)"}`,
+              boxShadow: input.trim()
+                ? "var(--shadow-glow), 0 4px 24px rgba(0,0,0,0.1)"
+                : isWelcome
+                ? "0 4px 24px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.02)"
+                : "var(--shadow-md)",
             }}
           >
             <button
               onClick={() => setIsListening(!isListening)}
-              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl transition-all"
+              className="flex h-9 w-9 sm:h-8 sm:w-8 flex-shrink-0 items-center justify-center rounded-xl transition-all active:scale-95"
               style={{
                 background: isListening
                   ? "var(--accent-danger)"
@@ -460,7 +574,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                 color: isListening ? "white" : "var(--text-tertiary)",
               }}
             >
-              <IconMic size={14} />
+              <IconMic size={15} />
             </button>
 
             <input
@@ -473,11 +587,11 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                 isLoading
                   ? "Yanıt bekleniyor..."
                   : isMobile
-                  ? "Mesajını yaz..."
-                  : "Mesajını yaz veya sesli konuş..."
+                  ? "Bir şey sor..."
+                  : "Bir soru sor veya konu yaz..."
               }
               disabled={isLoading}
-              className="flex-1 bg-transparent text-[13px] sm:text-sm outline-none disabled:opacity-50"
+              className="flex-1 bg-transparent text-sm sm:text-[15px] outline-none disabled:opacity-50"
               style={{ color: "var(--text-primary)" }}
             />
 
@@ -486,7 +600,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
               onMouseDown={(e) => e.preventDefault()}
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
-              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
+              className="flex h-9 w-9 sm:h-8 sm:w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
               style={{
                 background:
                   input.trim() && !isLoading
@@ -505,16 +619,6 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
               <IconSend size={14} />
             </button>
           </div>
-
-          {!isMobile && (
-            <p
-              className="text-center text-[10px] mt-2.5 flex items-center justify-center gap-1.5"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              <span style={{ color: "var(--accent-primary)", opacity: 0.6 }}>●</span>
-              Metni seç → Hızlı Öğren · Bu nedir? · Hızlı Oku
-            </p>
-          )}
         </div>
       </div>
 

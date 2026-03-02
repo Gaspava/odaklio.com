@@ -1058,6 +1058,17 @@ body {
   .copy-btn {
     opacity: 1;
   }
+
+  /* Odak hero mobile adjustments */
+  .odak-hero-glow {
+    width: 300px;
+    height: 300px;
+    top: 5%;
+  }
+
+  .odak-prompt-card:hover {
+    transform: none;
+  }
 }
 
 /* Small phones */
@@ -1096,6 +1107,87 @@ body {
   html {
     overscroll-behavior: none;
   }
+}
+
+/* ===== ODAK HERO / WELCOME SCREEN ===== */
+.odak-hero-glow {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(16, 185, 129, 0.08) 0%,
+    rgba(59, 130, 246, 0.04) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
+  animation: heroGlowPulse 6s ease-in-out infinite;
+}
+
+.dark .odak-hero-glow {
+  background: radial-gradient(
+    circle,
+    rgba(16, 185, 129, 0.12) 0%,
+    rgba(59, 130, 246, 0.06) 40%,
+    transparent 70%
+  );
+}
+
+@keyframes heroGlowPulse {
+  0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+}
+
+.odak-hero-logo {
+  animation: heroLogoIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes heroLogoIn {
+  from { opacity: 0; transform: scale(0.5) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.odak-feature-chip {
+  transition: all var(--transition-fast);
+}
+
+.odak-feature-chip:hover {
+  background: var(--bg-card-hover) !important;
+  border-color: rgba(16, 185, 129, 0.15) !important;
+  transform: translateY(-1px);
+}
+
+.odak-prompt-card {
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-normal);
+}
+
+.odak-prompt-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.odak-prompt-card:hover {
+  border-color: rgba(16, 185, 129, 0.2) !important;
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+.odak-prompt-card:hover::before {
+  opacity: 1;
+}
+
+.odak-input-hero {
+  transition: all var(--transition-normal);
 }
 
 /* ===== MINDMAP CHAT ===== */
