@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { chatRequestSchema } from "@/lib/validators/chat";
 
 const SYSTEM_INSTRUCTION = `Sen Odaklio AI, Türkçe konuşan bir akıllı öğrenme asistanısın. Görevin öğrencilere ders konularını anlaşılır, samimi ve motive edici bir şekilde açıklamak.
 
@@ -49,14 +50,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { messages } = body;
+    const parsed = chatRequestSchema.safeParse(body);
 
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+    if (!parsed.success) {
       return Response.json(
-        { error: "Geçersiz mesaj formatı." },
+        { error: parsed.error.issues[0]?.message || "Geçersiz mesaj formatı.", code: "VALIDATION_ERROR" },
         { status: 400 }
       );
     }
+
+    const { messages } = parsed.data;
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
@@ -69,8 +72,8 @@ export async function POST(request: Request) {
     // Build history from previous messages (exclude the last one)
     const history = messages
       .slice(0, -1)
-      .filter((msg: { role: string; content: string }) => msg.content?.trim())
-      .map((msg: { role: string; content: string }) => ({
+      .filter((msg) => msg.content?.trim())
+      .map((msg) => ({
         role: msg.role === "assistant" ? "model" : "user",
         parts: [{ text: msg.content }],
       }));

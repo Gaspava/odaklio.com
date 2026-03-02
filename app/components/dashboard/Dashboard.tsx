@@ -46,6 +46,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [showStyleSelector, setShowStyleSelector] = useState(false);
   const [chatKey, setChatKey] = useState(0);
   const [activePage, setActivePage] = useState<PageType>("focus");
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const { theme, toggleTheme } = useTheme();
 
@@ -136,13 +137,30 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   };
 
   const handleNewChat = () => {
+    setActiveConversationId(null);
     setShowStyleSelector(true);
   };
 
   const handleSelectStyle = (style: ChatStyle) => {
     setChatStyle(style);
+    setActiveConversationId(null);
     setChatKey((k) => k + 1);
     setShowStyleSelector(false);
+  };
+
+  const handleOpenConversation = (conversationId: string) => {
+    setActiveConversationId(conversationId);
+    setChatStyle("standard");
+    setChatKey((k) => k + 1);
+    setActivePage("focus");
+    if (isMobile) {
+      setLeftOpen(false);
+      setRightOpen(false);
+    }
+  };
+
+  const handleConversationCreated = (id: string) => {
+    setActiveConversationId(id);
   };
 
   const handlePageChange = (page: PageType) => {
@@ -158,12 +176,17 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const renderPageContent = () => {
     switch (activePage) {
       case "history":
-        return <ChatHistoryPage />;
+        return <ChatHistoryPage onOpenConversation={handleOpenConversation} />;
       case "tools":
         return <ToolsPage />;
       case "focus":
         return chatStyle === "standard" ? (
-          <MainChat key={chatKey} isMobile={isMobile} />
+          <MainChat
+            key={chatKey}
+            isMobile={isMobile}
+            conversationId={activeConversationId}
+            onConversationCreated={handleConversationCreated}
+          />
         ) : (
           <MindmapChat key={chatKey} isMobile={isMobile} />
         );

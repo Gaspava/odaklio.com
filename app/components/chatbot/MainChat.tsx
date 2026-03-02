@@ -6,6 +6,7 @@ import TextSelectionPopup from "./TextSelectionPopup";
 import SpeedReadingOverlay from "../speed-reading/SpeedReadingOverlay";
 import QuickLearnOverlay from "./QuickLearnOverlay";
 import ChatMessageRenderer from "./ChatMessageRenderer";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 interface Message {
   id: string;
@@ -16,6 +17,8 @@ interface Message {
 
 interface MainChatProps {
   isMobile?: boolean;
+  conversationId?: string | null;
+  onConversationCreated?: (id: string) => void;
 }
 
 const welcomeMessage: Message = {
@@ -115,11 +118,17 @@ function AiAvatar() {
   );
 }
 
-export default function MainChat({ isMobile = false }: MainChatProps) {
+export default function MainChat({
+  isMobile = false,
+  conversationId: initialConversationId = null,
+  onConversationCreated,
+}: MainChatProps) {
+  const { isAuthenticated } = useAuth();
   const [messages, setMessages] = useState<Message[]>([welcomeMessage]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(initialConversationId);
   const [selectionPopup, setSelectionPopup] = useState<{
     x: number;
     y: number;
@@ -132,6 +141,32 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastAiMsgIdRef = useRef<string | null>(null);
+
+  // Mevcut konuşma yüklendiğinde mesajları getir
+  useEffect(() => {
+    if (!initialConversationId || !isAuthenticated) return;
+
+    async function loadMessages() {
+      try {
+        const res = await fetch(`/api/conversations/${initialConversationId}/messages`);
+        if (!res.ok) return;
+        const { data } = await res.json();
+        if (data && data.length > 0) {
+          const loaded: Message[] = data.map((msg: { id: string; role: "user" | "assistant"; content: string; created_at: string }) => ({
+            id: msg.id,
+            role: msg.role,
+            content: msg.content,
+            timestamp: new Date(msg.created_at),
+          }));
+          setMessages([welcomeMessage, ...loaded]);
+        }
+      } catch {
+        // Mesajlar yüklenemezse mevcut haliyle devam et
+      }
+    }
+
+    loadMessages();
+  }, [initialConversationId, isAuthenticated]);
 
   // Scroll to the START of the last AI message (not the bottom)
   useEffect(() => {
@@ -195,6 +230,52 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
     };
   }, [handleTextSelection]);
 
+  /**
+   * Mesajları veritabanına kaydet.
+   * Konuşma yoksa yeni oluştur, varsa mesajları ekle.
+   */
+  const saveMessages = useCallback(
+    async (userContent: string, aiContent: string, currentConvId: string | null) => {
+      if (!isAuthenticated) return currentConvId;
+
+      try {
+        let convId = currentConvId;
+
+        // Yeni konuşma oluştur
+        if (!convId) {
+          const title = userContent.slice(0, 60) + (userContent.length > 60 ? "..." : "");
+          const res = await fetch("/api/conversations", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title }),
+          });
+          if (!res.ok) return null;
+          const { data } = await res.json();
+          convId = data.id;
+          setConversationId(convId);
+          onConversationCreated?.(convId!);
+        }
+
+        // Mesajları kaydet
+        await fetch(`/api/conversations/${convId}/messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [
+              { role: "user", content: userContent },
+              { role: "assistant", content: aiContent },
+            ],
+          }),
+        });
+
+        return convId;
+      } catch {
+        return currentConvId;
+      }
+    },
+    [isAuthenticated, onConversationCreated]
+  );
+
   const sendToAI = useCallback(
     async (userContent: string, allMessages: Message[]) => {
       setIsLoading(true);
@@ -213,10 +294,13 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
         .map((m) => ({ role: m.role, content: m.content }));
       apiMessages.push({ role: "user", content: userContent });
 
+      let fullAiResponse = "";
+
       try {
         await streamChat(
           apiMessages,
           (text) => {
+            fullAiResponse += text;
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === aiMsgId ? { ...m, content: m.content + text } : m
@@ -234,6 +318,10 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
           },
           () => {
             setIsLoading(false);
+            // AI yanıtı tamamlandığında mesajları kaydet
+            if (fullAiResponse && !fullAiResponse.startsWith("[!danger]")) {
+              saveMessages(userContent, fullAiResponse, conversationId);
+            }
           }
         );
       } catch (error) {
@@ -252,7 +340,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
         setIsLoading(false);
       }
     },
-    []
+    [conversationId, saveMessages]
   );
 
   const handleSend = useCallback(() => {
