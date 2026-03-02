@@ -11,6 +11,9 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   signup: (email: string, password: string, fullName: string) => Promise<{ error: string | null }>;
+  loginWithGoogle: () => Promise<{ error: string | null }>;
+  sendPhoneOtp: (phone: string) => Promise<{ error: string | null }>;
+  verifyPhoneOtp: (phone: string, token: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
 }
 
@@ -21,6 +24,9 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   login: async () => ({ error: null }),
   signup: async () => ({ error: null }),
+  loginWithGoogle: async () => ({ error: null }),
+  sendPhoneOtp: async () => ({ error: null }),
+  verifyPhoneOtp: async () => ({ error: null }),
   logout: async () => {},
 });
 
@@ -73,6 +79,39 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null };
   }, []);
 
+  const loginWithGoogle = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) {
+      return { error: error.message };
+    }
+    return { error: null };
+  }, []);
+
+  const sendPhoneOtp = useCallback(async (phone: string) => {
+    const { error } = await supabase.auth.signInWithOtp({ phone });
+    if (error) {
+      return { error: error.message };
+    }
+    return { error: null };
+  }, []);
+
+  const verifyPhoneOtp = useCallback(async (phone: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      phone,
+      token,
+      type: "sms",
+    });
+    if (error) {
+      return { error: error.message };
+    }
+    return { error: null };
+  }, []);
+
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
   }, []);
@@ -86,6 +125,9 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         login,
         signup,
+        loginWithGoogle,
+        sendPhoneOtp,
+        verifyPhoneOtp,
         logout,
       }}
     >
