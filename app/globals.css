@@ -2697,6 +2697,73 @@ body {
   color: var(--text-tertiary);
 }
 
+/* Miller Columns */
+.miller-columns-container {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-primary) transparent;
+}
+
+.miller-columns-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.miller-columns-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.miller-columns-container::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 3px;
+}
+
+.miller-column {
+  flex-shrink: 0;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-primary);
+  animation: millerSlideIn 0.3s ease-out;
+  overflow: hidden;
+}
+
+.miller-column:last-child {
+  border-right: none;
+}
+
+@keyframes millerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.miller-step-item {
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.miller-step-item:hover {
+  transform: translateX(2px);
+}
+
+.miller-step-item.selected {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.1);
+}
+
+@media (max-width: 768px) {
+  .miller-column {
+    width: 100%;
+    border-right: none;
+  }
+}
+
 /* Mode Selector Card */
 .mode-card {
   background: var(--bg-card);

@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { IconSend, IconRoadmap } from "../icons/Icons";
-import ChatMessageRenderer from "./ChatMessageRenderer";
+import { IconSend, IconRoadmap, IconChevronLeft, IconChevronRight } from "../icons/Icons";
 import {
   useConversation,
-  type ChatMessage,
 } from "@/app/providers/ConversationProvider";
 import {
   saveRoadmapSteps,
@@ -13,7 +11,9 @@ import {
   toggleRoadmapStepCompletion,
   getChildConversations,
   getConversationBreadcrumb,
+  getConversation,
   type Conversation,
+  type RoadmapStepRow,
 } from "@/lib/db/conversations";
 
 /* ===== TYPES ===== */
@@ -28,7 +28,20 @@ interface RoadmapStep {
   description: string;
   duration: string;
   completed: boolean;
+  expandable: boolean;
 }
+
+interface RoadmapColumn {
+  conversationId: string;
+  title: string;
+  steps: RoadmapStep[];
+  selectedStepNumber: number | null;
+  completedSteps: Set<number>;
+  isLoading: boolean;
+}
+
+type Phase = "input" | "loading" | "roadmap";
+const MAX_DEPTH = 4;
 
 /* ===== STREAMING HELPER ===== */
 async function streamChat(
@@ -89,14 +102,14 @@ async function streamChat(
   onDone();
 }
 
-/* ===== ROADMAP PARSERS ===== */
+/* ===== PARSERS ===== */
 function parseRoadmapTitle(content: string): string | null {
   const match = content.match(/\[ROADMAP_TITLE\](.*?)\[\/ROADMAP_TITLE\]/);
   return match ? match[1].trim() : null;
 }
 
 function parseRoadmapSteps(content: string): RoadmapStep[] {
-  const regex = /\[STEP\](\d+)\|([\s\S]*?)\|([\s\S]*?)\|([\s\S]*?)\[\/STEP\]/g;
+  const regex = /\[STEP\](\d+)\|([\s\S]*?)\|([\s\S]*?)\|([\s\S]*?)(?:\|(true|false))?\[\/STEP\]/g;
   const steps: RoadmapStep[] = [];
   let match;
   while ((match = regex.exec(content)) !== null) {
@@ -106,280 +119,175 @@ function parseRoadmapSteps(content: string): RoadmapStep[] {
       description: match[3].trim(),
       duration: match[4].trim(),
       completed: false,
+      expandable: match[5] ? match[5] === "true" : true,
     });
   }
   return steps;
 }
 
 /* ===== CONSTANTS ===== */
-const WELCOME_MESSAGE: ChatMessage = {
-  id: "welcome",
-  role: "assistant",
-  content:
-    "Merhaba! Ben Yol Haritasi asistaninim. Ne ogrenmek istedigini soyle, sana adim adim bir ogrenme plani hazirlayayim.\n\nOrnek: \"Python ogrenmek istiyorum\" veya \"Web gelistirme yol haritasi\"",
-  timestamp: new Date(),
-};
-
 const QUICK_PROMPTS = [
-  { text: "Python ogrenme yolu", icon: "\uD83D\uDC0D" },
-  { text: "Web gelistirme", icon: "\uD83C\uDF10" },
+  { text: "Python ogrenmek istiyorum", icon: "\uD83D\uDC0D" },
+  { text: "Web gelistirme yol haritasi", icon: "\uD83C\uDF10" },
   { text: "Makine ogrenmesi", icon: "\uD83E\uDD16" },
 ];
 
-/* ===== CHECKMARK ICON ===== */
+/* ===== INLINE SVG ICONS ===== */
 function CheckIcon() {
   return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="3"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 6 9 17 4 12" />
     </svg>
   );
 }
 
-/* ===== DETAIL ICON ===== */
-function DetailIcon() {
-  return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="16" x2="12" y2="12" />
-      <line x1="12" y1="8" x2="12.01" y2="8" />
-    </svg>
-  );
-}
-
-/* ===== BOOK ICON ===== */
 function BookIcon() {
   return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
       <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
     </svg>
   );
 }
 
-/* ===== STEP CARD COMPONENT ===== */
-function StepCard({
+/* ===== OVERALL PROGRESS BAR ===== */
+function OverallProgress({ columns }: { columns: RoadmapColumn[] }) {
+  let total = 0;
+  let completed = 0;
+  for (const col of columns) {
+    total += col.steps.length;
+    completed += col.completedSteps.size;
+  }
+  if (total === 0) return null;
+  const pct = Math.round((completed / total) * 100);
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-2" style={{ borderBottom: "1px solid var(--border-primary)" }}>
+      <span className="text-[11px] font-medium" style={{ color: "var(--text-tertiary)" }}>
+        Ilerleme
+      </span>
+      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-tertiary)" }}>
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${pct}%`, background: "var(--accent-primary)" }}
+        />
+      </div>
+      <span className="text-[11px] font-semibold" style={{ color: pct === 100 ? "var(--accent-primary)" : "var(--text-secondary)" }}>
+        {completed}/{total} ({pct}%)
+      </span>
+    </div>
+  );
+}
+
+/* ===== COLUMN SKELETON ===== */
+function ColumnSkeleton() {
+  return (
+    <div className="miller-column" style={{ background: "var(--bg-primary)" }}>
+      <div className="p-4" style={{ borderBottom: "1px solid var(--border-primary)" }}>
+        <div className="h-4 w-32 rounded-md animate-pulse" style={{ background: "var(--bg-tertiary)" }} />
+      </div>
+      <div className="p-3 flex flex-col gap-2">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="rounded-xl p-3" style={{ background: "var(--bg-card)", border: "1px solid var(--border-secondary)" }}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-6 w-6 rounded-lg animate-pulse" style={{ background: "var(--bg-tertiary)", animationDelay: `${i * 0.1}s` }} />
+              <div className="h-3.5 flex-1 rounded-md animate-pulse" style={{ background: "var(--bg-tertiary)", animationDelay: `${i * 0.12}s` }} />
+            </div>
+            <div className="h-2.5 w-3/4 rounded-md animate-pulse" style={{ background: "var(--bg-tertiary)", animationDelay: `${i * 0.15}s` }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ===== MILLER STEP ITEM ===== */
+function MillerStepItem({
   step,
   isCompleted,
-  isExpanded,
+  isSelected,
+  canExpand,
   onToggleComplete,
-  onToggleExpand,
-  onAskDetail,
-  onCreateSubRoadmap,
-  onStudyTopic,
-  childRoadmapId,
-  onOpenChild,
-  stepsSaved,
-  index,
+  onClick,
+  onStudy,
 }: {
   step: RoadmapStep;
   isCompleted: boolean;
-  isExpanded: boolean;
+  isSelected: boolean;
+  canExpand: boolean;
   onToggleComplete: () => void;
-  onToggleExpand: () => void;
-  onAskDetail: () => void;
-  onCreateSubRoadmap: () => void;
-  onStudyTopic: () => void;
-  childRoadmapId: string | null;
-  onOpenChild: (id: string) => void;
-  stepsSaved: boolean;
-  index: number;
+  onClick: () => void;
+  onStudy: () => void;
 }) {
   return (
     <div
-      className="relative flex gap-0 animate-msg-in"
-      style={{ animationDelay: `${index * 0.08}s` }}
+      className={`miller-step-item ${isSelected ? "selected" : ""}`}
+      style={{
+        background: isCompleted ? "rgba(16, 185, 129, 0.04)" : "var(--bg-card)",
+        border: isSelected
+          ? "1.5px solid #ef4444"
+          : isCompleted
+            ? "1px solid rgba(16, 185, 129, 0.2)"
+            : "1px solid var(--border-secondary)",
+      }}
     >
-      {/* Timeline dot */}
-      <div className="relative flex-shrink-0" style={{ width: 24 }}>
+      <div className="flex items-center gap-2.5">
+        {/* Completion checkbox */}
         <button
-          onClick={onToggleComplete}
-          className="relative z-10 flex items-center justify-center rounded-full transition-all duration-300"
+          onClick={(e) => { e.stopPropagation(); onToggleComplete(); }}
+          className="relative z-10 flex items-center justify-center rounded-full flex-shrink-0 transition-all duration-200"
           style={{
-            width: 24,
-            height: 24,
-            marginTop: 16,
-            background: isCompleted ? "#10b981" : "var(--bg-primary)",
-            border: isCompleted
-              ? "2px solid #10b981"
-              : "2px solid var(--border-primary)",
+            width: 20,
+            height: 20,
+            background: isCompleted ? "#10b981" : "transparent",
+            border: isCompleted ? "2px solid #10b981" : "2px solid var(--border-primary)",
             color: isCompleted ? "white" : "transparent",
-            boxShadow: isCompleted
-              ? "0 0 12px rgba(16, 185, 129, 0.35)"
-              : "none",
             cursor: "pointer",
           }}
-          title={isCompleted ? "Tamamlandi olarak isaretlendi" : "Tamamlandi olarak isaretle"}
+          title={isCompleted ? "Tamamlandi" : "Tamamla"}
         >
           {isCompleted && <CheckIcon />}
         </button>
-      </div>
 
-      {/* Step card content */}
-      <div
-        className="flex-1 rounded-xl p-4 mb-4 transition-all duration-300"
-        style={{
-          marginLeft: 16,
-          background: isCompleted
-            ? "rgba(16, 185, 129, 0.06)"
-            : "var(--bg-card)",
-          border: isCompleted
-            ? "1px solid rgba(16, 185, 129, 0.2)"
-            : "1px solid var(--border-primary)",
-          opacity: isCompleted ? 0.85 : 1,
-          boxShadow: "var(--shadow-card)",
-        }}
-      >
-        {/* Step header */}
-        <div className="flex items-center gap-2.5 mb-2">
-          {/* Step number badge */}
+        {/* Step number badge + title + duration — clickable area */}
+        <div className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer" onClick={onClick}>
           <span
-            className="flex items-center justify-center rounded-lg text-[11px] font-bold flex-shrink-0"
-            style={{
-              width: 26,
-              height: 26,
-              background: "#ef4444",
-              color: "white",
-            }}
+            className="flex items-center justify-center rounded-lg text-[10px] font-bold flex-shrink-0"
+            style={{ width: 22, height: 22, background: "#ef4444", color: "white" }}
           >
             {step.number}
           </span>
-
           <span
-            className="font-semibold text-sm flex-1"
+            className="text-[13px] font-medium flex-1 min-w-0 truncate"
             style={{
               color: "var(--text-primary)",
               textDecoration: isCompleted ? "line-through" : "none",
-              textDecorationColor: isCompleted
-                ? "rgba(16, 185, 129, 0.5)"
-                : undefined,
+              textDecorationColor: isCompleted ? "rgba(16, 185, 129, 0.5)" : undefined,
             }}
           >
             {step.title}
           </span>
-
-          {/* Duration badge */}
           <span
-            className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium flex-shrink-0"
-            style={{
-              background: "var(--bg-tertiary)",
-              color: "var(--text-tertiary)",
-            }}
+            className="text-[10px] flex-shrink-0 px-1.5 py-0.5 rounded-full"
+            style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
           >
-            <span style={{ fontSize: 11 }}>&#9201;</span>
             {step.duration}
           </span>
         </div>
 
-        {/* Description */}
-        <p
-          className="text-[13px] leading-relaxed mb-3"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          {step.description}
-        </p>
-
-        {/* Child roadmap badge */}
-        {childRoadmapId && (
+        {/* Right action: chevron for expandable OR study button for leaf */}
+        {canExpand ? (
           <button
-            onClick={() => onOpenChild(childRoadmapId)}
-            className="flex items-center gap-1.5 mb-3 px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all active:scale-[0.97]"
-            style={{
-              background: "rgba(239, 68, 68, 0.06)",
-              color: "#ef4444",
-              border: "1px solid rgba(239, 68, 68, 0.15)",
-            }}
+            onClick={onClick}
+            className="flex-shrink-0 flex items-center justify-center transition-colors"
+            style={{ color: "var(--text-tertiary)", width: 20, height: 20 }}
           >
-            <IconRoadmap size={10} />
-            Alt yol haritasi mevcut
+            <IconChevronRight size={14} />
           </button>
-        )}
-
-        {/* Actions row */}
-        <div className="flex items-center gap-2 flex-wrap">
+        ) : (
           <button
-            onClick={onToggleComplete}
-            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all active:scale-[0.97]"
-            style={{
-              background: isCompleted
-                ? "rgba(16, 185, 129, 0.12)"
-                : "var(--bg-tertiary)",
-              color: isCompleted ? "#10b981" : "var(--text-tertiary)",
-              border: isCompleted
-                ? "1px solid rgba(16, 185, 129, 0.2)"
-                : "1px solid transparent",
-            }}
-          >
-            {isCompleted ? (
-              <>
-                <CheckIcon />
-                Tamamlandi
-              </>
-            ) : (
-              "Tamamla"
-            )}
-          </button>
-
-          <button
-            onClick={onAskDetail}
-            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all active:scale-[0.97]"
-            style={{
-              background: "rgba(239, 68, 68, 0.08)",
-              color: "#ef4444",
-              border: "1px solid rgba(239, 68, 68, 0.15)",
-            }}
-          >
-            <DetailIcon />
-            Detay
-          </button>
-
-          {/* Sub-roadmap button */}
-          {!childRoadmapId && (
-            <button
-              onClick={onCreateSubRoadmap}
-              disabled={!stepsSaved}
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all active:scale-[0.97] disabled:opacity-40"
-              style={{
-                background: "rgba(239, 68, 68, 0.08)",
-                color: "#ef4444",
-                border: "1px solid rgba(239, 68, 68, 0.15)",
-              }}
-            >
-              <IconRoadmap size={11} />
-              Roadmap
-            </button>
-          )}
-
-          {/* Study topic button */}
-          <button
-            onClick={onStudyTopic}
-            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all active:scale-[0.97]"
+            onClick={(e) => { e.stopPropagation(); onStudy(); }}
+            className="flex-shrink-0 flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-all active:scale-[0.97]"
             style={{
               background: "rgba(16, 185, 129, 0.08)",
               color: "#10b981",
@@ -387,736 +295,563 @@ function StepCard({
             }}
           >
             <BookIcon />
-            Bu Konuyu Calis
+            Calis
           </button>
-        </div>
-
-        {/* Expanded detail area */}
-        {isExpanded && (
-          <div
-            className="mt-3 pt-3 text-[12px]"
-            style={{
-              borderTop: "1px solid var(--border-primary)",
-              color: "var(--text-tertiary)",
-            }}
-          >
-            AI&apos;dan detay isteniyor...
-          </div>
         )}
       </div>
-    </div>
-  );
-}
 
-/* ===== PROGRESS BAR ===== */
-function ProgressBar({
-  completed,
-  total,
-}: {
-  completed: number;
-  total: number;
-}) {
-  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-  return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-2">
-        <span
-          className="text-xs font-semibold"
-          style={{ color: "var(--text-secondary)" }}
+      {/* Description on hover/selection — show when selected */}
+      {isSelected && (
+        <p
+          className="text-[11px] leading-relaxed mt-2 pt-2"
+          style={{ color: "var(--text-tertiary)", borderTop: "1px solid var(--border-secondary)" }}
         >
-          Ilerleme
-        </span>
-        <span
-          className="text-xs font-bold"
-          style={{
-            color: percentage === 100 ? "#10b981" : "var(--text-tertiary)",
-          }}
-        >
-          {completed}/{total} adim ({percentage}%)
-        </span>
-      </div>
-      <div
-        className="relative h-2 rounded-full overflow-hidden"
-        style={{ background: "var(--bg-tertiary)" }}
-      >
-        <div
-          className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out"
-          style={{
-            width: `${percentage}%`,
-            background:
-              percentage === 100
-                ? "linear-gradient(90deg, #10b981, #34d399)"
-                : "linear-gradient(90deg, #ef4444, #f87171)",
-            boxShadow:
-              percentage > 0
-                ? percentage === 100
-                  ? "0 0 12px rgba(16, 185, 129, 0.4)"
-                  : "0 0 12px rgba(239, 68, 68, 0.3)"
-                : "none",
-          }}
-        />
-      </div>
+          {step.description}
+        </p>
+      )}
     </div>
   );
 }
 
-/* ===== TYPING INDICATOR ===== */
-function TypingIndicator() {
-  return (
-    <div className="flex items-center gap-1.5 px-1 py-1">
-      <div
-        className="typing-dot w-2 h-2 rounded-full"
-        style={{ background: "#ef4444" }}
-      />
-      <div
-        className="typing-dot w-2 h-2 rounded-full"
-        style={{ background: "#ef4444" }}
-      />
-      <div
-        className="typing-dot w-2 h-2 rounded-full"
-        style={{ background: "#ef4444" }}
-      />
-    </div>
-  );
-}
-
-/* ===== AI AVATAR ===== */
-function AiAvatar() {
-  return (
-    <div
-      className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg mr-2.5 mt-1 text-white text-[11px] font-bold relative"
-      style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
-    >
-      <IconRoadmap size={14} />
-      <div
-        className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
-        style={{
-          background: "var(--accent-success)",
-          borderColor: "var(--bg-primary)",
-        }}
-      />
-    </div>
-  );
-}
-
-/* ===== BREADCRUMB ===== */
-function Breadcrumb({
-  crumbs,
-  onNavigate,
+/* ===== MILLER COLUMN ===== */
+function MillerColumn({
+  column,
+  colIndex,
+  totalColumns,
+  onSelectStep,
+  onToggleComplete,
+  onStudy,
 }: {
-  crumbs: { id: string; title: string }[];
-  onNavigate: (id: string) => void;
+  column: RoadmapColumn;
+  colIndex: number;
+  totalColumns: number;
+  onSelectStep: (stepNumber: number) => void;
+  onToggleComplete: (stepNumber: number) => void;
+  onStudy: (step: RoadmapStep) => void;
 }) {
-  if (crumbs.length <= 1) return null;
+  const completed = column.completedSteps.size;
+  const total = column.steps.length;
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const bgColor = colIndex % 2 === 0 ? "var(--bg-primary)" : "var(--bg-secondary)";
+
+  if (column.isLoading) {
+    return <ColumnSkeleton />;
+  }
 
   return (
-    <div
-      className="flex items-center gap-1.5 px-4 py-2.5 text-[11px] overflow-x-auto flex-shrink-0"
-      style={{
-        background: "var(--bg-secondary)",
-        borderBottom: "1px solid var(--border-primary)",
-      }}
-    >
-      {crumbs.map((crumb, i) => {
-        const isLast = i === crumbs.length - 1;
-        return (
-          <span key={crumb.id} className="flex items-center gap-1.5 flex-shrink-0">
-            {i > 0 && (
-              <span style={{ color: "var(--text-tertiary)" }}>&#8250;</span>
-            )}
-            {isLast ? (
-              <span className="font-semibold" style={{ color: "#ef4444" }}>
-                {crumb.title}
-              </span>
-            ) : (
-              <button
-                onClick={() => onNavigate(crumb.id)}
-                className="font-medium transition-colors hover:underline"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                {crumb.title}
-              </button>
-            )}
+    <div className="miller-column" style={{ background: bgColor }}>
+      {/* Column header */}
+      <div className="px-4 py-3 flex-shrink-0" style={{ borderBottom: "1px solid var(--border-primary)" }}>
+        <h3 className="text-[13px] font-semibold truncate mb-1.5" style={{ color: "var(--text-primary)" }}>
+          {column.title || "Yol Haritasi"}
+        </h3>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: "var(--bg-tertiary)" }}>
+            <div
+              className="h-full rounded-full transition-all duration-300"
+              style={{ width: `${pct}%`, background: "var(--accent-primary)" }}
+            />
+          </div>
+          <span className="text-[10px] font-medium" style={{ color: "var(--text-tertiary)" }}>
+            {completed}/{total}
           </span>
-        );
-      })}
+        </div>
+      </div>
+
+      {/* Step list */}
+      <div className="flex-1 overflow-y-auto p-2.5 flex flex-col gap-1.5">
+        {column.steps.map((step) => {
+          const canExpand = step.expandable && colIndex + 1 < MAX_DEPTH;
+          return (
+            <MillerStepItem
+              key={step.number}
+              step={step}
+              isCompleted={column.completedSteps.has(step.number)}
+              isSelected={column.selectedStepNumber === step.number}
+              canExpand={canExpand}
+              onToggleComplete={() => onToggleComplete(step.number)}
+              onClick={() => onSelectStep(step.number)}
+              onStudy={() => onStudy(step)}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
 
-/* ===== MAIN ROADMAP CHAT ===== */
+/* ===== MAIN COMPONENT ===== */
 export default function RoadmapChat({ isMobile = false, onOpenConversation }: RoadmapChatProps) {
   const {
     activeConversationId,
     saveUserMessage,
     saveAssistantMessage,
     generateTitle,
-    refreshConversations,
-    loadConversation,
-    createChildRoadmap,
     createTypedConversation,
+    createChildRoadmap,
+    refreshConversations,
+    setActiveConversationId,
+    setActiveConversationType,
   } = useConversation();
 
-  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isInitialLoading, setIsInitialLoading] = useState(false);
-
-  // Roadmap state
-  const [roadmapTitle, setRoadmapTitle] = useState<string | null>(null);
-  const [steps, setSteps] = useState<RoadmapStep[]>([]);
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
-  const [expandedStep, setExpandedStep] = useState<number | null>(null);
-  const [stepsSaved, setStepsSaved] = useState(false);
-
-  // 2-panel layout state
-  const [activeTab, setActiveTab] = useState<"roadmap" | "chat">("chat");
-  const [detailStep, setDetailStep] = useState<RoadmapStep | null>(null);
-
-  // Hierarchy state
-  const [breadcrumbs, setBreadcrumbs] = useState<{ id: string; title: string }[]>([]);
-  const [childRoadmapMap, setChildRoadmapMap] = useState<Record<number, string>>({});
+  const [phase, setPhase] = useState<Phase>("input");
+  const [columns, setColumns] = useState<RoadmapColumn[]>([]);
+  const [inputText, setInputText] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [mobileActiveColumn, setMobileActiveColumn] = useState(0);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const lastAiMsgIdRef = useRef<string | null>(null);
-  const isFirstMessageRef = useRef(true);
 
-  // Load conversation on mount if there is an active one
-  useEffect(() => {
-    if (activeConversationId) {
-      isFirstMessageRef.current = false;
-      setIsInitialLoading(true);
-
-      // Load steps from DB, breadcrumb, and children in parallel
-      const loadAll = async () => {
-        const [loaded, dbSteps, crumbs, children] = await Promise.all([
-          loadConversation(activeConversationId),
-          getRoadmapSteps(activeConversationId).catch(() => []),
-          getConversationBreadcrumb(activeConversationId).catch(() => []),
-          getChildConversations(activeConversationId).catch(() => [] as Conversation[]),
-        ]);
-
-        if (loaded.length > 0) {
-          setMessages([WELCOME_MESSAGE, ...loaded]);
-        }
-
-        // Load steps from DB if available, otherwise parse from messages
-        if (dbSteps.length > 0) {
-          const stepsFromDb: RoadmapStep[] = dbSteps.map((s) => ({
-            number: s.step_number,
-            title: s.title,
-            description: s.description,
-            duration: s.duration,
-            completed: s.is_completed,
-          }));
-          setSteps(stepsFromDb);
-          setCompletedSteps(new Set(dbSteps.filter((s) => s.is_completed).map((s) => s.step_number)));
-          setStepsSaved(true);
-        } else {
-          // Fallback: parse from messages
-          for (const msg of loaded) {
-            if (msg.role === "assistant") {
-              const parsed = parseRoadmapSteps(msg.content);
-              if (parsed.length > 0) setSteps(parsed);
-            }
-          }
-        }
-
-        // Parse title from messages
-        for (const msg of loaded) {
-          if (msg.role === "assistant") {
-            const title = parseRoadmapTitle(msg.content);
-            if (title) setRoadmapTitle(title);
-          }
-        }
-
-        setBreadcrumbs(crumbs);
-
-        // Build child roadmap map (stepNumber -> childConversationId)
-        const childMap: Record<number, string> = {};
-        for (const child of children) {
-          if (child.parent_step_number != null) {
-            childMap[child.parent_step_number] = child.id;
-          }
-        }
-        setChildRoadmapMap(childMap);
-
-        setIsInitialLoading(false);
-      };
-
-      loadAll();
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Scroll to the START of the last AI message
-  useEffect(() => {
-    const lastMsg = messages[messages.length - 1];
-    if (!lastMsg || lastMsg.role !== "assistant") return;
-    if (lastAiMsgIdRef.current === lastMsg.id) return;
-    lastAiMsgIdRef.current = lastMsg.id;
-
-    requestAnimationFrame(() => {
-      const el = document.getElementById(`roadmap-msg-${lastMsg.id}`);
-      if (el && scrollContainerRef.current) {
-        const container = scrollContainerRef.current;
-        const elTop = el.offsetTop - container.offsetTop;
-        container.scrollTo({ top: elTop - 16, behavior: "smooth" });
+  /* ===== AUTO-SCROLL RIGHT ===== */
+  const scrollToRight = useCallback(() => {
+    setTimeout(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({
+          left: scrollContainerRef.current.scrollWidth,
+          behavior: "smooth",
+        });
       }
-    });
-  }, [messages]);
-
-  // Parse roadmap from the latest assistant message whenever messages change
-  useEffect(() => {
-    // Only parse from messages if steps weren't loaded from DB
-    if (stepsSaved) return;
-
-    const assistantMessages = messages.filter(
-      (m) => m.role === "assistant" && m.id !== "welcome"
-    );
-    if (assistantMessages.length === 0) return;
-
-    for (const msg of assistantMessages) {
-      const title = parseRoadmapTitle(msg.content);
-      if (title) setRoadmapTitle(title);
-
-      const parsed = parseRoadmapSteps(msg.content);
-      if (parsed.length > 0) setSteps(parsed);
-    }
-  }, [messages, stepsSaved]);
-
-  const sendToAI = useCallback(
-    async (userContent: string, allMessages: ChatMessage[]) => {
-      setIsLoading(true);
-
-      let conversationId: string;
-      let isFirst = isFirstMessageRef.current;
-      try {
-        const result = await saveUserMessage(userContent, null, "roadmap");
-        conversationId = result.conversationId;
-        if (isFirst) {
-          isFirstMessageRef.current = false;
-        }
-      } catch (err) {
-        console.error("Failed to save user message:", err);
-        conversationId = "";
-      }
-
-      const aiMsgId = (Date.now() + 1).toString();
-      const aiMsg: ChatMessage = {
-        id: aiMsgId,
-        role: "assistant",
-        content: "",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-
-      const apiMessages = allMessages
-        .filter((m) => m.id !== "welcome")
-        .map((m) => ({ role: m.role, content: m.content }));
-      apiMessages.push({ role: "user", content: userContent });
-
-      let fullContent = "";
-
-      try {
-        await streamChat(
-          apiMessages,
-          (text) => {
-            fullContent += text;
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === aiMsgId ? { ...m, content: m.content + text } : m
-              )
-            );
-          },
-          (error) => {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === aiMsgId
-                  ? { ...m, content: `[!danger] Hata\n${error}` }
-                  : m
-              )
-            );
-          },
-          () => {
-            setIsLoading(false);
-          },
-          "roadmap"
-        );
-
-        // Save completed assistant message to DB
-        if (fullContent) {
-          try {
-            await saveAssistantMessage(conversationId, fullContent);
-          } catch (err) {
-            console.error("Failed to save assistant message:", err);
-          }
-
-          // Persist steps to DB after AI stream completes
-          const parsedSteps = parseRoadmapSteps(fullContent);
-          if (parsedSteps.length > 0 && conversationId) {
-            try {
-              await saveRoadmapSteps(
-                conversationId,
-                parsedSteps.map((s) => ({
-                  stepNumber: s.number,
-                  title: s.title,
-                  description: s.description,
-                  duration: s.duration,
-                  isCompleted: false,
-                }))
-              );
-              setStepsSaved(true);
-            } catch (err) {
-              console.error("Failed to save roadmap steps:", err);
-            }
-          }
-        }
-
-        if (isFirst && fullContent) {
-          generateTitle(conversationId, userContent);
-        }
-
-        refreshConversations();
-      } catch (error) {
-        const errorMsg =
-          error instanceof Error ? error.message : "Bilinmeyen hata";
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === aiMsgId
-              ? {
-                  ...m,
-                  content: `[!danger] Baglanti Hatasi\n${errorMsg}. Lutfen tekrar dene.`,
-                }
-              : m
-          )
-        );
-        setIsLoading(false);
-      }
-    },
-    [
-      saveUserMessage,
-      saveAssistantMessage,
-      generateTitle,
-      refreshConversations,
-    ]
-  );
-
-  const handleSend = useCallback(() => {
-    if (!input.trim() || isLoading) return;
-
-    const userContent = input;
-    const userMsg: ChatMessage = {
-      id: Date.now().toString(),
-      role: "user",
-      content: userContent,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
-    sendToAI(userContent, messages);
-
-    setInput("");
-    if (isMobile) {
-      inputRef.current?.blur();
-    }
-  }, [input, isLoading, sendToAI, isMobile, messages]);
-
-  const handleAskDetail = useCallback(
-    (step: RoadmapStep) => {
-      setDetailStep(step);
-      const userContent = `Adim ${step.number}: ${step.title} hakkinda detayli bilgi ver`;
-      const userMsg: ChatMessage = {
-        id: Date.now().toString(),
-        role: "user",
-        content: userContent,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, userMsg]);
-      sendToAI(userContent, messages);
-      if (isMobile) setActiveTab("chat");
-    },
-    [sendToAI, messages, isMobile]
-  );
-
-  const toggleStepComplete = useCallback(
-    (stepNumber: number) => {
-      setCompletedSteps((prev) => {
-        const next = new Set(prev);
-        const newState = !next.has(stepNumber);
-        if (newState) {
-          next.add(stepNumber);
-        } else {
-          next.delete(stepNumber);
-        }
-
-        // Persist to DB
-        if (activeConversationId) {
-          toggleRoadmapStepCompletion(activeConversationId, stepNumber, newState).catch((err) =>
-            console.error("Failed to toggle step:", err)
-          );
-        }
-
-        return next;
-      });
-    },
-    [activeConversationId]
-  );
-
-  const handleCreateSubRoadmap = useCallback(
-    async (step: RoadmapStep) => {
-      if (!activeConversationId || !onOpenConversation) return;
-      try {
-        const childId = await createChildRoadmap(activeConversationId, step.number);
-        setChildRoadmapMap((prev) => ({ ...prev, [step.number]: childId }));
-
-        // Auto-send message to child roadmap
-        const msg = `${step.title} konusunda detayli yol haritasi olustur`;
-        await saveUserMessage.call(null, msg, null, "roadmap");
-
-        onOpenConversation(childId, "roadmap");
-      } catch (err) {
-        console.error("Failed to create sub-roadmap:", err);
-      }
-    },
-    [activeConversationId, createChildRoadmap, onOpenConversation, saveUserMessage]
-  );
-
-  const handleStudyTopic = useCallback(
-    async (step: RoadmapStep) => {
-      if (!onOpenConversation) return;
-      try {
-        const convId = await createTypedConversation("standard");
-        const contextMsg = `${roadmapTitle || "Yol haritasi"} yol haritasinda '${step.title}' konusunu calisiyorum. Aciklama: ${step.description}. Lutfen bu konuyu bana detayli ogret.`;
-
-        // We need to save the user message for the new conversation
-        // The createTypedConversation already set it as active, so saveUserMessage will use it
-        await saveUserMessage(contextMsg, null, "standard");
-
-        onOpenConversation(convId, "standard");
-      } catch (err) {
-        console.error("Failed to create study conversation:", err);
-      }
-    },
-    [onOpenConversation, createTypedConversation, saveUserMessage, roadmapTitle]
-  );
-
-  const handleBreadcrumbNavigate = useCallback(
-    (id: string) => {
-      if (onOpenConversation) {
-        onOpenConversation(id, "roadmap");
-      }
-    },
-    [onOpenConversation]
-  );
-
-  const handleOpenChild = useCallback(
-    (id: string) => {
-      if (onOpenConversation) {
-        onOpenConversation(id, "roadmap");
-      }
-    },
-    [onOpenConversation]
-  );
-
-  const handleQuickPrompt = useCallback((text: string) => {
-    setInput(text);
+    }, 100);
   }, []);
 
-  if (isInitialLoading) {
-    return (
-      <div className="flex flex-col h-full items-center justify-center gap-3">
-        <div className="auth-spinner" style={{ width: 28, height: 28 }} />
-        <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-          Yol haritasi yukleniyor...
-        </p>
-      </div>
-    );
+  /* ===== GENERATE INITIAL ROADMAP ===== */
+  const handleGenerate = useCallback(async (topic: string) => {
+    if (!topic.trim() || isGenerating) return;
+
+    setPhase("loading");
+    setIsGenerating(true);
+    setError(null);
+
+    let fullResponse = "";
+
+    try {
+      const { conversationId } = await saveUserMessage(topic, null, "roadmap");
+      generateTitle(conversationId, topic);
+
+      await new Promise<void>((resolve, reject) => {
+        streamChat(
+          [{ role: "user", content: topic }],
+          (chunk) => { fullResponse += chunk; },
+          (err) => reject(new Error(err)),
+          () => resolve(),
+          "roadmap"
+        );
+      });
+
+      const title = parseRoadmapTitle(fullResponse) || topic;
+      const steps = parseRoadmapSteps(fullResponse);
+
+      if (steps.length === 0) {
+        throw new Error("Yol haritasi adimlari olusturulamadi. Lutfen tekrar deneyin.");
+      }
+
+      await saveRoadmapSteps(conversationId, steps.map((s) => ({
+        stepNumber: s.number,
+        title: s.title,
+        description: s.description,
+        duration: s.duration,
+        isExpandable: s.expandable,
+      })));
+
+      await saveAssistantMessage(conversationId, fullResponse);
+      await refreshConversations();
+
+      setColumns([{
+        conversationId,
+        title,
+        steps,
+        selectedStepNumber: null,
+        completedSteps: new Set(),
+        isLoading: false,
+      }]);
+      setPhase("roadmap");
+    } catch (err) {
+      console.error("Roadmap generation error:", err);
+      setError(err instanceof Error ? err.message : "Bir hata olustu");
+      setPhase("input");
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [isGenerating, saveUserMessage, generateTitle, saveAssistantMessage, refreshConversations]);
+
+  /* ===== SELECT STEP (EXPAND) ===== */
+  const handleSelectStep = useCallback(async (colIndex: number, stepNumber: number) => {
+    const col = columns[colIndex];
+    if (!col) return;
+
+    const step = col.steps.find((s) => s.number === stepNumber);
+    if (!step) return;
+
+    // If same step clicked again → deselect and remove columns to the right
+    if (col.selectedStepNumber === stepNumber) {
+      setColumns((prev) => {
+        const next = prev.slice(0, colIndex + 1);
+        next[colIndex] = { ...next[colIndex], selectedStepNumber: null };
+        return next;
+      });
+      return;
+    }
+
+    // Update selection, remove columns to the right
+    setColumns((prev) => {
+      const next = prev.slice(0, colIndex + 1);
+      next[colIndex] = { ...next[colIndex], selectedStepNumber: stepNumber };
+      return next;
+    });
+
+    // Don't expand if not expandable or at max depth
+    if (!step.expandable || colIndex + 1 >= MAX_DEPTH) return;
+
+    // Check DB for existing child
+    try {
+      const children = await getChildConversations(col.conversationId);
+      const existingChild = children.find((c) => c.parent_step_number === stepNumber);
+
+      if (existingChild) {
+        // Load existing sub-roadmap
+        const childSteps = await getRoadmapSteps(existingChild.id);
+        const completedSet = new Set(childSteps.filter((s) => s.is_completed).map((s) => s.step_number));
+        const mappedSteps = childSteps.map((s) => ({
+          number: s.step_number,
+          title: s.title,
+          description: s.description,
+          duration: s.duration,
+          completed: s.is_completed,
+          expandable: s.is_expandable,
+        }));
+
+        setColumns((prev) => {
+          const next = [...prev.slice(0, colIndex + 1)];
+          next[colIndex] = { ...next[colIndex], selectedStepNumber: stepNumber };
+          next.push({
+            conversationId: existingChild.id,
+            title: existingChild.title || step.title,
+            steps: mappedSteps,
+            selectedStepNumber: null,
+            completedSteps: completedSet,
+            isLoading: false,
+          });
+          return next;
+        });
+
+        if (isMobile) setMobileActiveColumn(colIndex + 1);
+        scrollToRight();
+        return;
+      }
+
+      // Create new child roadmap — add loading column first
+      setColumns((prev) => {
+        const next = [...prev.slice(0, colIndex + 1)];
+        next[colIndex] = { ...next[colIndex], selectedStepNumber: stepNumber };
+        next.push({
+          conversationId: "",
+          title: step.title,
+          steps: [],
+          selectedStepNumber: null,
+          completedSteps: new Set(),
+          isLoading: true,
+        });
+        return next;
+      });
+
+      if (isMobile) setMobileActiveColumn(colIndex + 1);
+      scrollToRight();
+
+      // Create child conversation and stream sub-roadmap
+      const childConvId = await createChildRoadmap(col.conversationId, stepNumber);
+      // Don't update active conversation — keep the root
+      setActiveConversationId(columns[0]?.conversationId || null);
+      setActiveConversationType("roadmap");
+
+      const subPrompt = `"${step.title}" konusunu alt adimlara ayir. Bu bir ust yol haritasinin alt yol haritasidir. Ustundeki adimin aciklamasi: "${step.description}"`;
+
+      let subResponse = "";
+      await new Promise<void>((resolve, reject) => {
+        streamChat(
+          [{ role: "user", content: subPrompt }],
+          (chunk) => { subResponse += chunk; },
+          (err) => reject(new Error(err)),
+          () => resolve(),
+          "roadmap"
+        );
+      });
+
+      const subTitle = parseRoadmapTitle(subResponse) || step.title;
+      const subSteps = parseRoadmapSteps(subResponse);
+
+      if (subSteps.length > 0) {
+        await saveRoadmapSteps(childConvId, subSteps.map((s) => ({
+          stepNumber: s.number,
+          title: s.title,
+          description: s.description,
+          duration: s.duration,
+          isExpandable: s.expandable,
+        })));
+      }
+
+      await saveAssistantMessage(childConvId, subResponse);
+
+      // Update child conversation title
+      const { updateConversationTitle } = await import("@/lib/db/conversations");
+      await updateConversationTitle(childConvId, subTitle);
+
+      setColumns((prev) => {
+        const lastIndex = prev.length - 1;
+        if (lastIndex < colIndex + 1) return prev;
+        const next = [...prev];
+        next[lastIndex] = {
+          conversationId: childConvId,
+          title: subTitle,
+          steps: subSteps,
+          selectedStepNumber: null,
+          completedSteps: new Set(),
+          isLoading: false,
+        };
+        return next;
+      });
+    } catch (err) {
+      console.error("Expansion error:", err);
+      // Remove loading column on error
+      setColumns((prev) => prev.slice(0, colIndex + 1));
+    }
+  }, [columns, createChildRoadmap, saveAssistantMessage, isMobile, scrollToRight, setActiveConversationId, setActiveConversationType]);
+
+  /* ===== TOGGLE COMPLETION ===== */
+  const handleToggleComplete = useCallback((colIndex: number, stepNumber: number) => {
+    setColumns((prev) => {
+      const next = [...prev];
+      const col = { ...next[colIndex] };
+      const newCompleted = new Set(col.completedSteps);
+
+      if (newCompleted.has(stepNumber)) {
+        newCompleted.delete(stepNumber);
+      } else {
+        newCompleted.add(stepNumber);
+      }
+
+      col.completedSteps = newCompleted;
+      next[colIndex] = col;
+      return next;
+    });
+
+    // Persist to DB
+    const col = columns[colIndex];
+    if (col) {
+      const wasCompleted = col.completedSteps.has(stepNumber);
+      toggleRoadmapStepCompletion(col.conversationId, stepNumber, !wasCompleted).catch(console.error);
+    }
+  }, [columns]);
+
+  /* ===== STUDY TOPIC ===== */
+  const handleStudyTopic = useCallback(async (step: RoadmapStep) => {
+    if (!onOpenConversation) return;
+    try {
+      const convId = await createTypedConversation("standard");
+      await saveAssistantMessage(convId, `"${step.title}" konusunu birlikte calisalim!\n\n${step.description}\n\nNe sormak istersin?`);
+      onOpenConversation(convId, "standard");
+    } catch (err) {
+      console.error("Study topic error:", err);
+    }
+  }, [onOpenConversation, createTypedConversation, saveAssistantMessage]);
+
+  /* ===== LOAD EXISTING ROADMAP ===== */
+  useEffect(() => {
+    if (!activeConversationId) {
+      setPhase("input");
+      setColumns([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadExisting() {
+      try {
+        // Walk up to root
+        const breadcrumb = await getConversationBreadcrumb(activeConversationId!);
+        if (cancelled || breadcrumb.length === 0) return;
+
+        const rootId = breadcrumb[0].id;
+
+        // Walk down from root, building columns
+        const builtColumns: RoadmapColumn[] = [];
+        let currentId = rootId;
+        let targetPath: string[] = [];
+
+        // Build the path from root to active conversation
+        if (breadcrumb.length > 1) {
+          targetPath = breadcrumb.slice(1).map((b) => b.id);
+        }
+
+        // Load root column
+        const rootConv = await getConversation(rootId);
+        if (cancelled || !rootConv) return;
+
+        const rootSteps = await getRoadmapSteps(rootId);
+        if (cancelled) return;
+
+        const rootCompleted = new Set(rootSteps.filter((s) => s.is_completed).map((s) => s.step_number));
+        const rootMapped = rootSteps.map(stepRowToStep);
+
+        // Find which step leads to next in path
+        let selectedStep: number | null = null;
+        if (targetPath.length > 0) {
+          const children = await getChildConversations(rootId);
+          const nextChild = children.find((c) => c.id === targetPath[0]);
+          if (nextChild?.parent_step_number) selectedStep = nextChild.parent_step_number;
+        }
+
+        builtColumns.push({
+          conversationId: rootId,
+          title: rootConv.title || "Yol Haritasi",
+          steps: rootMapped,
+          selectedStepNumber: selectedStep,
+          completedSteps: rootCompleted,
+          isLoading: false,
+        });
+
+        // Walk down the path
+        for (let i = 0; i < targetPath.length; i++) {
+          if (cancelled) return;
+          const childId = targetPath[i];
+          const childConv = await getConversation(childId);
+          if (!childConv) break;
+
+          const childSteps = await getRoadmapSteps(childId);
+          const childCompleted = new Set(childSteps.filter((s) => s.is_completed).map((s) => s.step_number));
+          const childMapped = childSteps.map(stepRowToStep);
+
+          let childSelected: number | null = null;
+          if (i + 1 < targetPath.length) {
+            const grandchildren = await getChildConversations(childId);
+            const nextGrandchild = grandchildren.find((c) => c.id === targetPath[i + 1]);
+            if (nextGrandchild?.parent_step_number) childSelected = nextGrandchild.parent_step_number;
+          }
+
+          builtColumns.push({
+            conversationId: childId,
+            title: childConv.title || "Alt Yol Haritasi",
+            steps: childMapped,
+            selectedStepNumber: childSelected,
+            completedSteps: childCompleted,
+            isLoading: false,
+          });
+        }
+
+        if (!cancelled) {
+          setColumns(builtColumns);
+          setPhase("roadmap");
+          if (isMobile) setMobileActiveColumn(builtColumns.length - 1);
+        }
+      } catch (err) {
+        console.error("Load existing roadmap error:", err);
+        if (!cancelled) {
+          setPhase("input");
+        }
+      }
+    }
+
+    loadExisting();
+    return () => { cancelled = true; };
+  }, [activeConversationId, isMobile]);
+
+  /* ===== HELPERS ===== */
+  function stepRowToStep(row: RoadmapStepRow): RoadmapStep {
+    return {
+      number: row.step_number,
+      title: row.title,
+      description: row.description,
+      duration: row.duration,
+      completed: row.is_completed,
+      expandable: row.is_expandable,
+    };
   }
 
-  const hasRoadmap = steps.length > 0;
+  /* ===== INPUT SUBMISSION ===== */
+  const handleSubmit = () => {
+    if (inputText.trim()) {
+      handleGenerate(inputText.trim());
+      setInputText("");
+    }
+  };
 
-  /* ===== FULL-WIDTH MODE (before roadmap generated) ===== */
-  if (!hasRoadmap) {
+  /* ===== RENDER: INPUT PHASE ===== */
+  if (phase === "input") {
     return (
-      <div className="flex flex-col h-full" style={{ background: "var(--bg-primary)" }}>
-        {/* Breadcrumb */}
-        <Breadcrumb crumbs={breadcrumbs} onNavigate={handleBreadcrumbNavigate} />
-
-        {/* Main scrollable area */}
-        <div
-          ref={scrollContainerRef}
-          className={`flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 ${isMobile ? "pb-2" : ""}`}
-        >
-          <div className="max-w-[720px] mx-auto">
-            {/* Messages */}
-            <div className="space-y-5 sm:space-y-6">
-              {messages.map((msg, idx) => (
-                <div
-                  id={`roadmap-msg-${msg.id}`}
-                  key={msg.id}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-msg-in`}
-                  style={{
-                    animationDelay: `${Math.min(idx * 0.05, 0.3)}s`,
-                  }}
-                >
-                  {msg.role === "assistant" && <AiAvatar />}
-
-                  <div
-                    className={`group relative ${
-                      msg.role === "user"
-                        ? "max-w-[85%] sm:max-w-[70%]"
-                        : "max-w-[92%] sm:max-w-[88%]"
-                    }`}
-                  >
-                    <div
-                      className={`px-3.5 py-3 sm:px-4 sm:py-3.5 ${
-                        msg.role === "user" ? "msg-user" : "msg-ai"
-                      }`}
-                    >
-                      {msg.role === "assistant" ? (
-                        <>
-                          {msg.content ? (
-                            <ChatMessageRenderer content={msg.content} />
-                          ) : (
-                            isLoading &&
-                            msg.id ===
-                              messages[messages.length - 1]?.id && (
-                              <TypingIndicator />
-                            )
-                          )}
-                        </>
-                      ) : (
-                        <p className="text-[13px] sm:text-sm leading-relaxed">
-                          {msg.content}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8" style={{ background: "var(--bg-primary)" }}>
+        <div className="flex flex-col items-center gap-6 w-full" style={{ maxWidth: 480 }}>
+          {/* Icon + heading */}
+          <div className="flex flex-col items-center gap-3">
+            <div
+              className="flex items-center justify-center rounded-2xl"
+              style={{ width: 56, height: 56, background: "rgba(239, 68, 68, 0.08)" }}
+            >
+              <IconRoadmap size={28} className="" />
             </div>
-
-            {/* Quick Prompts (show when no user messages yet) */}
-            {messages.length <= 1 && (
-              <div
-                className="mt-8 sm:mt-10 animate-fade-in"
-                style={{ animationDelay: "0.3s" }}
-              >
-                <div className="text-center mb-6">
-                  <div
-                    className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 animate-float"
-                    style={{
-                      background: "rgba(239, 68, 68, 0.1)",
-                      boxShadow: "0 0 20px rgba(239, 68, 68, 0.15)",
-                    }}
-                  >
-                    <IconRoadmap size={28} style={{ color: "#ef4444" }} />
-                  </div>
-                  <h2
-                    className="text-base font-bold mb-1"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    Ne ogrenmek istiyorsun?
-                  </h2>
-                  <p
-                    className="text-xs"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    Bir konu sec, sana adim adim ogrenme yolu cikarayim
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:flex sm:flex-wrap sm:justify-center gap-2 sm:gap-2.5">
-                  {QUICK_PROMPTS.map((prompt, i) => (
-                    <button
-                      key={prompt.text}
-                      onClick={() => handleQuickPrompt(prompt.text)}
-                      className="flex items-center gap-2 rounded-xl px-3.5 py-3 sm:px-4 sm:py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md stagger-children"
-                      style={{
-                        background: "var(--bg-card)",
-                        border: "1px solid var(--border-primary)",
-                        color: "var(--text-secondary)",
-                        animationDelay: `${0.4 + i * 0.08}s`,
-                      }}
-                    >
-                      <span className="text-sm">{prompt.icon}</span>
-                      <span>{prompt.text}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+              Ne ogrenmek istiyorsun?
+            </h2>
+            <p className="text-[13px] text-center" style={{ color: "var(--text-tertiary)" }}>
+              Bir konu yaz, sana adim adim ogrenme yol haritasi hazirlayayim.
+            </p>
           </div>
-        </div>
 
-        {/* Input Bar */}
-        <div
-          className={`flex-shrink-0 px-3 sm:px-4 ${isMobile ? "pb-2" : "pb-4"}`}
-        >
-          <div
-            className="max-w-[720px] mx-auto flex items-center gap-2 rounded-2xl px-3 py-2.5 sm:px-4 transition-all"
-            style={{
-              background: "var(--bg-card)",
-              border: "1px solid var(--border-primary)",
-              boxShadow: input.trim()
-                ? "0 0 12px rgba(239, 68, 68, 0.15)"
-                : "var(--shadow-md)",
-              borderColor: input.trim()
-                ? "rgba(239, 68, 68, 0.25)"
-                : "var(--border-primary)",
-            }}
-          >
+          {/* Quick prompts */}
+          <div className="flex flex-wrap justify-center gap-2">
+            {QUICK_PROMPTS.map((qp) => (
+              <button
+                key={qp.text}
+                onClick={() => handleGenerate(qp.text)}
+                disabled={isGenerating}
+                className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[12px] font-medium transition-all active:scale-[0.97] disabled:opacity-50"
+                style={{
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border-primary)",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                <span>{qp.icon}</span>
+                {qp.text}
+              </button>
+            ))}
+          </div>
+
+          {/* Input */}
+          <div className="w-full flex items-center gap-2">
             <input
               ref={inputRef}
               type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder={
-                isLoading
-                  ? "Yanit bekleniyor..."
-                  : "Ne ogrenmek istiyorsun? (or: React ogrenme yolu)"
-              }
-              disabled={isLoading}
-              className="flex-1 bg-transparent text-[13px] sm:text-sm outline-none disabled:opacity-50"
-              style={{ color: "var(--text-primary)" }}
-            />
-
-            <button
-              type="button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
-              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
+              placeholder="Ornegin: React ile web uygulamasi gelistirme..."
+              disabled={isGenerating}
+              className="flex-1 rounded-xl px-4 py-3 text-[13px] outline-none transition-all"
               style={{
-                background:
-                  input.trim() && !isLoading
-                    ? "linear-gradient(135deg, #ef4444, #dc2626)"
-                    : "var(--bg-tertiary)",
-                color:
-                  input.trim() && !isLoading
-                    ? "white"
-                    : "var(--text-tertiary)",
-                boxShadow:
-                  input.trim() && !isLoading
-                    ? "0 0 12px rgba(239, 68, 68, 0.3)"
-                    : "none",
+                background: "var(--bg-input)",
+                border: "1px solid var(--border-primary)",
+                color: "var(--text-primary)",
+              }}
+            />
+            <button
+              onClick={handleSubmit}
+              disabled={!inputText.trim() || isGenerating}
+              className="flex items-center justify-center rounded-xl transition-all active:scale-[0.95] disabled:opacity-40"
+              style={{
+                width: 44,
+                height: 44,
+                background: "#ef4444",
+                color: "white",
               }}
             >
-              <IconSend size={14} />
+              <IconSend size={18} />
             </button>
           </div>
 
-          {!isMobile && (
-            <p
-              className="text-center text-[10px] mt-2.5 flex items-center justify-center gap-1.5"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              <span style={{ color: "#ef4444", opacity: 0.6 }}>&#9679;</span>
-              Adimlari tamamla isaretiyle takip et &#183; Detay butonu ile
-              derinlemesine ogren
+          {error && (
+            <p className="text-[12px] text-center" style={{ color: "var(--accent-danger)" }}>
+              {error}
             </p>
           )}
         </div>
@@ -1124,386 +859,110 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
     );
   }
 
-  /* ===== 2-PANEL MODE (after roadmap generated) ===== */
-  return (
-    <div className="flex flex-col h-full" style={{ background: "var(--bg-primary)" }}>
-      {/* Breadcrumb */}
-      <Breadcrumb crumbs={breadcrumbs} onNavigate={handleBreadcrumbNavigate} />
-
-      <div className="flex flex-1 min-h-0 relative">
-        {/* Mobile tab bar - only when hasRoadmap && isMobile */}
-        {isMobile && (
+  /* ===== RENDER: LOADING PHASE ===== */
+  if (phase === "loading") {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8" style={{ background: "var(--bg-primary)" }}>
+        <div className="flex flex-col items-center gap-5" style={{ maxWidth: 400 }}>
           <div
-            className="absolute top-0 left-0 right-0 z-10 flex"
-            style={{
-              borderBottom: "1px solid var(--border-primary)",
-              background: "var(--bg-secondary)",
-            }}
+            className="flex items-center justify-center rounded-2xl animate-pulse"
+            style={{ width: 56, height: 56, background: "rgba(239, 68, 68, 0.08)" }}
           >
+            <IconRoadmap size={28} />
+          </div>
+          <p className="text-[14px] font-medium" style={{ color: "var(--text-secondary)" }}>
+            Yol haritaniz hazirlaniyor...
+          </p>
+
+          {/* Skeleton steps */}
+          <div className="w-full flex flex-col gap-2.5" style={{ maxWidth: 360 }}>
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="rounded-xl p-3 animate-pulse"
+                style={{
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border-secondary)",
+                  animationDelay: `${i * 0.12}s`,
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="h-5 w-5 rounded-lg" style={{ background: "var(--bg-tertiary)" }} />
+                  <div className="h-3 flex-1 rounded-md" style={{ background: "var(--bg-tertiary)" }} />
+                  <div className="h-3 w-10 rounded-md" style={{ background: "var(--bg-tertiary)" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ===== RENDER: ROADMAP PHASE (MILLER COLUMNS) ===== */
+  if (isMobile) {
+    const activeCol = columns[mobileActiveColumn];
+    if (!activeCol) return null;
+
+    return (
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "var(--bg-primary)" }}>
+        {/* Overall progress */}
+        <OverallProgress columns={columns} />
+
+        {/* Mobile navigation header */}
+        {mobileActiveColumn > 0 && (
+          <div className="flex items-center gap-2 px-3 py-2" style={{ borderBottom: "1px solid var(--border-secondary)" }}>
             <button
-              onClick={() => setActiveTab("chat")}
-              className="flex-1 py-2.5 text-xs font-semibold transition-colors"
-              style={{
-                color: activeTab === "chat" ? "#ef4444" : "var(--text-tertiary)",
-                borderBottom: activeTab === "chat" ? "2px solid #ef4444" : "2px solid transparent",
-              }}
+              onClick={() => setMobileActiveColumn((prev) => Math.max(0, prev - 1))}
+              className="flex items-center gap-1 text-[12px] font-medium rounded-lg px-2 py-1"
+              style={{ color: "#ef4444" }}
             >
-              Sohbet
+              <IconChevronLeft size={14} />
+              Geri
             </button>
-            <button
-              onClick={() => setActiveTab("roadmap")}
-              className="flex-1 py-2.5 text-xs font-semibold transition-colors"
-              style={{
-                color: activeTab === "roadmap" ? "#ef4444" : "var(--text-tertiary)",
-                borderBottom: activeTab === "roadmap" ? "2px solid #ef4444" : "2px solid transparent",
-              }}
-            >
-              Harita
-            </button>
+            <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+              {columns[mobileActiveColumn - 1]?.title}
+            </span>
           </div>
         )}
 
-        {/* LEFT PANEL: Chat + Detail */}
-        <div
-          style={{
-            flex: 1,
-            display: isMobile && activeTab !== "chat" ? "none" : "flex",
-            flexDirection: "column",
-            minWidth: 0,
-          }}
-        >
-          {/* Mobile top padding for tab bar */}
-          {isMobile && <div style={{ height: 42, flexShrink: 0 }} />}
-
-          {/* Detail step card - shown at top when a step detail is active */}
-          {detailStep && (
-            <div
-              className="flex-shrink-0 p-3"
-              style={{
-                borderBottom: "1px solid var(--border-primary)",
-                background: "var(--bg-secondary)",
-              }}
-            >
-              <div
-                className="rounded-xl p-3"
-                style={{
-                  background: "rgba(239, 68, 68, 0.04)",
-                  border: "1px solid rgba(239, 68, 68, 0.15)",
-                }}
-              >
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span
-                    className="flex items-center justify-center rounded-lg text-[10px] font-bold"
-                    style={{
-                      width: 22,
-                      height: 22,
-                      background: "#ef4444",
-                      color: "white",
-                    }}
-                  >
-                    {detailStep.number}
-                  </span>
-                  <span
-                    className="font-semibold text-sm flex-1"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    {detailStep.title}
-                  </span>
-                  <span
-                    className="text-[10px] px-2 py-0.5 rounded-full"
-                    style={{
-                      background: "var(--bg-tertiary)",
-                      color: "var(--text-tertiary)",
-                    }}
-                  >
-                    {detailStep.duration}
-                  </span>
-                  <button
-                    onClick={() => setDetailStep(null)}
-                    className="ml-1 text-xs rounded-md p-1 transition-colors hover:opacity-70"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    &#10005;
-                  </button>
-                </div>
-                <p
-                  className="text-[11px]"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  {detailStep.description}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Messages area - scrollable */}
-          <div
-            ref={scrollContainerRef}
-            className={`flex-1 overflow-y-auto p-4 sm:p-6 ${isMobile ? "pb-2" : ""}`}
-          >
-            <div className="space-y-5 sm:space-y-6">
-              {messages.map((msg, idx) => {
-                if (msg.id === "welcome") return null;
-
-                const isRoadmapData =
-                  msg.role === "assistant" &&
-                  (parseRoadmapSteps(msg.content).length > 0 ||
-                    parseRoadmapTitle(msg.content) !== null);
-
-                if (isRoadmapData && msg.content.length > 0) {
-                  return (
-                    <div
-                      id={`roadmap-msg-${msg.id}`}
-                      key={msg.id}
-                      className="flex justify-start animate-msg-in"
-                      style={{
-                        animationDelay: `${Math.min(idx * 0.05, 0.3)}s`,
-                      }}
-                    >
-                      <AiAvatar />
-                      <div className="group relative max-w-[92%] sm:max-w-[88%]">
-                        <div className="px-3.5 py-3 sm:px-4 sm:py-3.5 msg-ai">
-                          <div className="flex items-center gap-2 text-[12px]" style={{ color: "var(--text-tertiary)" }}>
-                            <IconRoadmap size={12} style={{ color: "#ef4444" }} />
-                            <span>Yol haritasi olusturuldu - sol panelde goruntuleniyor</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div
-                    id={`roadmap-msg-${msg.id}`}
-                    key={msg.id}
-                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-msg-in`}
-                    style={{
-                      animationDelay: `${Math.min(idx * 0.05, 0.3)}s`,
-                    }}
-                  >
-                    {msg.role === "assistant" && <AiAvatar />}
-
-                    <div
-                      className={`group relative ${
-                        msg.role === "user"
-                          ? "max-w-[85%] sm:max-w-[70%]"
-                          : "max-w-[92%] sm:max-w-[88%]"
-                      }`}
-                    >
-                      <div
-                        className={`px-3.5 py-3 sm:px-4 sm:py-3.5 ${
-                          msg.role === "user" ? "msg-user" : "msg-ai"
-                        }`}
-                      >
-                        {msg.role === "assistant" ? (
-                          <>
-                            {msg.content ? (
-                              <ChatMessageRenderer content={msg.content} />
-                            ) : (
-                              isLoading &&
-                              msg.id ===
-                                messages[messages.length - 1]?.id && (
-                                <TypingIndicator />
-                              )
-                            )}
-                          </>
-                        ) : (
-                          <p className="text-[13px] sm:text-sm leading-relaxed">
-                            {msg.content}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Input Bar */}
-          <div
-            className={`flex-shrink-0 p-3 sm:p-4`}
-            style={{ borderTop: "1px solid var(--border-primary)" }}
-          >
-            <div
-              className="flex items-center gap-2 rounded-2xl px-3 py-2.5 sm:px-4 transition-all"
-              style={{
-                background: "var(--bg-card)",
-                border: "1px solid var(--border-primary)",
-                boxShadow: input.trim()
-                  ? "0 0 12px rgba(239, 68, 68, 0.15)"
-                  : "var(--shadow-md)",
-                borderColor: input.trim()
-                  ? "rgba(239, 68, 68, 0.25)"
-                  : "var(--border-primary)",
-              }}
-            >
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder={
-                  isLoading
-                    ? "Yanit bekleniyor..."
-                    : "Adimlar hakkinda soru sor..."
-                }
-                disabled={isLoading}
-                className="flex-1 bg-transparent text-[13px] sm:text-sm outline-none disabled:opacity-50"
-                style={{ color: "var(--text-primary)" }}
-              />
-
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={handleSend}
-                disabled={!input.trim() || isLoading}
-                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
-                style={{
-                  background:
-                    input.trim() && !isLoading
-                      ? "linear-gradient(135deg, #ef4444, #dc2626)"
-                      : "var(--bg-tertiary)",
-                  color:
-                    input.trim() && !isLoading
-                      ? "white"
-                      : "var(--text-tertiary)",
-                  boxShadow:
-                    input.trim() && !isLoading
-                      ? "0 0 12px rgba(239, 68, 68, 0.3)"
-                      : "none",
-                }}
-              >
-                <IconSend size={14} />
-              </button>
-            </div>
-
-            {!isMobile && (
-              <p
-                className="text-center text-[10px] mt-2.5 flex items-center justify-center gap-1.5"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                <span style={{ color: "#ef4444", opacity: 0.6 }}>&#9679;</span>
-                Adimlari tamamla isaretiyle takip et &#183; Detay butonu ile
-                derinlemesine ogren
-              </p>
-            )}
-          </div>
+        {/* Single column view */}
+        <div className="flex-1 overflow-hidden flex flex-col">
+          <MillerColumn
+            column={activeCol}
+            colIndex={mobileActiveColumn}
+            totalColumns={columns.length}
+            onSelectStep={(stepNum) => handleSelectStep(mobileActiveColumn, stepNum)}
+            onToggleComplete={(stepNum) => handleToggleComplete(mobileActiveColumn, stepNum)}
+            onStudy={(step) => handleStudyTopic(step)}
+          />
         </div>
+      </div>
+    );
+  }
 
-        {/* RIGHT PANEL: Roadmap timeline */}
-        <div
-          style={{
-            width: isMobile ? "100%" : "45%",
-            display: isMobile && activeTab !== "roadmap" ? "none" : "flex",
-            flexDirection: "column",
-            borderLeft: isMobile ? "none" : "1px solid var(--border-primary)",
-            background: "var(--bg-secondary)",
-            transition: "width 0.3s ease",
-          }}
-          className="overflow-y-auto"
-        >
-          <div
-            className="p-4 sm:p-6"
-            style={{ paddingTop: isMobile ? 52 : undefined }}
-          >
-            {/* Roadmap Title */}
-            {roadmapTitle && (
-              <div className="text-center mb-6 animate-msg-in">
-                <h1
-                  className="text-xl sm:text-2xl font-bold mb-2"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #ef4444, #f97316, #ef4444)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                  }}
-                >
-                  {roadmapTitle}
-                </h1>
-                <p
-                  className="text-xs"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  {steps.length} adimlik ogrenme plani
-                </p>
-              </div>
-            )}
+  /* Desktop: horizontal scroll container */
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "var(--bg-primary)" }}>
+      {/* Overall progress */}
+      <OverallProgress columns={columns} />
 
-            {/* Progress Bar */}
-            <ProgressBar
-              completed={completedSteps.size}
-              total={steps.length}
-            />
-
-            {/* Timeline */}
-            <div className="relative">
-              {/* Vertical timeline line */}
-              <div
-                className="absolute"
-                style={{
-                  left: 11,
-                  top: 28,
-                  bottom: 16,
-                  width: 2,
-                  background: `linear-gradient(to bottom, #ef4444, var(--border-primary))`,
-                  borderRadius: 1,
-                }}
-              />
-
-              {/* Steps */}
-              {steps.map((step, idx) => (
-                <StepCard
-                  key={step.number}
-                  step={step}
-                  isCompleted={completedSteps.has(step.number)}
-                  isExpanded={expandedStep === step.number}
-                  onToggleComplete={() => toggleStepComplete(step.number)}
-                  onToggleExpand={() =>
-                    setExpandedStep(
-                      expandedStep === step.number ? null : step.number
-                    )
-                  }
-                  onAskDetail={() => handleAskDetail(step)}
-                  onCreateSubRoadmap={() => handleCreateSubRoadmap(step)}
-                  onStudyTopic={() => handleStudyTopic(step)}
-                  childRoadmapId={childRoadmapMap[step.number] || null}
-                  onOpenChild={handleOpenChild}
-                  stepsSaved={stepsSaved}
-                  index={idx}
-                />
-              ))}
-            </div>
-
-            {/* Completion celebration */}
-            {completedSteps.size === steps.length && steps.length > 0 && (
-              <div
-                className="text-center py-6 rounded-xl mt-4 animate-msg-in"
-                style={{
-                  background: "rgba(16, 185, 129, 0.08)",
-                  border: "1px solid rgba(16, 185, 129, 0.2)",
-                }}
-              >
-                <span className="text-3xl mb-2 block">&#127881;</span>
-                <p
-                  className="text-sm font-bold"
-                  style={{ color: "#10b981" }}
-                >
-                  Tebrikler! Tum adimlari tamamladin!
-                </p>
-                <p
-                  className="text-xs mt-1"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  Yeni bir konu kesfetmek icin sohbet panelinden soru sorabilirsin.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+      {/* Miller columns container */}
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 flex overflow-x-auto miller-columns-container"
+      >
+        {columns.map((col, idx) => (
+          <MillerColumn
+            key={col.conversationId || `loading-${idx}`}
+            column={col}
+            colIndex={idx}
+            totalColumns={columns.length}
+            onSelectStep={(stepNum) => handleSelectStep(idx, stepNum)}
+            onToggleComplete={(stepNum) => handleToggleComplete(idx, stepNum)}
+            onStudy={(step) => handleStudyTopic(step)}
+          />
+        ))}
       </div>
     </div>
   );

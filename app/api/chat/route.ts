@@ -89,12 +89,15 @@ Kuralların:
 
 [ROADMAP_TITLE]Yol Haritası Başlığı[/ROADMAP_TITLE]
 
-[STEP]1|Adım Başlığı|Bu adımda ne öğrenilecek açıklaması|2 saat[/STEP]
-[STEP]2|İkinci Adım|Açıklama metni|3 saat[/STEP]
-[STEP]3|Üçüncü Adım|Açıklama metni|4 saat[/STEP]
+[STEP]1|Adım Başlığı|Bu adımda ne öğrenilecek açıklaması|2 saat|true[/STEP]
+[STEP]2|İkinci Adım|Açıklama metni|3 saat|false[/STEP]
+[STEP]3|Üçüncü Adım|Açıklama metni|4 saat|true[/STEP]
 
+- 5. alan (true/false) adımın genişletilebilir olup olmadığını belirtir.
+- Eğer adım birden fazla alt konu içeriyorsa (3+ alt konu varsa) true yap — bu adıma tıklanınca alt yol haritası açılacak.
+- Eğer adım tek, basit ve atomik bir konuysa false yap — genişletmeye gerek yok.
 - 5-10 adım arası plan oluştur.
-- Her adımda: numara, başlık, açıklama, tahmini süre olsun.
+- Her adımda: numara, başlık, açıklama, tahmini süre, genişletilebilirlik olsun.
 - Adımlar mantıklı sırada ilerlesin (temelden ileri seviyeye).
 - Adım açıklamaları 1-2 cümle olsun.
 - Süreleri gerçekçi ver.

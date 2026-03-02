@@ -22,6 +22,7 @@ export interface RoadmapStepRow {
   description: string;
   duration: string;
   is_completed: boolean;
+  is_expandable: boolean;
   created_at: string;
 }
 
@@ -359,7 +360,7 @@ export async function deleteUserNote(noteId: string): Promise<void> {
 
 export async function saveRoadmapSteps(
   conversationId: string,
-  steps: { stepNumber: number; title: string; description: string; duration: string; isCompleted?: boolean }[]
+  steps: { stepNumber: number; title: string; description: string; duration: string; isCompleted?: boolean; isExpandable?: boolean }[]
 ): Promise<void> {
   const { error: delError } = await supabase
     .from("roadmap_steps")
@@ -376,6 +377,7 @@ export async function saveRoadmapSteps(
     description: s.description,
     duration: s.duration,
     is_completed: s.isCompleted ?? false,
+    is_expandable: s.isExpandable ?? true,
   }));
 
   const { error } = await supabase.from("roadmap_steps").insert(rows);
