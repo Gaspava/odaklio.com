@@ -217,7 +217,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       case "history":
         return <ChatHistoryPage onOpenConversation={handleOpenConversation} />;
       case "tools":
-        return <ToolsPage />;
+        return <ToolsPage onOpenConversation={handleOpenConversation} />;
       case "focus":
         if (!activeConversationId && showModeSelector) {
           return <ModeSelector onSelectMode={(mode) => handleSelectStyle(mode as ChatStyle)} />;
@@ -228,7 +228,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           case "flashcard":
             return <FlashcardChat key={chatKey} isMobile={isMobile} />;
           case "roadmap":
-            return <RoadmapChat key={chatKey} isMobile={isMobile} />;
+            return <RoadmapChat key={chatKey} isMobile={isMobile} onOpenConversation={handleOpenConversation} />;
           default:
             return <MainChat key={chatKey} isMobile={isMobile} />;
         }

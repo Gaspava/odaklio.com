@@ -15,6 +15,7 @@ import {
   getMindmapNodes,
   getAllMindmapMessages,
   updateCanvasState,
+  createChildRoadmapConversation,
   type Conversation,
   type ConversationType,
   type Message as DbMessage,
@@ -66,6 +67,8 @@ interface ConversationContextType {
   saveMindmapMessage: (conversationId: string, nodeId: string, role: "user" | "assistant", content: string) => Promise<string>;
   updateMindmapMessage: (messageId: string, content: string) => Promise<void>;
 
+  createChildRoadmap: (parentId: string, stepNumber: number) => Promise<string>;
+
   setActiveConversationId: (id: string | null) => void;
   setActiveConversationType: (type: ConversationType | null) => void;
 }
@@ -89,6 +92,7 @@ const ConversationContext = createContext<ConversationContextType>({
   loadMindmap: async () => ({ nodes: [], messages: [], canvasState: null }),
   saveMindmapMessage: async () => "",
   updateMindmapMessage: async () => {},
+  createChildRoadmap: async () => "",
   setActiveConversationId: () => {},
   setActiveConversationType: () => {},
 });
@@ -283,6 +287,17 @@ export default function ConversationProvider({ children }: { children: ReactNode
     []
   );
 
+  const createChildRoadmap = useCallback(
+    async (parentId: string, stepNumber: number): Promise<string> => {
+      if (!user) throw new Error("Not authenticated");
+      const conv = await createChildRoadmapConversation(user.id, parentId, stepNumber);
+      setActiveConversationId(conv.id);
+      setActiveConversationType("roadmap");
+      return conv.id;
+    },
+    [user]
+  );
+
   const handleDeleteConversation = useCallback(
     async (id: string) => {
       await dbDeleteConversation(id);
@@ -315,6 +330,7 @@ export default function ConversationProvider({ children }: { children: ReactNode
         loadMindmap: loadMindmapData,
         saveMindmapMessage,
         updateMindmapMessage,
+        createChildRoadmap,
         setActiveConversationId,
         setActiveConversationType,
       }}
