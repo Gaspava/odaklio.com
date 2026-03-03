@@ -220,7 +220,12 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
         return <ToolsPage onOpenConversation={handleOpenConversation} />;
       case "focus":
         if (!activeConversationId && showModeSelector) {
-          return <ModeSelector onSelectMode={(mode) => handleSelectStyle(mode as ChatStyle)} />;
+          return (
+            <ModeSelector
+              onSelectMode={(mode) => handleSelectStyle(mode as ChatStyle)}
+              onNavigateToPage={(page) => handlePageChange(page as PageType)}
+            />
+          );
         }
         switch (chatStyle) {
           case "mindmap":
