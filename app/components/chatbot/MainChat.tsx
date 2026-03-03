@@ -423,12 +423,19 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
             <div className="flex flex-col items-center justify-center min-h-full px-4 animate-fade-in">
               {/* Logo */}
               <div className="welcome-logo-glow mb-6 sm:mb-8">
-                <img src="/odaklio-logo.svg" alt="Odaklio" className="w-16 h-16 sm:w-20 sm:h-20" />
+                <img src="/odaklio-logo.svg" alt="Odaklio" className="w-24 h-24 sm:w-28 sm:h-28" />
               </div>
 
               {/* Greeting */}
-              <h1 className="text-xl sm:text-2xl font-bold mb-2 text-center" style={{ color: "var(--text-primary)" }}>
-                {firstName ? `Merhaba, ${firstName}!` : "Merhaba!"}
+              <h1 className="text-2xl sm:text-3xl font-extrabold mb-2 text-center tracking-wide">
+                {firstName ? (
+                  <>
+                    <span style={{ color: "var(--text-primary)" }}>MERHABA, </span>
+                    <span className="welcome-name-glow">{firstName.toUpperCase()}!</span>
+                  </>
+                ) : (
+                  <span style={{ color: "var(--text-primary)" }}>MERHABA!</span>
+                )}
               </h1>
               <p className="text-sm sm:text-base mb-8 sm:mb-10 text-center" style={{ color: "var(--text-tertiary)" }}>
                 Bugün sana nasıl yardımcı olabilirim?
