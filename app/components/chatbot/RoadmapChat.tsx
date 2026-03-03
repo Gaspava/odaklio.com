@@ -2,9 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { IconSend, IconRoadmap, IconChevronLeft, IconChevronRight } from "../icons/Icons";
-import {
-  useConversation,
-} from "@/app/providers/ConversationProvider";
+import { useConversation } from "@/app/providers/ConversationProvider";
+import { useAuth } from "@/app/providers/AuthProvider";
 import {
   saveRoadmapSteps,
   getRoadmapSteps,
@@ -382,6 +381,7 @@ function MillerColumn({
 
 /* ===== MAIN COMPONENT ===== */
 export default function RoadmapChat({ isMobile = false, onOpenConversation }: RoadmapChatProps) {
+  const { user } = useAuth();
   const {
     activeConversationId,
     saveUserMessage,
@@ -785,83 +785,81 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
 
   /* ===== RENDER: INPUT PHASE ===== */
   if (phase === "input") {
+    const firstName = user?.user_metadata?.full_name?.split(" ")[0] || "";
     return (
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8" style={{ background: "var(--bg-primary)" }}>
-        <div className="flex flex-col items-center gap-6 w-full" style={{ maxWidth: 480 }}>
-          {/* Icon + heading */}
-          <div className="flex flex-col items-center gap-3">
-            <div
-              className="flex items-center justify-center rounded-2xl"
-              style={{ width: 56, height: 56, background: "rgba(239, 68, 68, 0.08)" }}
-            >
-              <IconRoadmap size={28} className="" />
-            </div>
-            <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
-              Ne ogrenmek istiyorsun?
-            </h2>
-            <p className="text-[13px] text-center" style={{ color: "var(--text-tertiary)" }}>
-              Bir konu yaz, sana adim adim ogrenme yol haritasi hazirlayayim.
-            </p>
-          </div>
+      <div className="flex-1 flex flex-col items-center justify-center px-4 animate-fade-in" style={{ background: "var(--bg-primary)" }}>
+        <div className="welcome-logo-glow mb-6">
+          <img src="/odaklio-logo.svg" alt="Odaklio" className="w-24 h-24 sm:w-28 sm:h-28" />
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold mb-2 text-center tracking-wide">
+          {firstName ? (
+            <>
+              <span style={{ color: "var(--text-primary)" }}>MERHABA, </span>
+              <span className="welcome-name-glow">{firstName.toUpperCase()}!</span>
+            </>
+          ) : (
+            <span style={{ color: "var(--text-primary)" }}>MERHABA!</span>
+          )}
+        </h1>
+        <p className="text-sm sm:text-base mb-8 text-center" style={{ color: "var(--text-tertiary)" }}>
+          Bir konu yaz, sana adım adım öğrenme yol haritası hazırlayayım.
+        </p>
 
-          {/* Quick prompts */}
-          <div className="flex flex-wrap justify-center gap-2">
-            {QUICK_PROMPTS.map((qp) => (
-              <button
-                key={qp.text}
-                onClick={() => handleGenerate(qp.text)}
+        <div className="w-full max-w-[600px] mb-6">
+          <div className="welcome-input-wrapper">
+            <div className="welcome-input-glow" />
+            <div className="welcome-input-inner">
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
+                placeholder={isMobile ? "Konu yaz..." : "Öğrenmek istediğin konuyu yaz... (örn: React ile web geliştirme)"}
                 disabled={isGenerating}
-                className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[12px] font-medium transition-all active:scale-[0.97] disabled:opacity-50"
+                className="flex-1 bg-transparent text-sm sm:text-base outline-none disabled:opacity-50"
+                style={{ color: "var(--text-primary)" }}
+              />
+              <button
+                onClick={handleSubmit}
+                disabled={!inputText.trim() || isGenerating}
+                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition-all active:scale-[0.95] disabled:opacity-40"
                 style={{
-                  background: "var(--bg-card)",
-                  border: "1px solid var(--border-primary)",
-                  color: "var(--text-secondary)",
+                  background: inputText.trim() && !isGenerating ? "#ef4444" : "var(--bg-tertiary)",
+                  color: inputText.trim() && !isGenerating ? "white" : "var(--text-tertiary)",
+                  boxShadow: inputText.trim() && !isGenerating ? "0 0 12px rgba(239, 68, 68, 0.3)" : "none",
                 }}
               >
-                <span>{qp.icon}</span>
-                {qp.text}
+                <IconSend size={15} />
               </button>
-            ))}
+            </div>
           </div>
+        </div>
 
-          {/* Input */}
-          <div className="w-full flex items-center gap-2">
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
-              placeholder="Ornegin: React ile web uygulamasi gelistirme..."
-              disabled={isGenerating}
-              className="flex-1 rounded-xl px-4 py-3 text-[13px] outline-none transition-all"
-              style={{
-                background: "var(--bg-input)",
-                border: "1px solid var(--border-primary)",
-                color: "var(--text-primary)",
-              }}
-            />
+        <div className="flex flex-wrap justify-center gap-2.5 max-w-[600px]">
+          {QUICK_PROMPTS.map((qp) => (
             <button
-              onClick={handleSubmit}
-              disabled={!inputText.trim() || isGenerating}
-              className="flex items-center justify-center rounded-xl transition-all active:scale-[0.95] disabled:opacity-40"
+              key={qp.text}
+              onClick={() => handleGenerate(qp.text)}
+              disabled={isGenerating}
+              className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md disabled:opacity-50"
               style={{
-                width: 44,
-                height: 44,
-                background: "#ef4444",
-                color: "white",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-primary)",
+                color: "var(--text-secondary)",
               }}
             >
-              <IconSend size={18} />
+              <span>{qp.icon}</span>
+              {qp.text}
             </button>
-          </div>
-
-          {error && (
-            <p className="text-[12px] text-center" style={{ color: "var(--accent-danger)" }}>
-              {error}
-            </p>
-          )}
+          ))}
         </div>
+
+        {error && (
+          <p className="mt-4 text-[12px] text-center" style={{ color: "var(--accent-danger)" }}>
+            {error}
+          </p>
+        )}
       </div>
     );
   }

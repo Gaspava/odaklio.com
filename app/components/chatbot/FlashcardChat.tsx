@@ -309,8 +309,7 @@ function ScoreSummary({
 const welcomeMessage: ChatMessage = {
   id: "welcome",
   role: "assistant",
-  content:
-    "Merhaba! Ben Flashcard asistanin. Bir konu soyle, sana hafiza kartlari hazirlayayim.\n\nOrnek: \"Biyoloji hucre bolunmesi\" veya \"Ingilizce temel fiiller\"",
+  content: "",
   timestamp: new Date(),
 };
 
@@ -752,240 +751,153 @@ export default function FlashcardChat({
         </div>
       )}
 
-      {/* ===== MESSAGES AREA ===== */}
-      <div
-        className={`flex-1 overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 ${isMobile ? "pb-2" : ""}`}
-      >
-        <div className="max-w-[720px] mx-auto space-y-3">
-          {messages.map((msg, idx) => {
-            // Show welcome message fully
-            if (msg.id === "welcome") {
-              return (
-                <div
-                  key={msg.id}
-                  className="flex justify-start animate-msg-in"
-                  style={{ animationDelay: "0s" }}
-                >
-                  {/* Avatar */}
-                  <div
-                    className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg mr-2.5 mt-1 text-white text-[11px] font-bold relative"
-                    style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" }}
-                  >
-                    F
-                    <div
-                      className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
-                      style={{
-                        background: "var(--accent-success, #10b981)",
-                        borderColor: "var(--bg-primary)",
-                      }}
-                    />
-                  </div>
-                  <div className="max-w-[88%]">
-                    <div className="msg-ai px-3.5 py-3 sm:px-4 sm:py-3.5">
-                      <p
-                        className="text-[13px] sm:text-sm leading-relaxed whitespace-pre-line"
-                        style={{ color: "var(--text-primary)" }}
-                      >
-                        {msg.content}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            // User messages - right aligned bubbles
-            if (msg.role === "user") {
-              return (
-                <div
-                  key={msg.id}
-                  className="flex justify-end animate-msg-in"
-                  style={{
-                    animationDelay: `${Math.min(idx * 0.03, 0.2)}s`,
-                  }}
-                >
-                  <div className="max-w-[85%] sm:max-w-[70%]">
-                    <div className="msg-user px-3.5 py-2.5 sm:px-4 sm:py-3">
-                      <p className="text-[13px] sm:text-sm leading-relaxed">
-                        {msg.content}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            // AI messages - compact form (raw text without card rendering)
-            return (
-              <div
-                key={msg.id}
-                className="flex justify-start animate-msg-in"
-                style={{
-                  animationDelay: `${Math.min(idx * 0.03, 0.2)}s`,
-                }}
-              >
-                {/* Avatar */}
-                <div
-                  className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg mr-2.5 mt-1 text-white text-[11px] font-bold relative"
-                  style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" }}
-                >
-                  F
-                  <div
-                    className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
-                    style={{
-                      background: "var(--accent-success, #10b981)",
-                      borderColor: "var(--bg-primary)",
-                    }}
-                  />
-                </div>
-                <div className="max-w-[88%]">
-                  <div className="msg-ai px-3.5 py-2.5 sm:px-4 sm:py-3">
-                    {msg.content ? (
-                      <p
-                        className="text-[12px] sm:text-[13px] leading-relaxed line-clamp-3"
-                        style={{ color: "var(--text-secondary)" }}
-                      >
-                        {/* Strip flashcard tags for display */}
-                        {msg.content
-                          .replace(/\[FLASHCARD\][\s\S]*?\[\/FLASHCARD\]/g, "")
-                          .trim() || "Kartlar hazir!"}
-                      </p>
-                    ) : (
-                      isLoading &&
-                      msg.id === messages[messages.length - 1]?.id && (
-                        <TypingIndicator />
-                      )
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Quick Prompts - show when no real messages */}
-        {!hasNonWelcomeMessages && (
-          <div
-            className="max-w-[720px] mx-auto mt-8 sm:mt-10 animate-fade-in"
-            style={{ animationDelay: "0.3s" }}
-          >
-            <div className="text-center mb-6">
-              <div
-                className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 animate-float"
-                style={{
-                  background: "rgba(245, 158, 11, 0.1)",
-                  boxShadow: "0 0 24px rgba(245, 158, 11, 0.08)",
-                }}
-              >
-                <span className="text-2xl">&#127183;</span>
-              </div>
-              <h2
-                className="text-base font-bold mb-1"
-                style={{ color: "var(--text-primary)" }}
-              >
-                Flashcard olustur
-              </h2>
-              <p
-                className="text-xs"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                Bir konu sec veya kendi konunu yaz
-              </p>
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-2.5">
-              {quickPrompts.map((prompt, i) => (
+      {/* ===== WELCOME SCREEN or MESSAGES ===== */}
+      {!hasNonWelcomeMessages ? (
+        <div className="flex-1 overflow-y-auto px-4 flex flex-col items-center justify-center animate-fade-in">
+          <div className="welcome-logo-glow mb-6">
+            <img src="/odaklio-logo.svg" alt="Odaklio" className="w-24 h-24 sm:w-28 sm:h-28" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2 text-center tracking-wide">
+            {user?.user_metadata?.full_name?.split(" ")[0] ? (
+              <>
+                <span style={{ color: "var(--text-primary)" }}>MERHABA, </span>
+                <span className="welcome-name-glow">{user.user_metadata.full_name.split(" ")[0].toUpperCase()}!</span>
+              </>
+            ) : (
+              <span style={{ color: "var(--text-primary)" }}>MERHABA!</span>
+            )}
+          </h1>
+          <p className="text-sm sm:text-base mb-8 text-center" style={{ color: "var(--text-tertiary)" }}>
+            Bir konu söyle, sana hafıza kartları hazırlayayım.
+          </p>
+          <div className="w-full max-w-[600px] mb-6">
+            <div className="welcome-input-wrapper">
+              <div className="welcome-input-glow" />
+              <div className="welcome-input-inner">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                  placeholder={isMobile ? "Konu yaz..." : "Flashcard konusunu yaz... (örn: Biyoloji hücre yapısı)"}
+                  disabled={isLoading}
+                  className="flex-1 bg-transparent text-sm sm:text-base outline-none disabled:opacity-50"
+                  style={{ color: "var(--text-primary)" }}
+                />
                 <button
-                  key={prompt.text}
-                  onClick={() => setInput(prompt.text)}
-                  className="flex items-center gap-2 rounded-xl px-3.5 py-3 sm:px-4 sm:py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md stagger-children"
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={handleSend}
+                  disabled={!input.trim() || isLoading}
+                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
                   style={{
-                    background: "var(--bg-card)",
-                    border: "1px solid var(--border-primary)",
-                    color: "var(--text-secondary)",
-                    animationDelay: `${0.4 + i * 0.08}s`,
+                    background: input.trim() && !isLoading ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" : "var(--bg-tertiary)",
+                    color: input.trim() && !isLoading ? "white" : "var(--text-tertiary)",
+                    boxShadow: input.trim() && !isLoading ? "0 0 12px rgba(245, 158, 11, 0.3)" : "none",
                   }}
                 >
-                  <span className="text-sm">{prompt.icon}</span>
-                  <span>{prompt.text}</span>
+                  <IconSend size={15} />
                 </button>
-              ))}
+              </div>
             </div>
           </div>
-        )}
-      </div>
-
-      {/* ===== INPUT BAR ===== */}
-      <div
-        className={`flex-shrink-0 px-3 sm:px-4 ${isMobile ? "pb-2" : "pb-4"}`}
-      >
-        <div
-          className="max-w-[720px] mx-auto flex items-center gap-2 rounded-2xl px-3 py-2.5 sm:px-4 transition-all"
-          style={{
-            background: "var(--bg-card)",
-            border: "1px solid var(--border-primary)",
-            boxShadow: input.trim()
-              ? "0 0 16px rgba(245, 158, 11, 0.1)"
-              : "var(--shadow-md)",
-            borderColor: input.trim()
-              ? "rgba(245, 158, 11, 0.3)"
-              : "var(--border-primary)",
-          }}
-        >
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder={
-              isLoading
-                ? "Kartlar hazirlaniyor..."
-                : "Bir konu yaz... (or: Fizik formulleri)"
-            }
-            disabled={isLoading}
-            className="flex-1 bg-transparent text-[13px] sm:text-sm outline-none disabled:opacity-50"
-            style={{ color: "var(--text-primary)" }}
-          />
-
-          <button
-            type="button"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
-            style={{
-              background:
-                input.trim() && !isLoading
-                  ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
-                  : "var(--bg-tertiary)",
-              color:
-                input.trim() && !isLoading
-                  ? "white"
-                  : "var(--text-tertiary)",
-              boxShadow:
-                input.trim() && !isLoading
-                  ? "0 0 12px rgba(245, 158, 11, 0.3)"
-                  : "none",
-            }}
-          >
-            <IconSend size={14} />
-          </button>
+          <div className="flex flex-wrap justify-center gap-2.5 max-w-[600px]">
+            {quickPrompts.map((prompt, i) => (
+              <button
+                key={prompt.text}
+                onClick={() => setInput(prompt.text)}
+                className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md"
+                style={{
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border-primary)",
+                  color: "var(--text-secondary)",
+                  animationDelay: `${0.4 + i * 0.08}s`,
+                }}
+              >
+                <span className="text-sm">{prompt.icon}</span>
+                <span>{prompt.text}</span>
+              </button>
+            ))}
+          </div>
         </div>
+      ) : (
+        <>
+          <div className={`flex-1 overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 ${isMobile ? "pb-2" : ""}`}>
+            <div className="max-w-[720px] mx-auto space-y-3">
+              {messages.filter(m => m.id !== "welcome").map((msg, idx) => {
+                if (msg.role === "user") {
+                  return (
+                    <div key={msg.id} className="flex justify-end animate-msg-in" style={{ animationDelay: `${Math.min(idx * 0.03, 0.2)}s` }}>
+                      <div className="max-w-[85%] sm:max-w-[70%]">
+                        <div className="msg-user px-3.5 py-2.5 sm:px-4 sm:py-3">
+                          <p className="text-[13px] sm:text-sm leading-relaxed">{msg.content}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <div key={msg.id} className="flex justify-start animate-msg-in" style={{ animationDelay: `${Math.min(idx * 0.03, 0.2)}s` }}>
+                    <div className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full mr-2.5 mt-1">
+                      <img src="/odaklio-logo.svg" alt="" style={{ width: 28, height: 28 }} />
+                    </div>
+                    <div className="max-w-[88%]">
+                      <div className="msg-ai px-3.5 py-2.5 sm:px-4 sm:py-3">
+                        {msg.content ? (
+                          <p className="text-[12px] sm:text-[13px] leading-relaxed line-clamp-3" style={{ color: "var(--text-secondary)" }}>
+                            {msg.content.replace(/\[FLASHCARD\][\s\S]*?\[\/FLASHCARD\]/g, "").trim() || "Kartlar hazir!"}
+                          </p>
+                        ) : (
+                          isLoading && msg.id === messages[messages.length - 1]?.id && <TypingIndicator />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
 
-        {!isMobile && (
-          <p
-            className="text-center text-[10px] mt-2.5 flex items-center justify-center gap-1.5"
-            style={{ color: "var(--text-tertiary)" }}
-          >
-            <span style={{ color: "var(--accent-warning)", opacity: 0.6 }}>
-              &#9679;
-            </span>
-            Bir konu yaz, AI sana flashcard hazirlayacak
-          </p>
-        )}
-      </div>
+          <div className={`flex-shrink-0 px-3 sm:px-4 ${isMobile ? "pb-2" : "pb-4"}`}>
+            <div
+              className="max-w-[720px] mx-auto flex items-center gap-2 rounded-2xl px-3 py-2.5 sm:px-4 transition-all"
+              style={{
+                background: "var(--bg-card)",
+                border: "1px solid",
+                borderColor: input.trim() ? "rgba(245, 158, 11, 0.3)" : "var(--border-primary)",
+                boxShadow: input.trim() ? "0 0 16px rgba(245, 158, 11, 0.1)" : "var(--shadow-md)",
+              }}
+            >
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                placeholder={isLoading ? "Kartlar hazirlaniyor..." : "Yeni konu yaz..."}
+                disabled={isLoading}
+                className="flex-1 bg-transparent text-[13px] sm:text-sm outline-none disabled:opacity-50"
+                style={{ color: "var(--text-primary)" }}
+              />
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleSend}
+                disabled={!input.trim() || isLoading}
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl transition-all disabled:opacity-30 active:scale-95"
+                style={{
+                  background: input.trim() && !isLoading ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" : "var(--bg-tertiary)",
+                  color: input.trim() && !isLoading ? "white" : "var(--text-tertiary)",
+                }}
+              >
+                <IconSend size={14} />
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
