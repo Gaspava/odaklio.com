@@ -12,9 +12,9 @@ import {
   getChildConversations,
   getConversationBreadcrumb,
   getConversation,
-  type Conversation,
   type RoadmapStepRow,
 } from "@/lib/db/conversations";
+import ChatMessageRenderer from "./ChatMessageRenderer";
 
 /* ===== TYPES ===== */
 interface RoadmapChatProps {
@@ -40,6 +40,13 @@ interface RoadmapColumn {
   isLoading: boolean;
 }
 
+interface StudyMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  isStreaming?: boolean;
+}
+
 type Phase = "input" | "loading" | "roadmap";
 const MAX_DEPTH = 4;
 
@@ -49,12 +56,14 @@ async function streamChat(
   onChunk: (text: string) => void,
   onError: (error: string) => void,
   onDone: () => void,
-  mode?: string
+  mode?: string,
+  signal?: AbortSignal
 ) {
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ messages, mode }),
+    signal,
   });
 
   if (!res.ok) {
@@ -143,9 +152,18 @@ function CheckIcon() {
 
 function BookIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
       <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   );
 }
@@ -327,7 +345,7 @@ function MillerColumn({
   totalColumns: number;
   onSelectStep: (stepNumber: number) => void;
   onToggleComplete: (stepNumber: number) => void;
-  onStudy: (step: RoadmapStep) => void;
+  onStudy: (step: RoadmapStep, colIndex: number) => void;
 }) {
   const completed = column.completedSteps.size;
   const total = column.steps.length;
@@ -371,10 +389,164 @@ function MillerColumn({
               canExpand={canExpand}
               onToggleComplete={() => onToggleComplete(step.number)}
               onClick={() => onSelectStep(step.number)}
-              onStudy={() => onStudy(step)}
+              onStudy={() => onStudy(step, colIndex)}
             />
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+/* ===== STUDY CHAT PANEL ===== */
+function StudyChatPanel({
+  step,
+  messages,
+  isStreaming,
+  input,
+  onInputChange,
+  onSend,
+  endRef,
+}: {
+  step: RoadmapStep | null;
+  messages: StudyMessage[];
+  isStreaming: boolean;
+  input: string;
+  onInputChange: (v: string) => void;
+  onSend: () => void;
+  endRef: React.RefObject<HTMLDivElement>;
+}) {
+  // Welcome state — no step selected yet
+  if (!step) {
+    return (
+      <div
+        className="flex-1 flex flex-col items-center justify-center px-6 py-8"
+        style={{ background: "var(--bg-secondary)" }}
+      >
+        <div className="flex flex-col items-center gap-4 text-center" style={{ maxWidth: 300 }}>
+          <div
+            className="flex items-center justify-center rounded-2xl"
+            style={{ width: 64, height: 64, background: "rgba(16,185,129,0.08)" }}
+          >
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-[15px] font-semibold mb-1.5" style={{ color: "var(--text-primary)" }}>
+              Ders Paneli
+            </h3>
+            <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
+              Yol haritasından bir adıma tıkla ve{" "}
+              <span className="font-semibold" style={{ color: "#10b981" }}>Çalış</span>{" "}
+              butonuna bas — AI o konuyu sana ders gibi anlatacak.
+            </p>
+          </div>
+          {/* Decorative hint */}
+          <div className="flex items-center gap-2 mt-1">
+            {[1, 2, 3].map(i => (
+              <div
+                key={i}
+                className="rounded-lg flex items-center justify-center text-[10px] font-bold"
+                style={{ width: 28, height: 28, background: "rgba(239,68,68,0.08)", color: "#ef4444" }}
+              >
+                {i}
+              </div>
+            ))}
+            <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>→ Çalış</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "var(--bg-secondary)" }}>
+      {/* Panel header */}
+      <div
+        className="study-chat-panel-header"
+        style={{ borderBottom: "1px solid var(--border-primary)", background: "var(--bg-primary)" }}
+      >
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          {/* AI avatar */}
+          <div
+            className="flex items-center justify-center rounded-xl text-white text-[10px] font-bold flex-shrink-0"
+            style={{ width: 30, height: 30, background: "var(--gradient-primary)" }}
+          >
+            AI
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-medium" style={{ color: "var(--text-tertiary)" }}>
+              Konu Anlatımı
+            </p>
+            <p className="text-[13px] font-semibold truncate" style={{ color: "var(--text-primary)" }}>
+              {step.title}
+            </p>
+          </div>
+        </div>
+        <div
+          className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ml-2"
+          style={{ background: "rgba(16,185,129,0.1)", color: "#10b981" }}
+        >
+          {step.duration}
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="study-chat-messages">
+        {messages.map(msg => (
+          <div key={msg.id}>
+            {msg.role === "user" ? (
+              <div className="study-msg-user">
+                {msg.content}
+              </div>
+            ) : (
+              <div className="study-msg-ai">
+                {msg.content ? (
+                  <ChatMessageRenderer content={msg.content} />
+                ) : (
+                  /* Typing indicator */
+                  <div className="flex gap-1.5 py-1 px-1">
+                    {[0, 1, 2].map(i => (
+                      <div
+                        key={i}
+                        className="rounded-full animate-bounce"
+                        style={{
+                          width: 7,
+                          height: 7,
+                          background: "var(--text-tertiary)",
+                          animationDelay: `${i * 0.15}s`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+        <div ref={endRef} />
+      </div>
+
+      {/* Input bar */}
+      <div className="study-chat-input-bar">
+        <input
+          type="text"
+          value={input}
+          onChange={e => onInputChange(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSend(); } }}
+          placeholder="Sormak istediğin bir şey var mı?"
+          disabled={isStreaming}
+          className="study-chat-input"
+        />
+        <button
+          onClick={onSend}
+          disabled={!input.trim() || isStreaming}
+          className="study-chat-send-btn"
+        >
+          <IconSend size={16} />
+        </button>
       </div>
     </div>
   );
@@ -401,11 +573,25 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
   const [error, setError] = useState<string | null>(null);
   const [mobileActiveColumn, setMobileActiveColumn] = useState(0);
 
+  // Study panel state
+  const [studyStep, setStudyStep] = useState<RoadmapStep | null>(null);
+  const [studyMessages, setStudyMessages] = useState<StudyMessage[]>([]);
+  const [studyInput, setStudyInput] = useState("");
+  const [isStudying, setIsStudying] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"roadmap" | "study">("roadmap");
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const isGeneratingRef = useRef(false);
+  const studyEndRef = useRef<HTMLDivElement>(null);
+  const studyAbortRef = useRef<AbortController | null>(null);
 
-  /* ===== AUTO-SCROLL RIGHT ===== */
+  /* ===== AUTO-SCROLL STUDY PANEL ===== */
+  useEffect(() => {
+    studyEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [studyMessages]);
+
+  /* ===== AUTO-SCROLL MILLER COLUMNS RIGHT ===== */
   const scrollToRight = useCallback(() => {
     setTimeout(() => {
       if (scrollContainerRef.current) {
@@ -621,43 +807,161 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
     }
   }, [columns, createChildRoadmap, saveAssistantMessage, isMobile, scrollToRight, setActiveConversationId, setActiveConversationType]);
 
-  /* ===== TOGGLE COMPLETION ===== */
+  /* ===== TOGGLE COMPLETION WITH CASCADE ===== */
   const handleToggleComplete = useCallback((colIndex: number, stepNumber: number) => {
-    setColumns((prev) => {
-      const next = [...prev];
-      const col = { ...next[colIndex] };
-      const newCompleted = new Set(col.completedSteps);
+    const col = columns[colIndex];
+    if (!col) return;
 
-      if (newCompleted.has(stepNumber)) {
-        newCompleted.delete(stepNumber);
-      } else {
-        newCompleted.add(stepNumber);
+    const wasCompleted = col.completedSteps.has(stepNumber);
+    const isNowCompleted = !wasCompleted;
+
+    // Collect all DB updates: original + cascades
+    const dbUpdates: { conversationId: string; stepNumber: number; completed: boolean }[] = [
+      { conversationId: col.conversationId, stepNumber, completed: isNowCompleted },
+    ];
+
+    setColumns(prev => {
+      // Deep-clone all completedSets
+      const next = prev.map(c => ({ ...c, completedSteps: new Set(c.completedSteps) }));
+
+      // Apply the toggle
+      if (isNowCompleted) next[colIndex].completedSteps.add(stepNumber);
+      else next[colIndex].completedSteps.delete(stepNumber);
+
+      // Cascade upward when marking complete
+      if (isNowCompleted) {
+        let ci = colIndex;
+        while (ci > 0) {
+          const curCol = next[ci];
+          const allDone = curCol.steps.every(s => curCol.completedSteps.has(s.number));
+          if (!allDone) break;
+
+          const parentCI = ci - 1;
+          const parentStepNum = next[parentCI].selectedStepNumber;
+          if (parentStepNum === null) break;
+          if (next[parentCI].completedSteps.has(parentStepNum)) break; // already complete
+
+          next[parentCI].completedSteps.add(parentStepNum);
+          dbUpdates.push({
+            conversationId: next[parentCI].conversationId,
+            stepNumber: parentStepNum,
+            completed: true,
+          });
+          ci = parentCI;
+        }
       }
 
-      col.completedSteps = newCompleted;
-      next[colIndex] = col;
       return next;
     });
 
-    // Persist to DB
-    const col = columns[colIndex];
-    if (col) {
-      const wasCompleted = col.completedSteps.has(stepNumber);
-      toggleRoadmapStepCompletion(col.conversationId, stepNumber, !wasCompleted).catch(console.error);
+    // Persist all updates to DB (fire-and-forget)
+    for (const u of dbUpdates) {
+      toggleRoadmapStepCompletion(u.conversationId, u.stepNumber, u.completed).catch(console.error);
     }
   }, [columns]);
 
-  /* ===== STUDY TOPIC ===== */
+  /* ===== STUDY TOPIC — open inline study panel ===== */
   const handleStudyTopic = useCallback(async (step: RoadmapStep) => {
-    if (!onOpenConversation) return;
+    // Abort any in-flight study stream
+    studyAbortRef.current?.abort();
+    const controller = new AbortController();
+    studyAbortRef.current = controller;
+
+    setStudyStep(step);
+    setStudyInput("");
+    setMobileTab("study");
+
+    const loadingId = crypto.randomUUID();
+    setStudyMessages([{ id: loadingId, role: "assistant", content: "", isStreaming: true }]);
+    setIsStudying(true);
+
+    const prompt = `Konu: "${step.title}"\n\nKonu açıklaması: ${step.description}\n\nBu konuyu bana adım adım, tam bir ders gibi anlat. Hiçbir ön bilgi varsayma, sıfırdan başla.`;
+
+    let accumulated = "";
     try {
-      const convId = await createTypedConversation("standard");
-      await saveAssistantMessage(convId, `"${step.title}" konusunu birlikte calisalim!\n\n${step.description}\n\nNe sormak istersin?`);
-      onOpenConversation(convId, "standard");
+      await new Promise<void>((resolve, reject) => {
+        streamChat(
+          [{ role: "user", content: prompt }],
+          (chunk) => {
+            accumulated += chunk;
+            setStudyMessages(prev =>
+              prev.map(m => m.id === loadingId ? { ...m, content: accumulated } : m)
+            );
+          },
+          (err) => reject(new Error(err)),
+          () => resolve(),
+          "roadmap_study",
+          controller.signal
+        );
+      });
+      setStudyMessages(prev => prev.map(m =>
+        m.id === loadingId ? { ...m, isStreaming: false } : m
+      ));
     } catch (err) {
-      console.error("Study topic error:", err);
+      // Ignore abort errors (user switched topics)
+      if (err instanceof Error && err.name === "AbortError") return;
+      setStudyMessages(prev => prev.map(m =>
+        m.id === loadingId
+          ? { ...m, content: "Bir hata oluştu. Tekrar deneyin.", isStreaming: false }
+          : m
+      ));
+    } finally {
+      setIsStudying(false);
     }
-  }, [onOpenConversation, createTypedConversation, saveAssistantMessage]);
+  }, []);
+
+  /* ===== SEND FOLLOW-UP IN STUDY CHAT ===== */
+  const handleSendStudyMessage = useCallback(async () => {
+    const text = studyInput.trim();
+    if (!text || isStudying || !studyStep) return;
+    setStudyInput("");
+
+    const userMsg: StudyMessage = { id: crypto.randomUUID(), role: "user", content: text };
+    const assistantId = crypto.randomUUID();
+    setStudyMessages(prev => [
+      ...prev,
+      userMsg,
+      { id: assistantId, role: "assistant", content: "", isStreaming: true },
+    ]);
+    setIsStudying(true);
+
+    // Full API history: hidden intro prompt + all shown messages + new user message
+    const introPrompt = `Konu: "${studyStep.title}"\nKonu açıklaması: ${studyStep.description}\nBu konuyu bana öğret.`;
+    const history = [
+      { role: "user", content: introPrompt },
+      ...studyMessages.map(m => ({ role: m.role, content: m.content })),
+      { role: "user", content: text },
+    ];
+
+    let accumulated = "";
+    try {
+      await new Promise<void>((resolve, reject) => {
+        streamChat(
+          history,
+          (chunk) => {
+            accumulated += chunk;
+            setStudyMessages(prev =>
+              prev.map(m => m.id === assistantId ? { ...m, content: accumulated } : m)
+            );
+          },
+          (err) => reject(new Error(err)),
+          () => resolve(),
+          "roadmap_study"
+        );
+      });
+      setStudyMessages(prev => prev.map(m =>
+        m.id === assistantId ? { ...m, isStreaming: false } : m
+      ));
+    } catch {
+      setStudyMessages(prev => prev.map(m =>
+        m.id === assistantId
+          ? { ...m, content: "Bir hata oluştu. Tekrar deneyin.", isStreaming: false }
+          : m
+      ));
+    } finally {
+      setIsStudying(false);
+    }
+  }, [studyInput, isStudying, studyMessages, studyStep]);
 
   /* ===== LOAD EXISTING ROADMAP ===== */
   useEffect(() => {
@@ -683,10 +987,9 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
 
         // Walk down from root, building columns
         const builtColumns: RoadmapColumn[] = [];
-        let currentId = rootId;
-        let targetPath: string[] = [];
 
         // Build the path from root to active conversation
+        let targetPath: string[] = [];
         if (breadcrumb.length > 1) {
           targetPath = breadcrumb.slice(1).map((b) => b.id);
         }
@@ -906,71 +1209,113 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
     );
   }
 
-  /* ===== RENDER: ROADMAP PHASE (MILLER COLUMNS) ===== */
-  if (isMobile) {
-    const activeCol = columns[mobileActiveColumn];
-    if (!activeCol) return null;
-
-    return (
-      <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "var(--bg-primary)" }}>
-        {/* Overall progress */}
-        <OverallProgress columns={columns} />
-
-        {/* Mobile navigation header */}
-        {mobileActiveColumn > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2" style={{ borderBottom: "1px solid var(--border-secondary)" }}>
-            <button
-              onClick={() => setMobileActiveColumn((prev) => Math.max(0, prev - 1))}
-              className="flex items-center gap-1 text-[12px] font-medium rounded-lg px-2 py-1"
-              style={{ color: "#ef4444" }}
-            >
-              <IconChevronLeft size={14} />
-              Geri
-            </button>
-            <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
-              {columns[mobileActiveColumn - 1]?.title}
-            </span>
-          </div>
-        )}
-
-        {/* Single column view */}
-        <div className="flex-1 overflow-hidden flex flex-col">
-          <MillerColumn
-            column={activeCol}
-            colIndex={mobileActiveColumn}
-            totalColumns={columns.length}
-            onSelectStep={(stepNum) => handleSelectStep(mobileActiveColumn, stepNum)}
-            onToggleComplete={(stepNum) => handleToggleComplete(mobileActiveColumn, stepNum)}
-            onStudy={(step) => handleStudyTopic(step)}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  /* Desktop: horizontal scroll container */
+  /* ===== RENDER: ROADMAP PHASE ===== */
   return (
     <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "var(--bg-primary)" }}>
-      {/* Overall progress */}
       <OverallProgress columns={columns} />
 
-      {/* Miller columns container */}
-      <div
-        ref={scrollContainerRef}
-        className="flex-1 flex overflow-x-auto miller-columns-container"
-      >
-        {columns.map((col, idx) => (
-          <MillerColumn
-            key={col.conversationId || `loading-${idx}`}
-            column={col}
-            colIndex={idx}
-            totalColumns={columns.length}
-            onSelectStep={(stepNum) => handleSelectStep(idx, stepNum)}
-            onToggleComplete={(stepNum) => handleToggleComplete(idx, stepNum)}
-            onStudy={(step) => handleStudyTopic(step)}
-          />
-        ))}
-      </div>
+      {/* Mobile tab bar — shown only when a study session is active */}
+      {isMobile && studyStep && (
+        <div className="roadmap-mobile-tabs">
+          <button
+            className={`roadmap-mobile-tab ${mobileTab === "roadmap" ? "active" : ""}`}
+            onClick={() => setMobileTab("roadmap")}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+              <line x1="9" y1="3" x2="9" y2="18" />
+              <line x1="15" y1="6" x2="15" y2="21" />
+            </svg>
+            Yol Haritası
+          </button>
+          <button
+            className={`roadmap-mobile-tab ${mobileTab === "study" ? "active" : ""}`}
+            onClick={() => setMobileTab("study")}
+          >
+            <BookIcon />
+            Ders
+          </button>
+        </div>
+      )}
+
+      {isMobile ? (
+        /* ===== MOBILE: single panel based on tab ===== */
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {(mobileTab === "roadmap" || !studyStep) ? (
+            <>
+              {mobileActiveColumn > 0 && (
+                <div className="flex items-center gap-2 px-3 py-2" style={{ borderBottom: "1px solid var(--border-secondary)" }}>
+                  <button
+                    onClick={() => setMobileActiveColumn((prev) => Math.max(0, prev - 1))}
+                    className="flex items-center gap-1 text-[12px] font-medium rounded-lg px-2 py-1"
+                    style={{ color: "#ef4444" }}
+                  >
+                    <IconChevronLeft size={14} />
+                    Geri
+                  </button>
+                  <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+                    {columns[mobileActiveColumn - 1]?.title}
+                  </span>
+                </div>
+              )}
+              {columns[mobileActiveColumn] && (
+                <MillerColumn
+                  column={columns[mobileActiveColumn]}
+                  colIndex={mobileActiveColumn}
+                  totalColumns={columns.length}
+                  onSelectStep={(stepNum) => handleSelectStep(mobileActiveColumn, stepNum)}
+                  onToggleComplete={(stepNum) => handleToggleComplete(mobileActiveColumn, stepNum)}
+                  onStudy={handleStudyTopic}
+                />
+              )}
+            </>
+          ) : (
+            <StudyChatPanel
+              step={studyStep}
+              messages={studyMessages}
+              isStreaming={isStudying}
+              input={studyInput}
+              onInputChange={setStudyInput}
+              onSend={handleSendStudyMessage}
+              endRef={studyEndRef}
+            />
+          )}
+        </div>
+      ) : (
+        /* ===== DESKTOP: 2-panel split ===== */
+        <div className="roadmap-split-layout">
+          {/* Left: Miller Columns */}
+          <div
+            ref={scrollContainerRef}
+            className={`roadmap-left-panel miller-columns-container ${studyStep ? "has-study-panel" : ""}`}
+          >
+            {columns.map((col, idx) => (
+              <MillerColumn
+                key={col.conversationId || `loading-${idx}`}
+                column={col}
+                colIndex={idx}
+                totalColumns={columns.length}
+                onSelectStep={(stepNum) => handleSelectStep(idx, stepNum)}
+                onToggleComplete={(stepNum) => handleToggleComplete(idx, stepNum)}
+                onStudy={handleStudyTopic}
+              />
+            ))}
+          </div>
+
+          {/* Right: Study Chat Panel */}
+          <div className={studyStep ? "study-chat-panel" : "flex-1 flex flex-col"}>
+            <StudyChatPanel
+              step={studyStep}
+              messages={studyMessages}
+              isStreaming={isStudying}
+              input={studyInput}
+              onInputChange={setStudyInput}
+              onSend={handleSendStudyMessage}
+              endRef={studyEndRef}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
