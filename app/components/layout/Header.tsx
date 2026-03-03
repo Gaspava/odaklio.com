@@ -111,7 +111,7 @@ export default function Header({
     >
       {/* Left - Logo */}
       <div className="flex items-center flex-shrink-0">
-        <img src="/odaklio-logo.svg" alt="Odaklio" style={{ height: 36 }} />
+        <img src="/odaklio-logo.svg" alt="Odaklio" style={{ height: 44 }} />
       </div>
 
       {/* Center - Nav Pills (absolutely centered on full page width) */}
