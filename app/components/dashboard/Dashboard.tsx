@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import Header, { type PageType } from "../layout/Header";
 import MiniSidebar from "../layout/MiniSidebar";
-import ChatMap from "../layout/ChatMap";
 import ChatHistorySidebar from "../layout/ChatHistorySidebar";
 import MainChat from "../chatbot/MainChat";
 import MindmapChat from "../chatbot/MindmapChat";
@@ -313,18 +312,11 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
               )}
             </button>
           </div>
-          <button onClick={toggleRight} className="mobile-sidebar-toggle"
-            style={{ opacity: showSidePanels ? 1 : 0.4, pointerEvents: showSidePanels ? "auto" : "none" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" />
-              <rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" />
-            </svg>
-          </button>
         </div>
       )}
 
       <div className="flex flex-1 overflow-hidden relative">
-        {isMobile && (leftOpen || rightOpen) && (
+        {isMobile && leftOpen && (
           <div className="mobile-overlay" onClick={closeAllPanels} />
         )}
 
@@ -364,59 +356,6 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           {renderPageContent()}
         </div>
 
-        {/* Desktop right panel toggle button - always visible */}
-        {showSidePanels && !["flashcard", "roadmap"].includes(chatStyle) && !isMobile && (
-          <button onClick={() => setRightOpen(!rightOpen)}
-            className="absolute flex items-center justify-center transition-all hover:opacity-100"
-            style={{ right: rightOpen ? 304 : 4, top: 12, width: 24, height: 24, background: "var(--bg-secondary)", borderRadius: "var(--radius-full)", color: "var(--text-tertiary)", border: "1px solid var(--border-primary)", opacity: 0.7, cursor: "pointer", zIndex: 5, transition: "right 0.3s ease" }}
-            title={rightOpen ? "Chat Map panelini kapat" : "Chat Map panelini ac"}>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points={rightOpen ? "9 18 15 12 9 6" : "15 18 9 12 15 6"} />
-            </svg>
-          </button>
-        )}
-
-        {/* Desktop right panel - absolute so it doesn't push content */}
-        {showSidePanels && !["flashcard", "roadmap"].includes(chatStyle) && !isMobile && (
-          <div
-            className="overflow-visible transition-all duration-300 ease-in-out"
-            style={{
-              position: "absolute",
-              right: 0,
-              top: 0,
-              bottom: 0,
-              width: 300,
-              background: "var(--bg-secondary)",
-              borderLeft: "1px solid var(--border-primary)",
-              zIndex: 4,
-              transform: rightOpen ? "translateX(0)" : "translateX(100%)",
-            }}
-          >
-            <ChatMap
-              onClose={() => setRightOpen(false)}
-              chatStyle={chatStyle}
-              isMobile={isMobile}
-            />
-          </div>
-        )}
-
-        {/* Mobile right panel */}
-        {showSidePanels && !["flashcard", "roadmap"].includes(chatStyle) && isMobile && rightOpen && (
-          <div
-            className="panel-mobile-overlay panel-right overflow-visible transition-all duration-300 ease-in-out"
-            style={{
-              width: "85vw",
-              maxWidth: 320,
-              background: "var(--bg-secondary)",
-            }}
-          >
-            <ChatMap
-              onClose={() => setRightOpen(false)}
-              chatStyle={chatStyle}
-              isMobile={isMobile}
-            />
-          </div>
-        )}
       </div>
 
       {isMobile && activePage === "focus" && (
