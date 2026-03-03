@@ -5,6 +5,7 @@ import PomodoroPopup from "../tools/PomodoroPopup";
 import AmbientSoundPopup from "../tools/AmbientSoundPopup";
 import NewChatPopup from "../tools/NewChatPopup";
 import NotesPopup from "../tools/NotesPopup";
+import { usePomodoro } from "@/app/providers/PomodoroProvider";
 
 interface MiniSidebarProps {
   onNewChat: (style: string) => void;
@@ -12,10 +13,12 @@ interface MiniSidebarProps {
 }
 
 export default function MiniSidebar({ onNewChat, onClearChat }: MiniSidebarProps) {
+  const { isRunning, timeLeft } = usePomodoro();
+  const pomodoroMinutes = Math.floor(timeLeft / 60);
+  const pomodoroSeconds = timeLeft % 60;
+
   const [activePopup, setActivePopup] = useState<"new-chat" | "pomodoro" | "sound" | "notes" | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [pomodoroRunning, setPomodoroRunning] = useState(false);
-  const [pomodoroTime, setPomodoroTime] = useState({ minutes: 25, seconds: 0 });
   const [soundPlaying, setSoundPlaying] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
@@ -33,11 +36,6 @@ export default function MiniSidebar({ onNewChat, onClearChat }: MiniSidebarProps
 
   const togglePopup = useCallback((popup: "new-chat" | "pomodoro" | "sound" | "notes") => {
     setActivePopup((prev) => (prev === popup ? null : popup));
-  }, []);
-
-  const handleTimerChange = useCallback((running: boolean, minutes: number, seconds: number) => {
-    setPomodoroRunning(running);
-    setPomodoroTime({ minutes, seconds });
   }, []);
 
   const handleSoundChange = useCallback((playing: boolean) => {
@@ -115,9 +113,9 @@ export default function MiniSidebar({ onNewChat, onClearChat }: MiniSidebarProps
             <path d="M5 3L2 6" />
             <path d="M22 6l-3-3" />
           </svg>
-          {pomodoroRunning && (
+          {isRunning && (
             <span className="pomodoro-indicator">
-              {String(pomodoroTime.minutes).padStart(2, "0")}:{String(pomodoroTime.seconds).padStart(2, "0")}
+              {String(pomodoroMinutes).padStart(2, "0")}:{String(pomodoroSeconds).padStart(2, "0")}
             </span>
           )}
           <span className="mini-sidebar-tooltip">Pomodoro</span>
@@ -125,7 +123,6 @@ export default function MiniSidebar({ onNewChat, onClearChat }: MiniSidebarProps
         {activePopup === "pomodoro" && (
           <PomodoroPopup
             onClose={() => setActivePopup(null)}
-            onTimerChange={handleTimerChange}
           />
         )}
       </div>
