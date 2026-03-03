@@ -787,7 +787,7 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
   if (phase === "input") {
     const firstName = user?.user_metadata?.full_name?.split(" ")[0] || "";
     return (
-      <div className="flex-1 overflow-y-auto" style={{ background: "var(--bg-primary)" }}>
+      <div className="h-full overflow-y-auto" style={{ background: "var(--bg-primary)" }}>
         <div className="min-h-full flex flex-col items-center justify-center px-4 py-8 animate-fade-in">
           {/* Mode badge */}
           <div className="welcome-mode-badge welcome-mode-badge-red mb-4">
