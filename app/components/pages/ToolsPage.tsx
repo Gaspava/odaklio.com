@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { usePomodoro } from "@/app/providers/PomodoroProvider";
+import { getRecentSessions, type PomodoroSession } from "@/lib/db/pomodoro";
 import {
   getSavedFlashcards,
   getSavedFlashcardsByConversation,
@@ -563,102 +565,336 @@ function FlashcardDetail({ onBack }: { onBack: () => void }) {
 
 /* ===== POMODORO DETAIL ===== */
 function PomodoroDetail({ onBack }: { onBack: () => void }) {
-  const [isRunning, setIsRunning] = useState(false);
-  const [minutes, setMinutes] = useState(25);
-  const [seconds, setSeconds] = useState(0);
-  const [mode, setMode] = useState<"work" | "break">("work");
+  const { user } = useAuth();
+  const {
+    isRunning,
+    isPaused,
+    mode,
+    timeLeft,
+    totalTime,
+    settings,
+    completedPomodoros,
+    currentSubject,
+    start,
+    pause,
+    resume,
+    reset,
+    skip,
+    updateSettings,
+  } = usePomodoro();
 
-  const circumference = 2 * Math.PI * 60;
-  const totalSeconds = mode === "work" ? 25 * 60 : 5 * 60;
-  const elapsed = totalSeconds - (minutes * 60 + seconds);
-  const progress = (elapsed / totalSeconds) * 100;
+  const [showSettings, setShowSettings] = useState(false);
+  const [recentSessions, setRecentSessions] = useState<PomodoroSession[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(true);
+  const [todayStats, setTodayStats] = useState({ totalMinutes: 0, count: 0 });
+
+  const displayMinutes = Math.floor(timeLeft / 60);
+  const displaySeconds = timeLeft % 60;
+  const progress = totalTime > 0 ? ((totalTime - timeLeft) / totalTime) * 100 : 0;
+  const circumference = 2 * Math.PI * 70;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
   const modeColor = mode === "work" ? "var(--accent-primary)" : "var(--accent-cyan)";
+  const dailyGoal = 4;
+  const goalProgress = Math.min((completedPomodoros / dailyGoal) * 100, 100);
+
+  // Load recent sessions and today's stats
+  useEffect(() => {
+    if (!user) return;
+    setLoadingSessions(true);
+    getRecentSessions(user.id, 8).then((sessions) => {
+      setRecentSessions(sessions);
+      // Calculate today's stats
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todaySessions = sessions.filter(
+        (s) => s.status === "completed" && new Date(s.started_at) >= today
+      );
+      setTodayStats({
+        count: todaySessions.length,
+        totalMinutes: todaySessions.reduce((sum, s) => sum + Math.round(s.actual_seconds / 60), 0),
+      });
+      setLoadingSessions(false);
+    }).catch(() => setLoadingSessions(false));
+  }, [user, completedPomodoros]);
+
+  const handlePlayPause = () => {
+    if (isRunning) {
+      isPaused ? resume() : pause();
+    } else {
+      start();
+    }
+  };
+
+  const formatSessionDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const today = new Date();
+    if (d.toDateString() === today.toDateString()) return "Bugun";
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) return "Dun";
+    return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+  };
 
   return (
     <div className="space-y-4 animate-fade-in">
-      <div className="flex items-center gap-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="flex h-8 w-8 items-center justify-center rounded-lg transition-all active:scale-95"
+            style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+          >
+            <IconChevronLeft size={16} />
+          </button>
+          <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Pomodoro</h2>
+        </div>
         <button
-          onClick={onBack}
+          onClick={() => setShowSettings(!showSettings)}
           className="flex h-8 w-8 items-center justify-center rounded-lg transition-all active:scale-95"
-          style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+          style={{
+            background: showSettings ? "var(--bg-card)" : "var(--bg-tertiary)",
+            color: showSettings ? "var(--accent-primary)" : "var(--text-tertiary)",
+          }}
         >
-          <IconChevronLeft size={16} />
+          <IconSettings size={16} />
         </button>
-        <h2 className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Pomodoro</h2>
       </div>
 
+      {/* Today's Quick Stats */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-xl p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
+          <div className="text-lg font-bold" style={{ color: "var(--accent-primary)" }}>{completedPomodoros}</div>
+          <div className="text-[9px] font-medium" style={{ color: "var(--text-tertiary)" }}>Pomodoro</div>
+        </div>
+        <div className="rounded-xl p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
+          <div className="text-lg font-bold" style={{ color: "var(--accent-cyan)" }}>
+            {todayStats.totalMinutes > 0 ? `${todayStats.totalMinutes}` : "0"}
+          </div>
+          <div className="text-[9px] font-medium" style={{ color: "var(--text-tertiary)" }}>Dakika</div>
+        </div>
+        <div className="rounded-xl p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
+          <div className="text-lg font-bold" style={{ color: "var(--accent-warning)" }}>
+            {dailyGoal - completedPomodoros > 0 ? dailyGoal - completedPomodoros : 0}
+          </div>
+          <div className="text-[9px] font-medium" style={{ color: "var(--text-tertiary)" }}>Kalan</div>
+        </div>
+      </div>
+
+      {/* Timer Card */}
       <div
         className="rounded-2xl p-6 flex flex-col items-center gap-5"
         style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
       >
-        <div className="flex rounded-xl p-1 w-full max-w-[240px]" style={{ background: "var(--bg-tertiary)" }}>
+        {/* Subject Badge */}
+        {currentSubject && (
+          <div className="px-3 py-1 rounded-full text-[10px] font-semibold"
+            style={{ background: `${modeColor}15`, color: modeColor }}>
+            {currentSubject}
+          </div>
+        )}
+
+        {/* Mode Toggle */}
+        <div className="flex rounded-xl p-1 w-full max-w-[260px]" style={{ background: "var(--bg-tertiary)" }}>
           {(["work", "break"] as const).map((m) => (
             <button
               key={m}
-              onClick={() => { setMode(m); setMinutes(m === "work" ? 25 : 5); setSeconds(0); setIsRunning(false); }}
+              onClick={() => { if (!isRunning && m !== mode) reset(); }}
               className="flex-1 rounded-lg py-2 text-xs font-semibold transition-all"
               style={{
                 background: mode === m ? "var(--bg-card)" : "transparent",
-                color: mode === m ? modeColor : "var(--text-tertiary)",
+                color: mode === m ? (m === "work" ? "var(--accent-primary)" : "var(--accent-cyan)") : "var(--text-tertiary)",
                 boxShadow: mode === m ? "var(--shadow-sm)" : "none",
+                opacity: isRunning && mode !== m ? 0.4 : 1,
+                cursor: isRunning && mode !== m ? "not-allowed" : "pointer",
               }}
             >
-              {m === "work" ? "\u00c7al\u0131\u015f (25dk)" : "Mola (5dk)"}
+              {m === "work" ? `Calis (${settings.workMinutes}dk)` : `Mola (${settings.shortBreakMinutes}dk)`}
             </button>
           ))}
         </div>
 
+        {/* Timer Circle */}
         <div className="relative">
-          <svg width="180" height="180" className="-rotate-90">
-            <circle cx="90" cy="90" r="60" fill="none" stroke="var(--bg-tertiary)" strokeWidth="8" />
+          <svg width="200" height="200" className="-rotate-90">
+            <circle cx="100" cy="100" r="70" fill="none" stroke="var(--bg-tertiary)" strokeWidth="8" />
             <circle
-              cx="90" cy="90" r="60"
+              cx="100" cy="100" r="70"
               fill="none"
               stroke={modeColor}
               strokeWidth="8"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
-              style={{ transition: "stroke-dashoffset 1s linear", filter: `drop-shadow(0 0 8px ${modeColor})` }}
+              style={{
+                transition: "stroke-dashoffset 1s linear",
+                filter: `drop-shadow(0 0 10px ${modeColor === "var(--accent-primary)" ? "rgba(16,185,129,0.5)" : "rgba(6,182,212,0.5)"})`,
+              }}
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>
-              {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+            <span className="text-4xl font-bold tabular-nums tracking-tight" style={{ color: "var(--text-primary)" }}>
+              {String(displayMinutes).padStart(2, "0")}:{String(displaySeconds).padStart(2, "0")}
             </span>
-            <span className="text-[11px] font-semibold" style={{ color: modeColor }}>
-              {mode === "work" ? "Odak Zaman\u0131" : "Mola Zaman\u0131"}
+            <span className="text-xs font-semibold mt-1" style={{ color: modeColor }}>
+              {mode === "work" ? "Odak Zamani" : "Mola Zamani"}
             </span>
+            {isRunning && isPaused && (
+              <span className="text-[9px] font-medium mt-0.5" style={{ color: "var(--accent-warning)" }}>
+                Duraklatildi
+              </span>
+            )}
           </div>
         </div>
 
+        {/* Controls */}
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsRunning(!isRunning)}
-            className="flex h-12 w-12 items-center justify-center rounded-2xl text-white transition-all active:scale-95"
-            style={{ background: modeColor, boxShadow: `0 0 16px ${modeColor}40` }}
+            onClick={handlePlayPause}
+            className="flex h-14 w-14 items-center justify-center rounded-2xl text-white transition-all active:scale-95 hover:scale-105"
+            style={{ background: modeColor, boxShadow: `0 0 24px ${modeColor}50` }}
           >
-            {isRunning ? <IconPause size={20} /> : <IconPlay size={20} />}
+            {isRunning && !isPaused ? <IconPause size={22} /> : <IconPlay size={22} />}
           </button>
           <button
-            onClick={() => { setIsRunning(false); setMinutes(mode === "work" ? 25 : 5); setSeconds(0); }}
+            onClick={() => reset()}
             className="flex h-12 w-12 items-center justify-center rounded-2xl transition-all active:scale-95"
             style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
           >
             <IconRefresh size={20} />
           </button>
+          {mode === "break" && (
+            <button
+              onClick={() => skip()}
+              className="flex h-12 w-12 items-center justify-center rounded-2xl transition-all active:scale-95"
+              style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+              title="Molayi atla"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5 4 15 12 5 20 5 4" /><rect x="15" y="4" width="4" height="16" />
+              </svg>
+            </button>
+          )}
         </div>
 
-        <div className="w-full max-w-[280px]">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>G\u00fcnl\u00fck Hedef</span>
-            <span className="text-[11px] font-semibold" style={{ color: "var(--accent-success)" }}>2/4</span>
+        {/* Daily Goal Progress */}
+        <div className="w-full max-w-[300px]">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-medium" style={{ color: "var(--text-tertiary)" }}>Gunluk Hedef</span>
+            <span className="text-[11px] font-bold" style={{ color: goalProgress >= 100 ? "var(--accent-success)" : "var(--accent-primary)" }}>
+              {completedPomodoros}/{dailyGoal}
+              {goalProgress >= 100 && " ✓"}
+            </span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: "var(--bg-tertiary)" }}>
-            <div className="h-full rounded-full" style={{ width: "50%", background: "var(--gradient-primary)" }} />
+          <div className="h-2.5 w-full overflow-hidden rounded-full" style={{ background: "var(--bg-tertiary)" }}>
+            <div
+              className="h-full rounded-full transition-all duration-700 ease-out"
+              style={{
+                width: `${goalProgress}%`,
+                background: goalProgress >= 100 ? "var(--accent-success)" : "var(--gradient-primary)",
+                boxShadow: goalProgress > 0 ? "var(--shadow-glow-sm)" : "none",
+              }}
+            />
           </div>
         </div>
+      </div>
+
+      {/* Settings Panel */}
+      {showSettings && (
+        <div
+          className="rounded-2xl p-5"
+          style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
+        >
+          <h3 className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: "var(--text-tertiary)" }}>
+            Sure Ayarlari
+          </h3>
+          <div className="space-y-3">
+            {[
+              { label: "Calisma Suresi", key: "workMinutes" as const, max: 120, color: "var(--accent-primary)", suffix: "dk" },
+              { label: "Kisa Mola", key: "shortBreakMinutes" as const, max: 30, color: "var(--accent-cyan)", suffix: "dk" },
+              { label: "Uzun Mola", key: "longBreakMinutes" as const, max: 60, color: "var(--accent-warning)", suffix: "dk" },
+            ].map(({ label, key, max, color, suffix }) => (
+              <div key={key} className="flex items-center justify-between p-3 rounded-xl" style={{ background: "var(--bg-tertiary)" }}>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full" style={{ background: color }} />
+                  <span className="text-[12px] font-medium" style={{ color: "var(--text-secondary)" }}>{label}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    min={1}
+                    max={max}
+                    value={settings[key]}
+                    onChange={(e) => updateSettings({ [key]: Math.max(1, Math.min(max, Number(e.target.value))) })}
+                    className="w-14 px-2 py-1.5 rounded-lg text-[12px] text-center font-bold outline-none"
+                    style={{
+                      background: "var(--bg-card)",
+                      color: "var(--text-primary)",
+                      border: "1px solid var(--border-primary)",
+                    }}
+                    disabled={isRunning}
+                  />
+                  <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>{suffix}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[9px] mt-3 text-center" style={{ color: "var(--text-tertiary)" }}>
+            Her 4 pomodoro sonrasi uzun mola otomatik baslar
+          </p>
+        </div>
+      )}
+
+      {/* Recent Sessions */}
+      <div
+        className="rounded-2xl p-5"
+        style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
+      >
+        <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--text-tertiary)" }}>
+          Son Oturumlar
+        </h3>
+        {loadingSessions ? (
+          <div className="text-[11px] text-center py-4" style={{ color: "var(--text-tertiary)" }}>Yukleniyor...</div>
+        ) : recentSessions.length === 0 ? (
+          <div className="text-center py-6">
+            <div className="text-2xl mb-2">🍅</div>
+            <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>Henuz oturum yok</p>
+            <p className="text-[10px] mt-1" style={{ color: "var(--text-tertiary)" }}>Ilk pomodoronu baslatarak basla!</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {recentSessions.map((session) => (
+              <div key={session.id} className="flex items-center justify-between p-3 rounded-xl transition-all"
+                style={{ background: "var(--bg-tertiary)" }}>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{
+                      background: session.status === "completed" ? "var(--accent-primary)" : "var(--text-tertiary)",
+                      boxShadow: session.status === "completed" ? "0 0 6px rgba(16,185,129,0.5)" : "none",
+                    }}
+                  />
+                  <div>
+                    <span className="text-[12px] font-semibold block" style={{ color: "var(--text-primary)" }}>
+                      {session.subject || "Odak Oturumu"}
+                    </span>
+                    <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                      {formatSessionDate(session.started_at)} · {new Date(session.started_at).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[12px] font-bold tabular-nums" style={{ color: "var(--text-secondary)" }}>
+                    {Math.round(session.actual_seconds / 60)} dk
+                  </span>
+                  <span className="block text-[9px]" style={{ color: session.status === "completed" ? "var(--accent-primary)" : "var(--text-tertiary)" }}>
+                    {session.status === "completed" ? "Tamamlandi" : "Iptal"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -248,41 +248,43 @@ export default function PomodoroProvider({
   }, []);
 
   const reset = useCallback(async () => {
-    if (sessionIdRef.current) {
-      try {
-        await cancelPomodoroSession(sessionIdRef.current, elapsedRef.current);
-      } catch (e) {
-        console.error("Failed to cancel pomodoro session:", e);
-      }
-      sessionIdRef.current = null;
-    }
+    // Save refs before resetting
+    const prevSessionId = sessionIdRef.current;
+    const elapsed = elapsedRef.current;
+
+    // Reset state IMMEDIATELY (before any await)
+    sessionIdRef.current = null;
+    elapsedRef.current = 0;
     setIsRunning(false);
     setIsPaused(false);
     setMode("work");
     setTimeLeft(settings.workMinutes * 60);
     setTotalTime(settings.workMinutes * 60);
-    elapsedRef.current = 0;
+
+    // Cancel DB session in background
+    if (prevSessionId) {
+      cancelPomodoroSession(prevSessionId, elapsed).catch(console.error);
+    }
   }, [settings]);
 
   const skip = useCallback(async () => {
     if (mode === "break") {
-      if (sessionIdRef.current) {
-        try {
-          await completePomodoroSession(
-            sessionIdRef.current,
-            elapsedRef.current
-          );
-        } catch (e) {
-          console.error("Failed to complete break session:", e);
-        }
-        sessionIdRef.current = null;
-      }
+      const prevSessionId = sessionIdRef.current;
+      const elapsed = elapsedRef.current;
+
+      // Reset state IMMEDIATELY
+      sessionIdRef.current = null;
+      elapsedRef.current = 0;
       setMode("work");
       setTimeLeft(settings.workMinutes * 60);
       setTotalTime(settings.workMinutes * 60);
-      elapsedRef.current = 0;
       setIsRunning(false);
       setIsPaused(false);
+
+      // Complete DB session in background
+      if (prevSessionId) {
+        completePomodoroSession(prevSessionId, elapsed).catch(console.error);
+      }
     }
   }, [mode, settings]);
 
