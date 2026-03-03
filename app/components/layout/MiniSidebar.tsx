@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import PomodoroPopup from "../tools/PomodoroPopup";
 import AmbientSoundPopup from "../tools/AmbientSoundPopup";
 import NewChatPopup from "../tools/NewChatPopup";
+import NotesPopup from "../tools/NotesPopup";
 
 interface MiniSidebarProps {
   onNewChat: (style: string) => void;
@@ -11,7 +12,7 @@ interface MiniSidebarProps {
 }
 
 export default function MiniSidebar({ onNewChat, onClearChat }: MiniSidebarProps) {
-  const [activePopup, setActivePopup] = useState<"new-chat" | "pomodoro" | "sound" | null>(null);
+  const [activePopup, setActivePopup] = useState<"new-chat" | "pomodoro" | "sound" | "notes" | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [pomodoroRunning, setPomodoroRunning] = useState(false);
   const [pomodoroTime, setPomodoroTime] = useState({ minutes: 25, seconds: 0 });
@@ -30,7 +31,7 @@ export default function MiniSidebar({ onNewChat, onClearChat }: MiniSidebarProps
     return () => document.removeEventListener("mousedown", handleClick);
   }, [activePopup]);
 
-  const togglePopup = useCallback((popup: "new-chat" | "pomodoro" | "sound") => {
+  const togglePopup = useCallback((popup: "new-chat" | "pomodoro" | "sound" | "notes") => {
     setActivePopup((prev) => (prev === popup ? null : popup));
   }, []);
 
@@ -58,6 +59,24 @@ export default function MiniSidebar({ onNewChat, onClearChat }: MiniSidebarProps
         </svg>
         <span className="mini-sidebar-tooltip">Temizle</span>
       </button>
+
+      {/* Notes */}
+      <div className="relative">
+        <button
+          className={`mini-sidebar-btn ${activePopup === "notes" ? "active" : ""}`}
+          onClick={() => togglePopup("notes")}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span className="mini-sidebar-tooltip">Notlarım</span>
+        </button>
+        {activePopup === "notes" && (
+          <NotesPopup
+            onClose={() => setActivePopup(null)}
+          />
+        )}
+      </div>
 
       {/* Ambient Sound */}
       <div className="relative">

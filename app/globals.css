@@ -2941,6 +2941,11 @@ body {
   padding: 16px;
 }
 
+.tool-popup-notes {
+  width: 300px;
+  padding: 16px;
+}
+
 @keyframes popupIn {
   from {
     opacity: 0;

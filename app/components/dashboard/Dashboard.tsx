@@ -18,6 +18,7 @@ import AnalysisPage from "../pages/AnalysisPage";
 import PomodoroPopup from "../tools/PomodoroPopup";
 import AmbientSoundPopup from "../tools/AmbientSoundPopup";
 import NewChatPopup from "../tools/NewChatPopup";
+import NotesPopup from "../tools/NotesPopup";
 import {
   IconChat,
   IconPomodoro,
@@ -27,7 +28,6 @@ import {
 } from "../icons/Icons";
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { useConversation } from "@/app/providers/ConversationProvider";
-import NoteSelectionPopup from "../notes/NoteSelectionPopup";
 
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(false);
@@ -54,7 +54,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const [showModeSelector, setShowModeSelector] = useState(true);
   const [chatKey, setChatKey] = useState(0);
   const [activePage, setActivePage] = useState<PageType>(initialPage || "focus");
-  const [mobileBottomSheet, setMobileBottomSheet] = useState<"pomodoro" | "sound" | "new-chat" | null>(null);
+  const [mobileBottomSheet, setMobileBottomSheet] = useState<"pomodoro" | "sound" | "new-chat" | "notes" | null>(null);
   const [pomodoroRunning, setPomodoroRunning] = useState(false);
   const [pomodoroTime, setPomodoroTime] = useState({ minutes: 25, seconds: 0 });
   const [soundPlaying, setSoundPlaying] = useState(false);
@@ -524,11 +524,16 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
                 inline
               />
             )}
+            {mobileBottomSheet === "notes" && (
+              <NotesPopup
+                onClose={() => setMobileBottomSheet(null)}
+                inline
+              />
+            )}
           </div>
         </div>
       )}
 
-      <NoteSelectionPopup />
     </div>
   );
 }
