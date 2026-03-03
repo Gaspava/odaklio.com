@@ -44,68 +44,18 @@ export default function TextSelectionPopup({
     }
 
     let left = x - popupW / 2;
-    const pad = 8;
+    const pad = 6;
     if (left < pad) left = pad;
     if (left + popupW > window.innerWidth - pad) left = window.innerWidth - pad - popupW;
 
     setPos({ left, top, openBelow });
   }, [x, y, bottom]);
 
-  // Mobile layout
-  if (isMobile) {
-    return (
-      <div
-        className="fixed z-[100] animate-slide-up"
-        style={{
-          left: "50%",
-          bottom: 72,
-          transform: "translateX(-50%)",
-        }}
-      >
-        <div
-          className="flex items-center gap-1 rounded-2xl p-1.5 shadow-lg"
-          style={{
-            background: "var(--bg-card)",
-            border: "1px solid var(--border-primary)",
-            boxShadow: "var(--shadow-xl)",
-          }}
-        >
-          <button
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={() => onAction("quick-learn")}
-            className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-medium transition-colors active:scale-[0.96]"
-            style={{ color: "var(--accent-warning)", background: "var(--accent-warning-light)" }}
-          >
-            <IconBrain size={14} />
-            Hızlı Öğren
-          </button>
-
-          <button
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={() => onAction("what-is-this")}
-            className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-medium transition-colors active:scale-[0.96]"
-            style={{ color: "var(--accent-secondary)", background: "var(--accent-secondary-light)" }}
-          >
-            <IconSearch size={14} />
-            Bu nedir?
-          </button>
-
-          <button
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={() => onAction("speed-read")}
-            className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-medium transition-colors active:scale-[0.96]"
-            style={{ color: "var(--accent-primary)", background: "var(--accent-primary-light)" }}
-          >
-            <IconLightning size={14} />
-            Hızlı Oku
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   // Compute arrow horizontal position relative to popup
-  const arrowLeft = pos ? x - pos.left : 0;
+  const arrowLeft = pos ? Math.min(Math.max(x - pos.left, ARROW_SIZE + 4), (popupRef.current?.offsetWidth || 200) - ARROW_SIZE - 4) : 0;
+
+  // Shared button handler to prevent propagation on both mouse and touch
+  const stop = (e: React.MouseEvent | React.TouchEvent) => e.stopPropagation();
 
   return (
     <div
@@ -148,64 +98,109 @@ export default function TextSelectionPopup({
       )}
 
       <div
-        className="flex items-center gap-1 rounded-xl p-1 shadow-lg"
+        className={`flex items-center rounded-xl shadow-lg ${
+          isMobile ? "gap-0.5 p-0.5" : "gap-1 p-1"
+        }`}
         style={{
           background: "var(--bg-card)",
           border: "1px solid var(--border-primary)",
           boxShadow: "var(--shadow-xl)",
         }}
       >
-        <button
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={() => onAction("quick-learn")}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
-          style={{ color: "var(--accent-warning)" }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--accent-warning-light)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-          }}
-        >
-          <IconBrain size={14} />
-          Hızlı Öğren
-        </button>
+        {isMobile ? (
+          <>
+            <button
+              onMouseDown={stop}
+              onTouchStart={stop}
+              onClick={() => onAction("quick-learn")}
+              className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-medium transition-colors active:scale-[0.96]"
+              style={{ color: "var(--accent-warning)" }}
+            >
+              <IconBrain size={11} />
+              Öğren
+            </button>
 
-        <div className="w-px h-5" style={{ background: "var(--border-primary)" }} />
+            <div className="w-px h-4" style={{ background: "var(--border-primary)" }} />
 
-        <button
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={() => onAction("what-is-this")}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
-          style={{ color: "var(--accent-secondary)" }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--accent-secondary-light)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-          }}
-        >
-          <IconSearch size={14} />
-          Bu nedir?
-        </button>
+            <button
+              onMouseDown={stop}
+              onTouchStart={stop}
+              onClick={() => onAction("what-is-this")}
+              className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-medium transition-colors active:scale-[0.96]"
+              style={{ color: "var(--accent-secondary)" }}
+            >
+              <IconSearch size={11} />
+              Nedir?
+            </button>
 
-        <div className="w-px h-5" style={{ background: "var(--border-primary)" }} />
+            <div className="w-px h-4" style={{ background: "var(--border-primary)" }} />
 
-        <button
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={() => onAction("speed-read")}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
-          style={{ color: "var(--accent-primary)" }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--accent-primary-light)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-          }}
-        >
-          <IconLightning size={14} />
-          Hızlı Oku
-        </button>
+            <button
+              onMouseDown={stop}
+              onTouchStart={stop}
+              onClick={() => onAction("speed-read")}
+              className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-medium transition-colors active:scale-[0.96]"
+              style={{ color: "var(--accent-primary)" }}
+            >
+              <IconLightning size={11} />
+              Hızlı Oku
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onMouseDown={stop}
+              onClick={() => onAction("quick-learn")}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
+              style={{ color: "var(--accent-warning)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--accent-warning-light)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+              }}
+            >
+              <IconBrain size={14} />
+              Hızlı Öğren
+            </button>
+
+            <div className="w-px h-5" style={{ background: "var(--border-primary)" }} />
+
+            <button
+              onMouseDown={stop}
+              onClick={() => onAction("what-is-this")}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
+              style={{ color: "var(--accent-secondary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--accent-secondary-light)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+              }}
+            >
+              <IconSearch size={14} />
+              Bu nedir?
+            </button>
+
+            <div className="w-px h-5" style={{ background: "var(--border-primary)" }} />
+
+            <button
+              onMouseDown={stop}
+              onClick={() => onAction("speed-read")}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
+              style={{ color: "var(--accent-primary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--accent-primary-light)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+              }}
+            >
+              <IconLightning size={14} />
+              Hızlı Oku
+            </button>
+          </>
+        )}
       </div>
 
       {/* Arrow on bottom (when popup opens above) */}

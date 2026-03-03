@@ -374,13 +374,15 @@ function ChatNodeComponent({
           className="absolute z-50 animate-fade-in-scale"
           style={{
             left: branchBtnPos.x,
-            top: branchBtnPos.y - 40,
+            top: branchBtnPos.y - (isMobile ? 32 : 36),
             transform: "translateX(-50%)",
           }}
         >
           <button
-            className={`flex items-center gap-1.5 rounded-lg font-semibold transition-all shadow-lg ${
-              isMobile ? "px-4 py-3 text-sm" : "px-3.5 py-2 text-xs"
+            className={`flex items-center rounded-lg font-semibold transition-all shadow-lg ${
+              isMobile
+                ? "gap-1 px-2.5 py-1.5 text-[10px]"
+                : "gap-1.5 px-3.5 py-2 text-xs"
             }`}
             style={{
               background: "var(--accent-purple)",
@@ -396,8 +398,8 @@ function ChatNodeComponent({
               window.getSelection()?.removeAllRanges();
             }}
           >
-            <IconGitBranch size={12} />
-            Yeni Yol Oluştur
+            <IconGitBranch size={isMobile ? 10 : 12} />
+            {isMobile ? "Dal Oluştur" : "Yeni Yol Oluştur"}
           </button>
         </div>
       )}
