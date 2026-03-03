@@ -420,7 +420,17 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
 
           {/* Welcome Screen - shown when no real messages */}
           {messages.length <= 1 ? (
-            <div className="flex flex-col items-center justify-center min-h-full px-4 animate-fade-in">
+            <div
+              className="fixed flex flex-col items-center justify-center px-4 animate-fade-in"
+              style={{
+                top: isMobile ? 48 : 56,
+                left: 0,
+                right: 0,
+                bottom: isMobile ? 60 : 0,
+                zIndex: 5,
+                background: "var(--bg-primary)",
+              }}
+            >
               {/* Logo */}
               <div className="welcome-logo-glow mb-6 sm:mb-8">
                 <img src="/odaklio-logo.svg" alt="Odaklio" className="w-24 h-24 sm:w-28 sm:h-28" />

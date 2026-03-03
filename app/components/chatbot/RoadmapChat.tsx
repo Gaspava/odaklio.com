@@ -788,7 +788,17 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
     const firstName = user?.user_metadata?.full_name?.split(" ")[0] || "";
     return (
       <div className="h-full overflow-y-auto" style={{ background: "var(--bg-primary)" }}>
-        <div className="min-h-full flex flex-col items-center justify-center px-4 py-8 animate-fade-in">
+        <div
+          className="fixed flex flex-col items-center justify-center px-4 animate-fade-in"
+          style={{
+            top: isMobile ? 48 : 56,
+            left: 0,
+            right: 0,
+            bottom: isMobile ? 60 : 0,
+            zIndex: 5,
+            background: "var(--bg-primary)",
+          }}
+        >
           {/* Mode badge */}
           <div className="welcome-mode-badge welcome-mode-badge-red mb-4">
             <span>🗺️</span> Yol Haritası Modu
