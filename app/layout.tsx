@@ -8,6 +8,11 @@ export const metadata: Metadata = {
   title: "Odaklio - Akıllı Öğrenme Platformu",
   description:
     "AI destekli hızlı okuma, flashcard, mind map, pomodoro ve daha fazlasıyla öğrenme deneyimini dönüştür.",
+  icons: {
+    icon: "/odaklio-logo.svg",
+    shortcut: "/odaklio-logo.svg",
+    apple: "/odaklio-logo.svg",
+  },
 };
 
 export const viewport: Viewport = {
