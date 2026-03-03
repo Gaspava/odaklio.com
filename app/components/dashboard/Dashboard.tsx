@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Header, { type PageType } from "../layout/Header";
-import LeftPanel from "../layout/LeftPanel";
-import RightPanel from "../layout/RightPanel";
+import MiniSidebar from "../layout/MiniSidebar";
+import ChatMap from "../layout/ChatMap";
+import ChatHistorySidebar from "../layout/ChatHistorySidebar";
 import MainChat from "../chatbot/MainChat";
 import MindmapChat from "../chatbot/MindmapChat";
 import FlashcardChat from "../chatbot/FlashcardChat";
@@ -158,6 +159,13 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
     setChatKey((k) => k + 1);
   };
 
+  const handleClearChat = () => {
+    startNewConversation();
+    setShowModeSelector(true);
+    setChatStyle("standard");
+    setChatKey((k) => k + 1);
+  };
+
   const handleSelectStyle = (style: ChatStyle) => {
     setChatStyle(style);
     setChatKey((k) => k + 1);
@@ -256,55 +264,23 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
 
       {isMobile && (
         <div className="mobile-top-bar">
-          <button
-            onClick={toggleLeft}
-            className="mobile-sidebar-toggle"
-            title="Araçlar"
-            style={{
-              opacity: showSidePanels ? 1 : 0.4,
-              pointerEvents: showSidePanels ? "auto" : "none",
-            }}
-          >
+          <button onClick={toggleLeft} className="mobile-sidebar-toggle"
+            style={{ opacity: showSidePanels ? 1 : 0.4, pointerEvents: showSidePanels ? "auto" : "none" }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7" rx="1.5" />
-              <rect x="14" y="3" width="7" height="7" rx="1.5" />
-              <rect x="3" y="14" width="7" height="7" rx="1.5" />
-              <rect x="14" y="14" width="7" height="7" rx="1.5" />
+              <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
-
           <div className="mobile-top-center">
-            <div
-              className="mobile-logo"
-              style={{
-                background: "var(--gradient-primary)",
-                boxShadow: "var(--shadow-glow-sm)",
-              }}
-            >
-              O
-            </div>
-            <button
-              onClick={toggleTheme}
-              className="mobile-theme-toggle"
-            >
+            <img src="/odaklio-logo.svg" alt="Odaklio" style={{ height: 24 }} />
+            <button onClick={toggleTheme} className="mobile-theme-toggle">
               {theme === "dark" ? <IconSun size={14} /> : <IconMoon size={14} />}
             </button>
           </div>
-
-          <button
-            onClick={toggleRight}
-            className="mobile-sidebar-toggle"
-            title="Mentor"
-            style={{
-              opacity: showSidePanels ? 1 : 0.4,
-              pointerEvents: showSidePanels ? "auto" : "none",
-            }}
-          >
+          <button onClick={toggleRight} className="mobile-sidebar-toggle"
+            style={{ opacity: showSidePanels ? 1 : 0.4, pointerEvents: showSidePanels ? "auto" : "none" }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" />
             </svg>
           </button>
         </div>
@@ -315,70 +291,32 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           <div className="mobile-overlay" onClick={closeAllPanels} />
         )}
 
-        {showSidePanels && (!isMobile || leftOpen) && (
-          <div
-            className={`flex-shrink-0 overflow-visible transition-all duration-300 ease-in-out relative ${
-              isMobile ? "panel-mobile-overlay panel-left" : ""
-            }`}
-            style={{
-              width: isMobile ? "85vw" : leftOpen ? 280 : 0,
-              maxWidth: isMobile ? 320 : undefined,
-              borderRight: !isMobile && leftOpen ? "1px solid var(--border-primary)" : "none",
-              background: "var(--bg-secondary)",
-            }}
-          >
-            <LeftPanel
-              onClose={() => setLeftOpen(false)}
-              onOpenConversation={handleOpenConversation}
-              onSelectMode={(mode) => handleSelectStyle(mode as ChatStyle)}
-            />
-            {!isMobile && leftOpen && (
-              <button
-                onClick={() => setLeftOpen(false)}
-                className="absolute top-3 flex items-center justify-center transition-all hover:opacity-100 z-20"
-                style={{
-                  right: -12,
-                  width: 12,
-                  height: 32,
-                  background: "var(--bg-secondary)",
-                  borderRadius: "0 5px 5px 0",
-                  color: "var(--text-tertiary)",
-                  border: "1px solid var(--border-primary)",
-                  borderLeft: "none",
-                  opacity: 0.6,
-                  cursor: "pointer",
-                }}
-                title="Araçlar panelini kapat"
-              >
-                <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-              </button>
-            )}
-          </div>
+        {/* Mini Sidebar - always visible on desktop when on focus page */}
+        {!isMobile && showSidePanels && (
+          <MiniSidebar
+            onNewChat={(mode) => handleSelectStyle(mode as ChatStyle)}
+            onClearChat={handleClearChat}
+          />
         )}
 
-        {showSidePanels && !isMobile && !leftOpen && (
-          <button
-            onClick={toggleLeft}
-            className="flex-shrink-0 flex items-center justify-center transition-all hover:opacity-100 self-start mt-3"
-            style={{
-              width: 12,
-              height: 32,
-              background: "var(--bg-tertiary)",
-              borderRadius: "0 5px 5px 0",
-              color: "var(--text-tertiary)",
-              border: "1px solid var(--border-primary)",
-              borderLeft: "none",
-              opacity: 0.5,
-              cursor: "pointer",
-            }}
-            title="Araçlar panelini aç"
-          >
-            <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
+        {/* Mobile left panel - ChatHistorySidebar */}
+        {showSidePanels && isMobile && leftOpen && (
+          <div className="panel-mobile-overlay panel-left flex-shrink-0 overflow-visible transition-all duration-300 ease-in-out relative"
+            style={{ width: "85vw", maxWidth: 320, background: "var(--bg-secondary)" }}>
+            <div className="h-full overflow-y-auto p-3 space-y-3">
+              <div className="flex items-center justify-between pb-1">
+                <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Sohbetler</h2>
+                <button onClick={() => setLeftOpen(false)}
+                  className="flex items-center justify-center w-7 h-7 rounded-lg"
+                  style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+              <ChatHistorySidebar onOpenConversation={handleOpenConversation} />
+            </div>
+          </div>
         )}
 
         <div
@@ -387,29 +325,6 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
         >
           {renderPageContent()}
         </div>
-
-        {showSidePanels && !["flashcard", "roadmap"].includes(chatStyle) && !isMobile && !rightOpen && (
-          <button
-            onClick={toggleRight}
-            className="flex-shrink-0 flex items-center justify-center transition-all hover:opacity-100 self-start mt-3"
-            style={{
-              width: 12,
-              height: 32,
-              background: "var(--bg-tertiary)",
-              borderRadius: "5px 0 0 5px",
-              color: "var(--text-tertiary)",
-              border: "1px solid var(--border-primary)",
-              borderRight: "none",
-              opacity: 0.5,
-              cursor: "pointer",
-            }}
-            title="Mentor panelini aç"
-          >
-            <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-        )}
 
         {showSidePanels && !["flashcard", "roadmap"].includes(chatStyle) && (!isMobile || rightOpen) && (
           <div
@@ -424,36 +339,34 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
             }}
           >
             {!isMobile && rightOpen && (
-              <button
-                onClick={() => setRightOpen(false)}
+              <button onClick={() => setRightOpen(false)}
                 className="absolute top-3 flex items-center justify-center transition-all hover:opacity-100 z-20"
-                style={{
-                  left: -12,
-                  width: 12,
-                  height: 32,
-                  background: "var(--bg-secondary)",
-                  borderRadius: "5px 0 0 5px",
-                  color: "var(--text-tertiary)",
-                  border: "1px solid var(--border-primary)",
-                  borderRight: "none",
-                  opacity: 0.6,
-                  cursor: "pointer",
-                }}
-                title="Mentor panelini kapat"
-              >
+                style={{ left: -12, width: 12, height: 32, background: "var(--bg-secondary)", borderRadius: "5px 0 0 5px", color: "var(--text-tertiary)", border: "1px solid var(--border-primary)", borderRight: "none", opacity: 0.6, cursor: "pointer" }}
+                title="Chat Map panelini kapat">
                 <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </button>
             )}
-            <RightPanel
+            <ChatMap
               onClose={() => setRightOpen(false)}
-              onNewChat={handleNewChat}
               chatStyle={chatStyle}
+              isMobile={isMobile}
             />
           </div>
         )}
       </div>
+
+      {isMobile && activePage === "focus" && (
+        <button
+          onClick={() => setShowStyleSelector(true)}
+          className="fixed z-50 flex items-center justify-center w-12 h-12 rounded-full text-white active:scale-95 transition-all"
+          style={{ bottom: 72, right: 16, background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+      )}
 
       {isMobile && (
         <nav className="mobile-bottom-nav">

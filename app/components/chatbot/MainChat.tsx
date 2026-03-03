@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { IconSend, IconMic, IconHelp } from "../icons/Icons";
+import { IconSend, IconMic, IconHelp, IconCopy, IconThumbUp, IconThumbDown } from "../icons/Icons";
 import TextSelectionPopup from "./TextSelectionPopup";
 import SpeedReadingOverlay from "../speed-reading/SpeedReadingOverlay";
 import QuickLearnOverlay from "./QuickLearnOverlay";
@@ -94,16 +94,13 @@ function TypingIndicator() {
 function AiAvatar() {
   return (
     <div
-      className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg mr-2.5 mt-1 text-white text-[11px] font-bold relative"
-      style={{ background: "var(--gradient-primary)" }}
+      className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-xl mr-3 mt-1 relative"
+      style={{ background: "var(--accent-primary-light)" }}
     >
-      O
+      <img src="/odaklio-logo.svg" alt="" style={{ width: 18, height: 18 }} />
       <div
         className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
-        style={{
-          background: "var(--accent-success)",
-          borderColor: "var(--bg-primary)",
-        }}
+        style={{ background: "var(--accent-success)", borderColor: "var(--bg-primary)" }}
       />
     </div>
   );
@@ -435,34 +432,39 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                     )}
                   </div>
 
-                  {/* "Anlamadım" button on AI messages */}
+                  {/* Action buttons + "Anlamadım" on AI messages */}
                   {msg.role === "assistant" && msg.id !== "welcome" && msg.content && (
-                    <button
-                      onClick={() => {
-                        const userContent =
-                          "Bu açıklamayı anlamadım, daha basit anlatır mısın?";
-                        const userMsg: ChatMessage = {
-                          id: Date.now().toString(),
-                          role: "user",
-                          content: userContent,
-                          timestamp: new Date(),
-                        };
-                        setMessages((prev) => [...prev, userMsg]);
-                        sendToAI(userContent, messages);
-                      }}
-                      className={`absolute -bottom-2.5 right-4 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold transition-all ${
-                        isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                      }`}
-                      style={{
-                        background: "var(--bg-card)",
-                        border: "1px solid var(--border-primary)",
-                        color: "var(--accent-warning)",
-                        boxShadow: "var(--shadow-md)",
-                      }}
-                    >
-                      <IconHelp size={10} />
-                      Anlamadım
-                    </button>
+                    <>
+                      <div className={`flex items-center gap-1 mt-2 ${isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"} transition-opacity`}>
+                        <button title="Kopyala" onClick={() => navigator.clipboard.writeText(msg.content)}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg transition-all hover:bg-[var(--bg-tertiary)]"
+                          style={{ color: "var(--text-tertiary)" }}>
+                          <IconCopy size={13} />
+                        </button>
+                        <button title="Begendim"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg transition-all hover:bg-[var(--bg-tertiary)]"
+                          style={{ color: "var(--text-tertiary)" }}>
+                          <IconThumbUp size={13} />
+                        </button>
+                        <button title="Begenmedim"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg transition-all hover:bg-[var(--bg-tertiary)]"
+                          style={{ color: "var(--text-tertiary)" }}>
+                          <IconThumbDown size={13} />
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const userContent = "Bu aciklamayi anlamadim, daha basit anlatir misin?";
+                          const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: userContent, timestamp: new Date() };
+                          setMessages((prev) => [...prev, userMsg]);
+                          sendToAI(userContent, messages);
+                        }}
+                        className={`absolute -bottom-2.5 right-4 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold transition-all ${isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                        style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", color: "var(--accent-warning)", boxShadow: "var(--shadow-md)" }}>
+                        <IconHelp size={10} />
+                        Anlamadim
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
