@@ -20,7 +20,6 @@ import AmbientSoundPopup from "../tools/AmbientSoundPopup";
 import NewChatPopup from "../tools/NewChatPopup";
 import NotesPopup from "../tools/NotesPopup";
 import {
-  IconChat,
   IconPomodoro,
   IconMentor,
   IconSun,
@@ -308,7 +307,9 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
             </svg>
           </button>
           <div className="mobile-top-center">
-            <img src="/odaklio-logo.svg" alt="Odaklio" style={{ height: 24 }} />
+            <button onClick={() => handlePageChange("home")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+              <img src="/odaklio-logo.svg" alt="Odaklio" style={{ height: 24 }} />
+            </button>
             <button onClick={toggleTheme} className="mobile-theme-toggle">
               {theme === "dark" ? <IconSun size={14} /> : <IconMoon size={14} />}
             </button>
@@ -423,14 +424,17 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           </button>
 
           <button
-            onClick={() => { handlePageChange("focus"); setLeftOpen(false); setRightOpen(false); }}
+            onClick={() => handlePageChange("home")}
             style={{
-              color: activePage === "focus" ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: activePage === "focus" ? "var(--accent-primary-light)" : "transparent",
+              color: activePage === "home" ? "var(--accent-primary)" : "var(--text-tertiary)",
+              background: activePage === "home" ? "var(--accent-primary-light)" : "transparent",
             }}
           >
-            <IconChat size={19} />
-            <span style={{ color: "inherit" }}>Odak</span>
+            <svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+            <span style={{ color: "inherit" }}>Ana Sayfa</span>
           </button>
 
           <button
