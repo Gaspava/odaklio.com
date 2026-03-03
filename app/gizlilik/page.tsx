@@ -28,7 +28,7 @@ export default function GizlilikPage() {
     >
       <div style={S.box}>
         <p style={{ margin: 0, fontSize: 14, color: "var(--accent-primary)", fontWeight: 500 }}>
-          Odaklio olarak 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) ve Genel Veri Koruma Tüzüğü (GDPR) kapsamındaki yükümlülüklerimizi eksiksiz yerine getirmeyi taahhüt ediyoruz.
+          Odaklio olarak 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamındaki yükümlülüklerimizi eksiksiz yerine getirmeyi taahhüt ediyoruz.
         </p>
       </div>
 
@@ -36,9 +36,7 @@ export default function GizlilikPage() {
       <p style={S.p}>
         6698 sayılı KVKK kapsamında veri sorumlusu sıfatını taşıyan Odaklio, kişisel verilerinizi bu politikada açıklanan amaçlar doğrultusunda işlemektedir.
       </p>
-      <p style={S.p}>
-        <strong>İletişim:</strong> destek@odaklio.com | <strong>Web:</strong> odaklio.com
-      </p>
+      <p style={S.p}><strong>İletişim:</strong> destek@odaklio.com</p>
 
       <div style={S.divider} />
 
@@ -48,35 +46,21 @@ export default function GizlilikPage() {
         <thead>
           <tr>
             <th style={S.th}>Veri Türü</th>
-            <th style={S.th}>Açıklama</th>
-            <th style={S.th}>Zorunluluk</th>
+            <th style={S.th}>Amaç</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td style={S.td}><strong>Ad Soyad</strong></td>
-            <td style={S.td}>Kayıt sırasında girilen isim bilgisi</td>
-            <td style={S.td}>Zorunlu</td>
+            <td style={S.td}>Hesap oluşturma ve kişiselleştirme</td>
           </tr>
           <tr>
             <td style={S.td}><strong>E-posta Adresi</strong></td>
-            <td style={S.td}>Hesap girişi ve iletişim için kullanılır</td>
-            <td style={S.td}>Zorunlu (e-posta kaydı)</td>
+            <td style={S.td}>Hesap girişi ve bildirimler</td>
           </tr>
           <tr>
             <td style={S.td}><strong>Telefon Numarası</strong></td>
-            <td style={S.td}>SMS doğrulama için kullanılır</td>
-            <td style={S.td}>Zorunlu (telefon kaydı)</td>
-          </tr>
-          <tr>
-            <td style={S.td}><strong>Şifre</strong></td>
-            <td style={S.td}>bcrypt ile şifrelenmiş olarak saklanır; düz metin olarak hiçbir zaman saklanmaz</td>
-            <td style={S.td}>Zorunlu</td>
-          </tr>
-          <tr>
-            <td style={S.td}><strong>Google Hesap Bilgileri</strong></td>
-            <td style={S.td}>Google ile giriş yapıldığında Google'dan iletilen profil bilgileri</td>
-            <td style={S.td}>Opsiyonel (Google kaydı)</td>
+            <td style={S.td}>SMS ile kimlik doğrulama (telefon kaydı tercih edilirse)</td>
           </tr>
         </tbody>
       </table>
@@ -92,7 +76,7 @@ export default function GizlilikPage() {
         <tbody>
           <tr>
             <td style={S.td}><strong>Kullanım Verileri</strong></td>
-            <td style={S.td}>Hangi özelliklerin kullanıldığı, oturum süreleri, tıklama davranışları</td>
+            <td style={S.td}>Hangi özelliklerin kullanıldığı, oturum süreleri</td>
           </tr>
           <tr>
             <td style={S.td}><strong>Sohbet İçerikleri</strong></td>
@@ -100,19 +84,15 @@ export default function GizlilikPage() {
           </tr>
           <tr>
             <td style={S.td}><strong>Cihaz Bilgileri</strong></td>
-            <td style={S.td}>Tarayıcı türü, işletim sistemi, ekran çözünürlüğü</td>
+            <td style={S.td}>Tarayıcı türü, işletim sistemi</td>
           </tr>
           <tr>
             <td style={S.td}><strong>IP Adresi</strong></td>
-            <td style={S.td}>Güvenlik amacıyla ve yasal zorunluluklar için tutulur</td>
-          </tr>
-          <tr>
-            <td style={S.td}><strong>Pomodoro Verileri</strong></td>
-            <td style={S.td}>Çalışma seansları, odaklanma süreleri, mola bilgileri</td>
+            <td style={S.td}>Güvenlik amacıyla ve yasal zorunluluklar için</td>
           </tr>
           <tr>
             <td style={S.td}><strong>Öğrenme İçerikleri</strong></td>
-            <td style={S.td}>Oluşturulan flashcard'lar, notlar, yol haritaları ve zihin haritaları</td>
+            <td style={S.td}>Oluşturulan notlar, kartlar, yol haritaları ve çalışma verileri</td>
           </tr>
         </tbody>
       </table>
@@ -120,33 +100,27 @@ export default function GizlilikPage() {
       <div style={S.divider} />
 
       <h2 style={S.h2}>3. Verilerin İşlenme Amaçları</h2>
-      <p style={S.p}>Kişisel verileriniz aşağıdaki amaçlarla işlenmektedir:</p>
       <ul style={S.ul}>
         <li style={S.li}><strong>Hizmet Sunumu:</strong> Hesap oluşturma, kimlik doğrulama ve platform hizmetlerinin sağlanması</li>
-        <li style={S.li}><strong>Kişiselleştirme:</strong> Öğrenme geçmişinize göre kişiselleştirilmiş içerik ve önerilerin sunulması</li>
-        <li style={S.li}><strong>Yapay Zeka Hizmeti:</strong> Google Gemini API'ye sohbet içeriklerinin iletilmesi yoluyla AI yanıtlarının üretilmesi</li>
-        <li style={S.li}><strong>İletişim:</strong> Hesap bildirimleri, güvenlik uyarıları ve hizmet güncellemelerinin iletilmesi</li>
-        <li style={S.li}><strong>Güvenlik:</strong> Yetkisiz erişim, dolandırıcılık ve kötüye kullanımın önlenmesi</li>
-        <li style={S.li}><strong>Analitik:</strong> Platform performansının ölçülmesi ve hizmetin geliştirilmesi (anonim/toplu veriler)</li>
-        <li style={S.li}><strong>Yasal Yükümlülükler:</strong> Kanuni saklama sürelerine uyum ve yetkili makam taleplerine yanıt verilmesi</li>
+        <li style={S.li}><strong>Kişiselleştirme:</strong> Öğrenme geçmişinize göre kişiselleştirilmiş deneyim sunulması</li>
+        <li style={S.li}><strong>Yapay Zeka Hizmeti:</strong> AI yanıtlarının üretilmesi amacıyla ilgili içeriklerin işlenmesi</li>
+        <li style={S.li}><strong>İletişim:</strong> Hesap bildirimleri ve güvenlik uyarıları</li>
+        <li style={S.li}><strong>Güvenlik:</strong> Yetkisiz erişim ve kötüye kullanımın önlenmesi</li>
+        <li style={S.li}><strong>Yasal Yükümlülükler:</strong> Kanuni saklama sürelerine uyum</li>
       </ul>
 
       <div style={S.divider} />
 
-      <h2 style={S.h2}>4. Google Gemini Yapay Zeka Entegrasyonu</h2>
+      <h2 style={S.h2}>4. Yapay Zeka Hizmeti ve Veri Paylaşımı</h2>
       <div style={S.infoBox}>
         <p style={{ margin: 0, fontSize: 14, color: "var(--accent-secondary)", fontWeight: 500 }}>
-          ℹ️ Yapay zeka ile paylaştığınız içerikler Google'ın altyapısında işlenmektedir. Bu entegrasyona ilişkin Google'ın veri işleme politikasını da incelemenizi öneririz.
+          ℹ️ Yapay zeka ile paylaştığınız içerikler, hizmetin sunulabilmesi için üçüncü taraf bir yapay zeka sağlayıcısına iletilmektedir.
         </p>
       </div>
-      <p style={S.p}>
-        Odaklio, yapay zeka yanıtları üretmek için Google Gemini API'yi kullanmaktadır. Bu entegrasyon kapsamında:
-      </p>
       <ul style={S.ul}>
-        <li style={S.li}>Sohbet mesajlarınız Google Gemini API'ye iletilmektedir.</li>
-        <li style={S.li}>Google, API üzerinden iletilen verileri kendi <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-primary)", textDecoration: "none" }}>Gizlilik Politikası</a> ve Gemini API kullanım koşullarına göre işlemektedir.</li>
-        <li style={S.li}>Odaklio, verilerinizin Google ile paylaşılmasını yalnızca hizmetin sunulması amacıyla sınırlı tutar.</li>
-        <li style={S.li}>Yapay zekaya hassas kişisel bilgiler (TC kimlik no, finansal bilgiler, sağlık bilgileri) paylaşmamanızı tavsiye ederiz.</li>
+        <li style={S.li}>Sohbet içerikleriniz yalnızca yapay zeka yanıtlarının üretilmesi amacıyla kullanılır.</li>
+        <li style={S.li}>Bu veriler reklam veya pazarlama amacıyla kullanılmaz.</li>
+        <li style={S.li}>Yapay zekaya TC kimlik numarası, sağlık verisi veya finansal bilgi gibi hassas kişisel verileri paylaşmaktan kaçınmanızı tavsiye ederiz.</li>
       </ul>
 
       <div style={S.divider} />
@@ -161,24 +135,20 @@ export default function GizlilikPage() {
         </thead>
         <tbody>
           <tr>
-            <td style={S.td}>Hesap bilgileri (ad, e-posta)</td>
+            <td style={S.td}>Hesap bilgileri</td>
             <td style={S.td}>Hesap silinene kadar + 90 gün</td>
           </tr>
           <tr>
             <td style={S.td}>Sohbet geçmişi</td>
-            <td style={S.td}>Hesap silinene kadar; isteğe bağlı olarak kullanıcı tarafından silinebilir</td>
+            <td style={S.td}>Hesap silinene kadar; kullanıcı istediğinde silinebilir</td>
           </tr>
           <tr>
-            <td style={S.td}>Günlük/log kayıtları</td>
+            <td style={S.td}>Erişim günlükleri</td>
             <td style={S.td}>90 gün</td>
           </tr>
           <tr>
             <td style={S.td}>Ödeme kayıtları</td>
             <td style={S.td}>10 yıl (Türk Ticaret Kanunu gereği)</td>
-          </tr>
-          <tr>
-            <td style={S.td}>Pomodoro ve öğrenme verileri</td>
-            <td style={S.td}>Hesap silinene kadar</td>
           </tr>
         </tbody>
       </table>
@@ -186,38 +156,31 @@ export default function GizlilikPage() {
       <div style={S.divider} />
 
       <h2 style={S.h2}>6. Veri Güvenliği</h2>
-      <p style={S.p}>Verilerinizin güvenliği için aşağıdaki teknik ve idari tedbirler alınmaktadır:</p>
-      <ul style={S.ul}>
-        <li style={S.li}><strong>Şifreleme:</strong> Tüm veriler aktarım sırasında TLS/SSL ile, depolama sırasında AES-256 ile şifrelenmektedir.</li>
-        <li style={S.li}><strong>Şifre Güvenliği:</strong> Şifreler bcrypt algoritmasıyla hash'lenerek saklanır; düz metin olarak hiçbir zaman tutulmaz.</li>
-        <li style={S.li}><strong>Erişim Kontrolü:</strong> Verilerinize yalnızca yetkili personel erişebilir; erişimler kayıt altına alınır.</li>
-        <li style={S.li}><strong>Güvenlik Denetimleri:</strong> Düzenli güvenlik açığı taramaları ve penetrasyon testleri yapılmaktadır.</li>
-        <li style={S.li}><strong>Supabase Altyapısı:</strong> Verileriniz SOC 2 Type II sertifikalı Supabase altyapısında saklanmaktadır.</li>
-      </ul>
+      <p style={S.p}>
+        Verilerinizin korunması için endüstri standardı güvenlik önlemleri uygulanmaktadır: aktarım sırasında şifreleme, şifreli depolama ve erişim kontrolü. Verileriniz güvenli bulut altyapısında saklanmaktadır.
+      </p>
 
       <div style={S.divider} />
 
-      <h2 style={S.h2}>7. Üçüncü Taraflarla Veri Paylaşımı</h2>
+      <h2 style={S.h2}>7. Üçüncü Taraflarla Paylaşım</h2>
       <p style={S.p}>Verileriniz aşağıdaki durumlar dışında üçüncü taraflarla paylaşılmaz:</p>
       <ul style={S.ul}>
-        <li style={S.li}><strong>Hizmet Sağlayıcılar:</strong> Supabase (veritabanı ve kimlik doğrulama), Google (Gemini AI ve OAuth)</li>
-        <li style={S.li}><strong>Ödeme İşlemcileri:</strong> Ödeme bilgileri güvenli ödeme altyapısı sağlayıcılarıyla işlenir</li>
-        <li style={S.li}><strong>Yasal Zorunluluklar:</strong> Mahkeme kararı, savcılık talebi veya yasal yükümlülük halinde</li>
-        <li style={S.li}><strong>Şirket Devri:</strong> Birleşme, satın alma veya varlık satışı durumunda kullanıcılar önceden bilgilendirilir</li>
+        <li style={S.li}><strong>Yapay Zeka Sağlayıcısı:</strong> Yalnızca AI yanıtlarının üretilmesi amacıyla sohbet içerikleri</li>
+        <li style={S.li}><strong>Ödeme İşlemcileri:</strong> Ödeme bilgileri güvenli ödeme altyapısı aracılığıyla işlenir</li>
+        <li style={S.li}><strong>Yasal Zorunluluklar:</strong> Mahkeme kararı veya yasal yükümlülük halinde yetkili mercilere</li>
       </ul>
-      <p style={S.p}>Verileriniz hiçbir koşulda reklam amaçlı üçüncü taraflara satılmaz veya kiralanmaz.</p>
+      <p style={S.p}>Verileriniz hiçbir koşulda reklam amaçlı üçüncü taraflara satılmaz.</p>
 
       <div style={S.divider} />
 
       <h2 style={S.h2}>8. Kullanıcı Hakları</h2>
-      <p style={S.p}>KVKK'nın 11. maddesi kapsamında aşağıdaki haklara sahipsiniz:</p>
+      <p style={S.p}>KVKK'nın 11. maddesi kapsamında şu haklara sahipsiniz:</p>
       <ul style={S.ul}>
-        <li style={S.li}><strong>Bilgi Edinme Hakkı:</strong> Kişisel verilerinizin işlenip işlenmediğini öğrenme</li>
-        <li style={S.li}><strong>Erişim Hakkı:</strong> İşlenen kişisel verilerinize erişim talep etme</li>
-        <li style={S.li}><strong>Düzeltme Hakkı:</strong> Yanlış veya eksik verilerin düzeltilmesini isteme</li>
-        <li style={S.li}><strong>Silme Hakkı:</strong> Yasal saklama süresi dolduğunda verilerin silinmesini talep etme</li>
-        <li style={S.li}><strong>İtiraz Hakkı:</strong> Kişisel verilerinizin işlenmesine itiraz etme</li>
-        <li style={S.li}><strong>Veri Taşınabilirliği:</strong> Verilerinizin yapılandırılmış, makine tarafından okunabilir formatta alınması</li>
+        <li style={S.li}>Kişisel verilerinizin işlenip işlenmediğini öğrenme</li>
+        <li style={S.li}>İşlenen verilere erişim talep etme</li>
+        <li style={S.li}>Yanlış veya eksik verilerin düzeltilmesini isteme</li>
+        <li style={S.li}>Yasal şartların oluşması halinde silme talebinde bulunma</li>
+        <li style={S.li}>İşleme itiraz etme ve veri taşınabilirliği talep etme</li>
       </ul>
       <p style={S.p}>
         Haklarınızı kullanmak için <strong>destek@odaklio.com</strong> adresine yazabilirsiniz. Talepleriniz 30 gün içinde yanıtlanır.
@@ -227,31 +190,15 @@ export default function GizlilikPage() {
 
       <h2 style={S.h2}>9. Çerezler</h2>
       <p style={S.p}>
-        Odaklio, oturum yönetimi ve hizmet kalitesinin artırılması için çerezler kullanmaktadır. Çerezlere ilişkin ayrıntılı bilgi için <a href="/cerez-politikasi" style={{ color: "var(--accent-primary)", textDecoration: "none" }}>Çerez Politikamızı</a> inceleyiniz.
+        Çerez kullanımına ilişkin ayrıntılı bilgi için <a href="/cerez-politikasi" style={{ color: "var(--accent-primary)", textDecoration: "none" }}>Çerez Politikamızı</a> inceleyiniz.
       </p>
 
       <div style={S.divider} />
 
-      <h2 style={S.h2}>10. Çocukların Gizliliği</h2>
+      <h2 style={S.h2}>10. İletişim</h2>
       <p style={S.p}>
-        Platform, 13 yaşın altındaki çocuklara yönelik değildir ve bu kişilere ait kişisel verileri bilerek toplamaz. 13-18 yaş arası kullanıcıların ebeveyn onayıyla platformu kullanabileceğini hatırlatırız. Bu yaş grubuna ait verilerin ebeveyn talebiyle silinebileceğini belirtiriz.
-      </p>
-
-      <div style={S.divider} />
-
-      <h2 style={S.h2}>11. Politika Güncellemeleri</h2>
-      <p style={S.p}>
-        Bu Gizlilik Politikası periyodik olarak güncellenebilir. Önemli değişiklikler için kayıtlı e-posta adresinize bildirim gönderilecektir. Güncel versiyona her zaman <strong>odaklio.com/gizlilik</strong> adresinden ulaşabilirsiniz.
-      </p>
-
-      <div style={S.divider} />
-
-      <h2 style={S.h2}>12. İletişim</h2>
-      <p style={S.p}>
-        Gizlilik politikamıza ilişkin sorularınız veya talepleriniz için:<br />
-        <strong>E-posta:</strong> destek@odaklio.com<br />
-        <strong>KVKK Başvurusu:</strong> kvkk@odaklio.com<br />
-        <strong>Yanıt süresi:</strong> En geç 30 takvim günü
+        <strong>Genel:</strong> destek@odaklio.com<br />
+        <strong>KVKK Başvurusu:</strong> kvkk@odaklio.com
       </p>
     </LegalPageLayout>
   );

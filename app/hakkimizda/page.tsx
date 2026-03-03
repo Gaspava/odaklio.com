@@ -3,12 +3,11 @@ import Link from "next/link";
 
 export const metadata = {
   title: "Hakkımızda | Odaklio",
-  description: "Odaklio'nun misyonu, teknolojisi ve ekibi hakkında bilgi edinin.",
+  description: "Odaklio'nun misyonu ve sunduğu hizmetler hakkında bilgi edinin.",
 };
 
 const S = {
   h2: { fontSize: 20, fontWeight: 700, marginTop: 40, marginBottom: 12, color: "var(--text-primary)", letterSpacing: "-0.02em" } as React.CSSProperties,
-  h3: { fontSize: 16, fontWeight: 600, marginTop: 24, marginBottom: 8, color: "var(--text-primary)" } as React.CSSProperties,
   p: { marginBottom: 14, color: "var(--text-secondary)", fontSize: 15 } as React.CSSProperties,
   ul: { paddingLeft: 20, marginBottom: 14, color: "var(--text-secondary)", fontSize: 15 } as React.CSSProperties,
   li: { marginBottom: 8, lineHeight: 1.7 } as React.CSSProperties,
@@ -23,36 +22,12 @@ const stats = [
 ];
 
 const features = [
-  {
-    icon: "💬",
-    title: "AI Sohbet",
-    desc: "Google Gemini destekli yapay zeka asistanı ile her konuyu derinlemesine keşfet.",
-  },
-  {
-    icon: "🧠",
-    title: "Zihin Haritası",
-    desc: "Paralel konuşma düğümleriyle konuları görsel olarak bağla ve keşfet.",
-  },
-  {
-    icon: "🃏",
-    title: "Flashcard'lar",
-    desc: "Aktif geri çağırma yöntemiyle öğrendiklerini kalıcı hale getir.",
-  },
-  {
-    icon: "🗺️",
-    title: "Yol Haritası",
-    desc: "Herhangi bir konuyu öğrenmek için adım adım kişiselleştirilmiş planlar oluştur.",
-  },
-  {
-    icon: "⏱️",
-    title: "Pomodoro",
-    desc: "Kanıtlanmış Pomodoro tekniğiyle verimliliğini artır ve çalışmalarını takip et.",
-  },
-  {
-    icon: "🤝",
-    title: "AI Mentor",
-    desc: "Ders Koçu, Psikolog, Kanka veya Uzman; duruma göre doğru mentoru seç.",
-  },
+  { icon: "💬", title: "AI Sohbet", desc: "Yapay zeka destekli asistan ile her konuyu derinlemesine keşfet." },
+  { icon: "🧠", title: "Zihin Haritası", desc: "Konuları görsel olarak bağla ve paralel düğümlerle keşfet." },
+  { icon: "🃏", title: "Flashcard'lar", desc: "Aktif geri çağırma yöntemiyle öğrendiklerini kalıcı hale getir." },
+  { icon: "🗺️", title: "Yol Haritası", desc: "Herhangi bir konuyu adım adım öğrenmek için kişisel planlar oluştur." },
+  { icon: "⏱️", title: "Pomodoro", desc: "Kanıtlanmış Pomodoro tekniğiyle verimliliğini artır ve çalışmalarını takip et." },
+  { icon: "🤝", title: "AI Mentor", desc: "Ders Koçu, Psikolog, Kanka veya Uzman; duruma göre doğru mentoru seç." },
 ];
 
 export default function HakkimizdaPage() {
@@ -71,7 +46,7 @@ export default function HakkimizdaPage() {
         marginBottom: 32,
       }}>
         <p style={{ margin: 0, fontSize: 18, lineHeight: 1.7, color: "var(--text-primary)", fontWeight: 400 }}>
-          <strong style={{ color: "var(--accent-primary)" }}>Misyonumuz;</strong> her öğrenciye, her seviyede ve her konuda kişiselleştirilmiş, etkili ve erişilebilir bir öğrenme deneyimi sunmaktır. Yapay zekanın sonsuz kapasitesini Türkçe öğrencilerin hizmetine sunarak eğitimde fırsat eşitliğini destekliyoruz.
+          <strong style={{ color: "var(--accent-primary)" }}>Misyonumuz;</strong> her öğrenciye, her seviyede ve her konuda kişiselleştirilmiş, etkili ve erişilebilir bir öğrenme deneyimi sunmaktır. Yapay zekanın kapasitesini Türkçe öğrencilerin hizmetine sunarak eğitimde fırsat eşitliğini destekliyoruz.
         </p>
       </div>
 
@@ -96,7 +71,7 @@ export default function HakkimizdaPage() {
 
       <h2 style={S.h2}>Neden Odaklio?</h2>
       <p style={S.p}>
-        Geleneksel öğrenme yöntemleri tek yönlü, pasif ve motivasyon kırıcı olabiliyor. Odaklio, yapay zeka teknolojisini pedagojik ilkelerle birleştirerek öğrenmeyi aktif, kişisel ve eğlenceli hale getiriyor.
+        Geleneksel öğrenme yöntemleri tek yönlü ve pasif olabiliyor. Odaklio, yapay zeka teknolojisini pedagojik ilkelerle birleştirerek öğrenmeyi aktif, kişisel ve etkili hale getiriyor.
       </p>
 
       {/* Features grid */}
@@ -118,26 +93,9 @@ export default function HakkimizdaPage() {
 
       <div style={S.divider} />
 
-      <h2 style={S.h2}>Teknoloji Altyapımız</h2>
+      <h2 style={S.h2}>Gizlilik Taahhüdümüz</h2>
       <p style={S.p}>
-        Odaklio, güvenilirlik ve performans için en güncel teknolojileri kullanmaktadır:
-      </p>
-      <ul style={S.ul}>
-        <li style={S.li}><strong>Yapay Zeka:</strong> Google Gemini — dünyanın en gelişmiş çok modlu yapay zeka modellerinden biri</li>
-        <li style={S.li}><strong>Frontend:</strong> Next.js 15 ve React 19 ile sunucu taraflı rendering ve optimal performans</li>
-        <li style={S.li}><strong>Veritabanı ve Auth:</strong> Supabase — PostgreSQL tabanlı, SOC 2 sertifikalı güvenli altyapı</li>
-        <li style={S.li}><strong>Barındırma:</strong> Vercel Edge Network — küresel dağıtım ile düşük gecikme süresi</li>
-        <li style={S.li}><strong>Güvenlik:</strong> TLS/SSL şifreleme, bcrypt parola hashleme, Row Level Security (RLS)</li>
-      </ul>
-
-      <div style={S.divider} />
-
-      <h2 style={S.h2}>Yapay Zeka ile Gizlilik Dengesi</h2>
-      <p style={S.p}>
-        Yapay zeka hizmetleri sunarken gizliliğinizi korumayı öncelik kabul ediyoruz. Sohbet içerikleriniz hizmetin çalışması için Google Gemini API'ye iletilmektedir; ancak bu verileri pazarlama, reklam veya satış amacıyla kullanmıyoruz. Yapay zeka ile hassas kişisel bilgi paylaşmaktan kaçınmanızı öneririz.
-      </p>
-      <p style={S.p}>
-        Veri işleme pratiklerimiz hakkında daha fazla bilgi için:
+        Yapay zeka hizmetleri sunarken gizliliğinizi korumayı öncelik kabul ediyoruz. Verileriniz yalnızca hizmetin sunulması amacıyla kullanılır; pazarlama, reklam veya satış amacıyla üçüncü taraflarla paylaşılmaz.
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
         {[
@@ -171,15 +129,8 @@ export default function HakkimizdaPage() {
 
       <h2 style={S.h2}>İletişim</h2>
       <p style={S.p}>
-        Sorularınız, önerileriniz veya iş birliği teklifleriniz için bizimle iletişime geçebilirsiniz:
-      </p>
-      <ul style={S.ul}>
-        <li style={S.li}><strong>Genel:</strong> destek@odaklio.com</li>
-        <li style={S.li}><strong>KVKK / Gizlilik:</strong> kvkk@odaklio.com</li>
-        <li style={S.li}><strong>Web:</strong> odaklio.com</li>
-      </ul>
-      <p style={S.p}>
-        Destek talepleriniz iş günleri içinde 5 gün içinde yanıtlanmaktadır.
+        <strong>Genel:</strong> destek@odaklio.com<br />
+        <strong>KVKK / Gizlilik:</strong> kvkk@odaklio.com
       </p>
     </LegalPageLayout>
   );
