@@ -27,6 +27,8 @@ import {
 } from "../icons/Icons";
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { useConversation } from "@/app/providers/ConversationProvider";
+import { usePageTracking } from "@/app/providers/PageTrackingProvider";
+import { usePomodoro } from "@/app/providers/PomodoroProvider";
 
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(false);
@@ -60,6 +62,26 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const isMobile = useIsMobile();
   const { theme, toggleTheme } = useTheme();
   const { loadConversation, startNewConversation, conversations, activeConversationType, activeConversationId } = useConversation();
+  const { trackPageChange } = usePageTracking();
+  const { setCurrentPage, setCurrentSubject } = usePomodoro();
+
+  // Track page changes for analytics and pomodoro context
+  useEffect(() => {
+    trackPageChange(activePage, activeConversationId || null);
+    setCurrentPage(activePage);
+  }, [activePage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-detect subject from active conversation
+  useEffect(() => {
+    if (activeConversationId && conversations) {
+      const conv = conversations.find(c => c.id === activeConversationId);
+      if (conv) {
+        setCurrentSubject(conv.title || null);
+      }
+    } else {
+      setCurrentSubject(null);
+    }
+  }, [activeConversationId, conversations]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTimerChange = useCallback((running: boolean, minutes: number, seconds: number) => {
     setPomodoroRunning(running);
