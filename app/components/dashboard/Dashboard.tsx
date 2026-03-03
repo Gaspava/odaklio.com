@@ -179,6 +179,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   };
 
   const handleSelectStyle = (style: ChatStyle) => {
+    startNewConversation();
     setChatStyle(style);
     setChatKey((k) => k + 1);
     setShowModeSelector(false);
