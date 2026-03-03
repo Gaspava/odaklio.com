@@ -50,7 +50,7 @@ export default function MiniSidebar({ onNewChat, onClearChat }: MiniSidebarProps
 
   return (
     <div className="mini-sidebar" ref={sidebarRef}>
-      {/* Top: Clear Chat */}
+      {/* Clear Chat */}
       <button className="mini-sidebar-btn" onClick={() => setShowClearConfirm(true)}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="3 6 5 6 21 6" />
@@ -58,8 +58,6 @@ export default function MiniSidebar({ onNewChat, onClearChat }: MiniSidebarProps
         </svg>
         <span className="mini-sidebar-tooltip">Temizle</span>
       </button>
-
-      <div className="flex-1" />
 
       {/* Ambient Sound */}
       <div className="relative">
@@ -113,15 +111,16 @@ export default function MiniSidebar({ onNewChat, onClearChat }: MiniSidebarProps
         )}
       </div>
 
-      {/* New Chat - Bottom, green accent */}
+      {/* New Chat - green accent circle */}
       <div className="relative">
         <button
           className={`mini-sidebar-btn ${activePopup === "new-chat" ? "active" : ""}`}
           onClick={() => togglePopup("new-chat")}
           style={{
-            background: activePopup === "new-chat" ? "var(--accent-primary)" : "var(--accent-primary)",
+            background: "var(--accent-primary)",
             color: "white",
-            borderRadius: "var(--radius-md)",
+            border: "none",
+            boxShadow: "0 2px 8px rgba(16, 185, 129, 0.35)",
           }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

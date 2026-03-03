@@ -103,14 +103,14 @@ export default function Header({
 
   return (
     <header
-      className="flex items-center justify-between px-4 h-14 flex-shrink-0 relative z-10"
+      className="flex items-center px-4 h-14 flex-shrink-0 relative z-10"
       style={{
         background: "var(--bg-secondary)",
         borderBottom: "1px solid var(--border-primary)",
       }}
     >
       {/* Left - Logo */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2.5 flex-shrink-0">
         <img src="/odaklio-logo.svg" alt="Odaklio" style={{ height: 28 }} />
         <div className="hidden sm:flex flex-col">
           <span
@@ -128,8 +128,8 @@ export default function Header({
         </div>
       </div>
 
-      {/* Center - Nav Pills */}
-      <nav className="flex items-center gap-1">
+      {/* Center - Nav Pills (absolutely centered on full page width) */}
+      <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1">
         {pages.map((page) => (
           <button
             key={page.id}
@@ -144,7 +144,7 @@ export default function Header({
       </nav>
 
       {/* Right - Profile Area */}
-      <div className="header-profile-area">
+      <div className="header-profile-area ml-auto">
         <span className="header-profile-name hidden sm:block">
           {displayName || "Kullanici"}
         </span>

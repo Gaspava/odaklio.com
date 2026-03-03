@@ -356,6 +356,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           </div>
         )}
 
+        {/* Main content - always centered, not pushed by right panel */}
         <div
           className="flex-1 min-w-0 overflow-hidden"
           style={{ background: "var(--bg-primary)" }}
@@ -363,28 +364,52 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           {renderPageContent()}
         </div>
 
-        {showSidePanels && !["flashcard", "roadmap"].includes(chatStyle) && (!isMobile || rightOpen) && (
+        {/* Desktop right panel toggle button - always visible */}
+        {showSidePanels && !["flashcard", "roadmap"].includes(chatStyle) && !isMobile && (
+          <button onClick={() => setRightOpen(!rightOpen)}
+            className="absolute flex items-center justify-center transition-all hover:opacity-100"
+            style={{ right: rightOpen ? 304 : 4, top: 12, width: 24, height: 24, background: "var(--bg-secondary)", borderRadius: "var(--radius-full)", color: "var(--text-tertiary)", border: "1px solid var(--border-primary)", opacity: 0.7, cursor: "pointer", zIndex: 5, transition: "right 0.3s ease" }}
+            title={rightOpen ? "Chat Map panelini kapat" : "Chat Map panelini ac"}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points={rightOpen ? "9 18 15 12 9 6" : "15 18 9 12 15 6"} />
+            </svg>
+          </button>
+        )}
+
+        {/* Desktop right panel - absolute so it doesn't push content */}
+        {showSidePanels && !["flashcard", "roadmap"].includes(chatStyle) && !isMobile && (
           <div
-            className={`flex-shrink-0 overflow-visible transition-all duration-300 ease-in-out relative ${
-              isMobile ? "panel-mobile-overlay panel-right" : ""
-            }`}
+            className="overflow-visible transition-all duration-300 ease-in-out"
             style={{
-              width: isMobile ? "85vw" : rightOpen ? 300 : 0,
-              maxWidth: isMobile ? 320 : undefined,
-              borderLeft: !isMobile && rightOpen ? "1px solid var(--border-primary)" : "none",
+              position: "absolute",
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: 300,
+              background: "var(--bg-secondary)",
+              borderLeft: "1px solid var(--border-primary)",
+              zIndex: 4,
+              transform: rightOpen ? "translateX(0)" : "translateX(100%)",
+            }}
+          >
+            <ChatMap
+              onClose={() => setRightOpen(false)}
+              chatStyle={chatStyle}
+              isMobile={isMobile}
+            />
+          </div>
+        )}
+
+        {/* Mobile right panel */}
+        {showSidePanels && !["flashcard", "roadmap"].includes(chatStyle) && isMobile && rightOpen && (
+          <div
+            className="panel-mobile-overlay panel-right overflow-visible transition-all duration-300 ease-in-out"
+            style={{
+              width: "85vw",
+              maxWidth: 320,
               background: "var(--bg-secondary)",
             }}
           >
-            {!isMobile && rightOpen && (
-              <button onClick={() => setRightOpen(false)}
-                className="absolute top-3 flex items-center justify-center transition-all hover:opacity-100 z-20"
-                style={{ left: -12, width: 12, height: 32, background: "var(--bg-secondary)", borderRadius: "5px 0 0 5px", color: "var(--text-tertiary)", border: "1px solid var(--border-primary)", borderRight: "none", opacity: 0.6, cursor: "pointer" }}
-                title="Chat Map panelini kapat">
-                <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </button>
-            )}
             <ChatMap
               onClose={() => setRightOpen(false)}
               chatStyle={chatStyle}
