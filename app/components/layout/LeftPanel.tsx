@@ -23,6 +23,7 @@ import {
 } from "../icons/Icons";
 import Link from "next/link";
 import { useConversation } from "@/app/providers/ConversationProvider";
+import { usePomodoro } from "@/app/providers/PomodoroProvider";
 import type { Conversation } from "@/lib/db/conversations";
 
 interface LeftPanelProps {
@@ -153,22 +154,39 @@ function ChatHistorySidebar({ onOpenConversation }: { onOpenConversation?: (id: 
 
 /* ===== POMODORO MINI ===== */
 function PomodoroMini() {
-  const [isRunning, setIsRunning] = useState(false);
-  const [minutes, setMinutes] = useState(25);
-  const [seconds, setSeconds] = useState(0);
-  const [mode, setMode] = useState<"work" | "break">("work");
+  const {
+    isRunning,
+    isPaused,
+    mode,
+    timeLeft,
+    totalTime,
+    completedPomodoros,
+    currentSubject,
+    start,
+    pause,
+    resume,
+    reset,
+  } = usePomodoro();
+
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
 
   const dailyGoal = 4;
-  const completed = 2;
-  const goalProgress = (completed / dailyGoal) * 100;
+  const goalProgress = (completedPomodoros / dailyGoal) * 100;
 
   const circumference = 2 * Math.PI * 38;
-  const totalSeconds = mode === "work" ? 25 * 60 : 5 * 60;
-  const elapsed = totalSeconds - (minutes * 60 + seconds);
-  const progress = (elapsed / totalSeconds) * 100;
+  const progress = totalTime > 0 ? ((totalTime - timeLeft) / totalTime) * 100 : 0;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   const modeColor = mode === "work" ? "var(--accent-primary)" : "var(--accent-cyan)";
+
+  const handlePlayPause = () => {
+    if (isRunning) {
+      isPaused ? resume() : pause();
+    } else {
+      start();
+    }
+  };
 
   return (
     <div
@@ -243,19 +261,14 @@ function PomodoroMini() {
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-1.5">
             <button
-              onClick={() => setIsRunning(!isRunning)}
+              onClick={handlePlayPause}
               className="flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-lg text-white transition-all active:scale-95"
               style={{ background: modeColor, boxShadow: `0 0 8px ${modeColor}40` }}
             >
-              {isRunning ? <IconPause size={12} /> : <IconPlay size={12} />}
+              {isRunning && !isPaused ? <IconPause size={12} /> : <IconPlay size={12} />}
             </button>
             <button
-              onClick={() => {
-                setIsRunning(false);
-                setMinutes(25);
-                setSeconds(0);
-                setMode("work");
-              }}
+              onClick={() => reset()}
               className="flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-lg transition-all active:scale-95"
               style={{
                 background: "var(--bg-tertiary)",
@@ -273,17 +286,14 @@ function PomodoroMini() {
             {(["work", "break"] as const).map((m) => (
               <button
                 key={m}
-                onClick={() => {
-                  setMode(m);
-                  setMinutes(m === "work" ? 25 : 5);
-                  setSeconds(0);
-                  setIsRunning(false);
-                }}
+                disabled={isRunning}
                 className="flex-1 rounded-md py-1.5 sm:py-1 text-[10px] font-semibold transition-all"
                 style={{
                   background: mode === m ? "var(--bg-card)" : "transparent",
                   color: mode === m ? modeColor : "var(--text-tertiary)",
                   boxShadow: mode === m ? "var(--shadow-sm)" : "none",
+                  opacity: isRunning ? 0.5 : 1,
+                  cursor: isRunning ? "not-allowed" : "pointer",
                 }}
               >
                 {m === "work" ? "Çalış" : "Mola"}
@@ -293,6 +303,15 @@ function PomodoroMini() {
         </div>
       </div>
 
+      {/* Current Subject */}
+      {currentSubject && (
+        <div className="mt-2 px-1">
+          <span className="text-[10px] font-medium truncate block" style={{ color: "var(--text-tertiary)" }}>
+            {currentSubject}
+          </span>
+        </div>
+      )}
+
       {/* Daily Goal */}
       <div className="mt-3 pt-3" style={{ borderTop: "1px solid var(--border-secondary)" }}>
         <div className="flex items-center justify-between mb-1.5">
@@ -301,7 +320,7 @@ function PomodoroMini() {
           </span>
           <span className="flex items-center gap-1 text-[10px] font-semibold" style={{ color: "var(--accent-success)" }}>
             <IconTrendingUp size={10} />
-            {completed}/{dailyGoal}
+            {completedPomodoros}/{dailyGoal}
           </span>
         </div>
         <div
@@ -311,7 +330,7 @@ function PomodoroMini() {
           <div
             className="h-full rounded-full transition-all duration-700 ease-out"
             style={{
-              width: `${goalProgress}%`,
+              width: `${Math.min(goalProgress, 100)}%`,
               background: "var(--gradient-primary)",
               boxShadow: "var(--shadow-glow-sm)",
             }}
