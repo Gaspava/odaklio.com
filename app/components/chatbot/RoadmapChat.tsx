@@ -787,14 +787,11 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
   if (phase === "input") {
     const firstName = user?.user_metadata?.full_name?.split(" ")[0] || "";
     return (
-      <div className="h-full overflow-y-auto" style={{ background: "var(--bg-primary)" }}>
+      <div className="h-full overflow-y-auto relative" style={{ background: "var(--bg-primary)" }}>
         <div
-          className="fixed flex flex-col items-center justify-center px-4 animate-fade-in"
+          className="absolute flex flex-col items-center justify-center px-4 animate-fade-in"
           style={{
-            top: isMobile ? 48 : 56,
-            left: 0,
-            right: 0,
-            bottom: isMobile ? 60 : 0,
+            inset: 0,
             zIndex: 5,
             background: "var(--bg-primary)",
           }}

@@ -392,7 +392,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
 
   return (
     <>
-      <div className="flex flex-col h-full" ref={chatAreaRef}>
+      <div className="flex flex-col h-full relative" ref={chatAreaRef}>
         {/* Messages + Inline Map */}
         <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 ${isMobile ? "pb-2" : ""}`}>
           {/* Neon inline chat map - fixed to right side, desktop only */}
@@ -421,12 +421,9 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
           {/* Welcome Screen - shown when no real messages */}
           {messages.length <= 1 ? (
             <div
-              className="fixed flex flex-col items-center justify-center px-4 animate-fade-in"
+              className="absolute flex flex-col items-center justify-center px-4 animate-fade-in"
               style={{
-                top: isMobile ? 48 : 56,
-                left: 0,
-                right: 0,
-                bottom: isMobile ? 60 : 0,
+                inset: 0,
                 zIndex: 5,
                 background: "var(--bg-primary)",
               }}

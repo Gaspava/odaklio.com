@@ -591,7 +591,7 @@ export default function FlashcardChat({
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {/* ===== FLASHCARD DISPLAY AREA ===== */}
       {flashcards.length > 0 && !isReviewComplete && (
         <div
@@ -753,14 +753,11 @@ export default function FlashcardChat({
 
       {/* ===== WELCOME SCREEN or MESSAGES ===== */}
       {!hasNonWelcomeMessages ? (
-        <div className="flex-1 overflow-y-auto">
+        <>
           <div
-            className="fixed flex flex-col items-center justify-center px-4 animate-fade-in"
+            className="absolute flex flex-col items-center justify-center px-4 animate-fade-in"
             style={{
-              top: isMobile ? 48 : 56,
-              left: 0,
-              right: 0,
-              bottom: isMobile ? 60 : 0,
+              inset: 0,
               zIndex: 5,
               background: "var(--bg-primary)",
             }}
@@ -835,7 +832,7 @@ export default function FlashcardChat({
               ))}
             </div>
           </div>
-        </div>
+        </>
       ) : (
         <>
           <div className={`flex-1 overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 ${isMobile ? "pb-2" : ""}`}>
