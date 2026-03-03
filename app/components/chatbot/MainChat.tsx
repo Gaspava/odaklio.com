@@ -398,29 +398,28 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
       <div className="flex flex-col h-full" ref={chatAreaRef}>
         {/* Messages + Inline Map */}
         <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 ${isMobile ? "pb-2" : ""}`}>
-          <div className="relative">
-            {/* Neon inline chat map - right side, desktop only */}
-            {!isMobile && hasUserMessages && (
-              <div className="inline-chat-map">
-                {userMessages.map((msg, index) => {
-                  const truncated = msg.content.length > 35 ? msg.content.substring(0, 35) + "..." : msg.content;
-                  return (
-                    <button
-                      key={msg.id}
-                      onClick={() => {
-                        const el = document.getElementById(`msg-${msg.id}`);
-                        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                      }}
-                      className="inline-chat-map-item"
-                      title={msg.content}
-                    >
-                      <span className="inline-chat-map-dot" />
-                      <span className="inline-chat-map-text">{truncated}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+          {/* Neon inline chat map - fixed to right side, desktop only */}
+          {!isMobile && hasUserMessages && (
+            <div className="inline-chat-map">
+              {userMessages.map((msg, index) => {
+                const truncated = msg.content.length > 30 ? msg.content.substring(0, 30) + "…" : msg.content;
+                return (
+                  <button
+                    key={msg.id}
+                    onClick={() => {
+                      const el = document.getElementById(`msg-${msg.id}`);
+                      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                    className="inline-chat-map-item"
+                    title={msg.content}
+                  >
+                    <span className="inline-chat-map-dot" />
+                    <span className="inline-chat-map-text">{truncated}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           <div className="max-w-[720px] mx-auto space-y-5 sm:space-y-6">
             {messages.map((msg, idx) => (
@@ -540,7 +539,6 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
               </div>
             </div>
           )}
-          </div>
         </div>
 
         {/* Input Bar */}
