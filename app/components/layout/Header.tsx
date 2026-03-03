@@ -110,22 +110,8 @@ export default function Header({
       }}
     >
       {/* Left - Logo */}
-      <div className="flex items-center gap-2.5 flex-shrink-0">
-        <img src="/odaklio-logo.svg" alt="Odaklio" style={{ height: 28 }} />
-        <div className="hidden sm:flex flex-col">
-          <span
-            className="text-sm font-bold tracking-tight leading-tight"
-            style={{ color: "var(--text-primary)" }}
-          >
-            Odaklio
-          </span>
-          <span
-            className="text-[9px] font-medium leading-tight"
-            style={{ color: "var(--accent-primary)", opacity: 0.8 }}
-          >
-            AI Learning
-          </span>
-        </div>
+      <div className="flex items-center flex-shrink-0">
+        <img src="/odaklio-logo.svg" alt="Odaklio" style={{ height: 36 }} />
       </div>
 
       {/* Center - Nav Pills (absolutely centered on full page width) */}

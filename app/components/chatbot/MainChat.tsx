@@ -94,14 +94,9 @@ function TypingIndicator() {
 function AiAvatar() {
   return (
     <div
-      className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-xl mr-3 mt-1 relative"
-      style={{ background: "var(--accent-primary-light)" }}
+      className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full mr-3 mt-1"
     >
-      <img src="/odaklio-logo.svg" alt="" style={{ width: 18, height: 18 }} />
-      <div
-        className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
-        style={{ background: "var(--accent-success)", borderColor: "var(--bg-primary)" }}
-      />
+      <img src="/odaklio-logo.svg" alt="" style={{ width: 32, height: 32 }} />
     </div>
   );
 }
