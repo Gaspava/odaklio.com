@@ -753,72 +753,77 @@ export default function FlashcardChat({
 
       {/* ===== WELCOME SCREEN or MESSAGES ===== */}
       {!hasNonWelcomeMessages ? (
-        <div className="flex-1 overflow-y-auto px-4 flex flex-col items-center justify-center animate-fade-in">
-          <div className="welcome-logo-glow mb-6">
-            <img src="/odaklio-logo.svg" alt="Odaklio" className="w-24 h-24 sm:w-28 sm:h-28" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2 text-center tracking-wide">
-            {user?.user_metadata?.full_name?.split(" ")[0] ? (
-              <>
-                <span style={{ color: "var(--text-primary)" }}>MERHABA, </span>
-                <span className="welcome-name-glow">{user.user_metadata.full_name.split(" ")[0].toUpperCase()}!</span>
-              </>
-            ) : (
-              <span style={{ color: "var(--text-primary)" }}>MERHABA!</span>
-            )}
-          </h1>
-          <p className="text-sm sm:text-base mb-8 text-center" style={{ color: "var(--text-tertiary)" }}>
-            Bir konu söyle, sana hafıza kartları hazırlayayım.
-          </p>
-          <div className="w-full max-w-[600px] mb-6">
-            <div className="welcome-input-wrapper">
-              <div className="welcome-input-glow" />
-              <div className="welcome-input-inner">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                  placeholder={isMobile ? "Konu yaz..." : "Flashcard konusunu yaz... (örn: Biyoloji hücre yapısı)"}
-                  disabled={isLoading}
-                  className="flex-1 bg-transparent text-sm sm:text-base outline-none disabled:opacity-50"
-                  style={{ color: "var(--text-primary)" }}
-                />
-                <button
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={handleSend}
-                  disabled={!input.trim() || isLoading}
-                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
-                  style={{
-                    background: input.trim() && !isLoading ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" : "var(--bg-tertiary)",
-                    color: input.trim() && !isLoading ? "white" : "var(--text-tertiary)",
-                    boxShadow: input.trim() && !isLoading ? "0 0 12px rgba(245, 158, 11, 0.3)" : "none",
-                  }}
-                >
-                  <IconSend size={15} />
-                </button>
+        <div className="flex-1 overflow-y-auto">
+          <div className="min-h-full flex flex-col items-center justify-center px-4 py-8 animate-fade-in">
+            {/* Mode badge */}
+            <div className="welcome-mode-badge welcome-mode-badge-amber mb-4">
+              <span>🃏</span> Flashcard Modu
+            </div>
+            <div className="welcome-logo-glow mb-5">
+              <img src="/odaklio-logo.svg" alt="Odaklio" className="w-24 h-24 sm:w-28 sm:h-28" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold mb-2 text-center tracking-wide">
+              {user?.user_metadata?.full_name?.split(" ")[0] ? (
+                <>
+                  <span style={{ color: "var(--text-primary)" }}>MERHABA, </span>
+                  <span className="welcome-name-glow-amber">{user.user_metadata.full_name.split(" ")[0].toUpperCase()}!</span>
+                </>
+              ) : (
+                <span style={{ color: "var(--text-primary)" }}>MERHABA!</span>
+              )}
+            </h1>
+            <p className="text-sm sm:text-base mb-8 text-center" style={{ color: "var(--text-tertiary)" }}>
+              Bir konu söyle, sana hafıza kartları hazırlayayım.
+            </p>
+            <div className="w-full max-w-[600px] mb-6">
+              <div className="welcome-input-wrapper">
+                <div className="welcome-input-glow-amber" />
+                <div className="welcome-input-inner">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                    placeholder={isMobile ? "Konu yaz..." : "Flashcard konusunu yaz... (örn: Biyoloji hücre yapısı)"}
+                    disabled={isLoading}
+                    className="flex-1 bg-transparent text-sm sm:text-base outline-none disabled:opacity-50"
+                    style={{ color: "var(--text-primary)" }}
+                  />
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={handleSend}
+                    disabled={!input.trim() || isLoading}
+                    className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
+                    style={{
+                      background: input.trim() && !isLoading ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" : "var(--bg-tertiary)",
+                      color: input.trim() && !isLoading ? "white" : "var(--text-tertiary)",
+                      boxShadow: input.trim() && !isLoading ? "0 0 12px rgba(245, 158, 11, 0.3)" : "none",
+                    }}
+                  >
+                    <IconSend size={15} />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex flex-wrap justify-center gap-2.5 max-w-[600px]">
-            {quickPrompts.map((prompt, i) => (
-              <button
-                key={prompt.text}
-                onClick={() => setInput(prompt.text)}
-                className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md"
-                style={{
-                  background: "var(--bg-card)",
-                  border: "1px solid var(--border-primary)",
-                  color: "var(--text-secondary)",
-                  animationDelay: `${0.4 + i * 0.08}s`,
-                }}
-              >
-                <span className="text-sm">{prompt.icon}</span>
-                <span>{prompt.text}</span>
-              </button>
-            ))}
+            <div className="flex flex-wrap justify-center gap-2.5 max-w-[600px]">
+              {quickPrompts.map((prompt, i) => (
+                <button
+                  key={prompt.text}
+                  onClick={() => setInput(prompt.text)}
+                  className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md"
+                  style={{
+                    background: "var(--bg-card)",
+                    border: "1px solid rgba(245, 158, 11, 0.2)",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  <span className="text-sm">{prompt.icon}</span>
+                  <span>{prompt.text}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       ) : (

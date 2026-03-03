@@ -3187,12 +3187,97 @@ body {
   50% { transform: translateY(-7px); }
 }
 
+/* Standard = blue */
 .welcome-name-glow {
   background: linear-gradient(90deg, #60a5fa, #38bdf8, #67e8f9);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.5));
+}
+/* Flashcard = amber */
+.welcome-name-glow-amber {
+  background: linear-gradient(90deg, #fbbf24, #f59e0b, #fde68a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.55));
+}
+/* Roadmap = red */
+.welcome-name-glow-red {
+  background: linear-gradient(90deg, #f87171, #ef4444, #fca5a5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.55));
+}
+
+/* Mode badge */
+.welcome-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.welcome-mode-badge-amber {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.1);
+}
+.welcome-mode-badge-red {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.1);
+}
+
+/* Amber input glow (flashcard) */
+@keyframes input-neon-pulse-amber {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.2), 0 0 14px rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.45), 0 0 28px rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.55);
+  }
+}
+.welcome-input-glow-amber {
+  position: absolute;
+  inset: -1px;
+  border-radius: 20px;
+  background: transparent;
+  border: 1.5px solid transparent;
+  animation: input-neon-pulse-amber 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Red input glow (roadmap) */
+@keyframes input-neon-pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.2), 0 0 14px rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.45), 0 0 28px rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.55);
+  }
+}
+.welcome-input-glow-red {
+  position: absolute;
+  inset: -1px;
+  border-radius: 20px;
+  background: transparent;
+  border: 1.5px solid transparent;
+  animation: input-neon-pulse-red 2.5s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .welcome-input-wrapper {

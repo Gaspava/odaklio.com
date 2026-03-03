@@ -787,79 +787,85 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
   if (phase === "input") {
     const firstName = user?.user_metadata?.full_name?.split(" ")[0] || "";
     return (
-      <div className="flex-1 flex flex-col items-center justify-center px-4 animate-fade-in" style={{ background: "var(--bg-primary)" }}>
-        <div className="welcome-logo-glow mb-6">
-          <img src="/odaklio-logo.svg" alt="Odaklio" className="w-24 h-24 sm:w-28 sm:h-28" />
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold mb-2 text-center tracking-wide">
-          {firstName ? (
-            <>
-              <span style={{ color: "var(--text-primary)" }}>MERHABA, </span>
-              <span className="welcome-name-glow">{firstName.toUpperCase()}!</span>
-            </>
-          ) : (
-            <span style={{ color: "var(--text-primary)" }}>MERHABA!</span>
-          )}
-        </h1>
-        <p className="text-sm sm:text-base mb-8 text-center" style={{ color: "var(--text-tertiary)" }}>
-          Bir konu yaz, sana adım adım öğrenme yol haritası hazırlayayım.
-        </p>
+      <div className="flex-1 overflow-y-auto" style={{ background: "var(--bg-primary)" }}>
+        <div className="min-h-full flex flex-col items-center justify-center px-4 py-8 animate-fade-in">
+          {/* Mode badge */}
+          <div className="welcome-mode-badge welcome-mode-badge-red mb-4">
+            <span>🗺️</span> Yol Haritası Modu
+          </div>
+          <div className="welcome-logo-glow mb-5">
+            <img src="/odaklio-logo.svg" alt="Odaklio" className="w-24 h-24 sm:w-28 sm:h-28" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2 text-center tracking-wide">
+            {firstName ? (
+              <>
+                <span style={{ color: "var(--text-primary)" }}>MERHABA, </span>
+                <span className="welcome-name-glow-red">{firstName.toUpperCase()}!</span>
+              </>
+            ) : (
+              <span style={{ color: "var(--text-primary)" }}>MERHABA!</span>
+            )}
+          </h1>
+          <p className="text-sm sm:text-base mb-8 text-center" style={{ color: "var(--text-tertiary)" }}>
+            Bir konu yaz, sana adım adım öğrenme yol haritası hazırlayayım.
+          </p>
 
-        <div className="w-full max-w-[600px] mb-6">
-          <div className="welcome-input-wrapper">
-            <div className="welcome-input-glow" />
-            <div className="welcome-input-inner">
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
-                placeholder={isMobile ? "Konu yaz..." : "Öğrenmek istediğin konuyu yaz... (örn: React ile web geliştirme)"}
-                disabled={isGenerating}
-                className="flex-1 bg-transparent text-sm sm:text-base outline-none disabled:opacity-50"
-                style={{ color: "var(--text-primary)" }}
-              />
-              <button
-                onClick={handleSubmit}
-                disabled={!inputText.trim() || isGenerating}
-                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition-all active:scale-[0.95] disabled:opacity-40"
-                style={{
-                  background: inputText.trim() && !isGenerating ? "#ef4444" : "var(--bg-tertiary)",
-                  color: inputText.trim() && !isGenerating ? "white" : "var(--text-tertiary)",
-                  boxShadow: inputText.trim() && !isGenerating ? "0 0 12px rgba(239, 68, 68, 0.3)" : "none",
-                }}
-              >
-                <IconSend size={15} />
-              </button>
+          <div className="w-full max-w-[600px] mb-6">
+            <div className="welcome-input-wrapper">
+              <div className="welcome-input-glow-red" />
+              <div className="welcome-input-inner">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
+                  placeholder={isMobile ? "Konu yaz..." : "Öğrenmek istediğin konuyu yaz... (örn: React ile web geliştirme)"}
+                  disabled={isGenerating}
+                  className="flex-1 bg-transparent text-sm sm:text-base outline-none disabled:opacity-50"
+                  style={{ color: "var(--text-primary)" }}
+                />
+                <button
+                  onClick={handleSubmit}
+                  disabled={!inputText.trim() || isGenerating}
+                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition-all active:scale-[0.95] disabled:opacity-40"
+                  style={{
+                    background: inputText.trim() && !isGenerating ? "#ef4444" : "var(--bg-tertiary)",
+                    color: inputText.trim() && !isGenerating ? "white" : "var(--text-tertiary)",
+                    boxShadow: inputText.trim() && !isGenerating ? "0 0 12px rgba(239, 68, 68, 0.3)" : "none",
+                  }}
+                >
+                  <IconSend size={15} />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-wrap justify-center gap-2.5 max-w-[600px]">
-          {QUICK_PROMPTS.map((qp) => (
-            <button
-              key={qp.text}
-              onClick={() => handleGenerate(qp.text)}
-              disabled={isGenerating}
-              className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md disabled:opacity-50"
-              style={{
-                background: "var(--bg-card)",
-                border: "1px solid var(--border-primary)",
-                color: "var(--text-secondary)",
-              }}
-            >
-              <span>{qp.icon}</span>
-              {qp.text}
-            </button>
-          ))}
-        </div>
+          <div className="flex flex-wrap justify-center gap-2.5 max-w-[600px]">
+            {QUICK_PROMPTS.map((qp) => (
+              <button
+                key={qp.text}
+                onClick={() => handleGenerate(qp.text)}
+                disabled={isGenerating}
+                className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md disabled:opacity-50"
+                style={{
+                  background: "var(--bg-card)",
+                  border: "1px solid rgba(239, 68, 68, 0.2)",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                <span>{qp.icon}</span>
+                {qp.text}
+              </button>
+            ))}
+          </div>
 
-        {error && (
-          <p className="mt-4 text-[12px] text-center" style={{ color: "var(--accent-danger)" }}>
-            {error}
-          </p>
-        )}
+          {error && (
+            <p className="mt-4 text-[12px] text-center" style={{ color: "var(--accent-danger)" }}>
+              {error}
+            </p>
+          )}
+        </div>
       </div>
     );
   }
