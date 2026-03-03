@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { useFontSize } from "@/app/providers/FontSizeProvider";
 import { IconSun, IconMoon } from "../icons/Icons";
 
 export type PageType = "history" | "tools" | "focus" | "mentor" | "analysis";
@@ -76,8 +77,11 @@ export default function Header({
 }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
+  const { fontSize, setFontSize } = useFontSize();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
 
   // Close menu on outside click
   useEffect(() => {
@@ -90,6 +94,17 @@ export default function Header({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setSettingsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [settingsOpen]);
 
   const displayName = user?.user_metadata?.full_name || user?.email || "";
   const initials = displayName
@@ -186,9 +201,79 @@ export default function Header({
             background: "var(--bg-tertiary)",
             color: "var(--text-secondary)",
           }}
+          title="Tema değiştir (Ctrl+Shift+T)"
         >
           {theme === "dark" ? <IconSun size={15} /> : <IconMoon size={15} />}
         </button>
+
+        {/* Settings (font size) */}
+        <div className="relative" ref={settingsRef}>
+          <button
+            onClick={() => setSettingsOpen(!settingsOpen)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg transition-all active:scale-95"
+            style={{
+              background: settingsOpen ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
+              color: settingsOpen ? "var(--accent-primary)" : "var(--text-secondary)",
+            }}
+            title="Ayarlar"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
+
+          {settingsOpen && (
+            <div
+              className="absolute right-0 mt-2 w-56 rounded-xl overflow-hidden z-50"
+              style={{
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-primary)",
+                boxShadow: "var(--shadow-xl)",
+                top: "100%",
+              }}
+            >
+              <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--border-secondary)" }}>
+                <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>
+                  Yazı Boyutu
+                </p>
+              </div>
+              <div className="p-2 space-y-0.5">
+                {(["small", "normal", "large"] as const).map((size) => {
+                  const labels = { small: "Küçük", normal: "Normal", large: "Büyük" };
+                  const previews = { small: "Aa", normal: "Aa", large: "Aa" };
+                  const previewSizes = { small: 11, normal: 14, large: 18 };
+                  return (
+                    <button
+                      key={size}
+                      onClick={() => { setFontSize(size); setSettingsOpen(false); }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all"
+                      style={{
+                        background: fontSize === size ? "var(--accent-primary-light)" : "transparent",
+                        color: fontSize === size ? "var(--accent-primary)" : "var(--text-primary)",
+                      }}
+                    >
+                      <span style={{ fontSize: previewSizes[size], fontWeight: 600, minWidth: 24 }}>
+                        {previews[size]}
+                      </span>
+                      <span className="text-sm font-medium">{labels[size]}</span>
+                      {fontSize === size && (
+                        <svg className="ml-auto" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="px-4 py-2 mt-1" style={{ borderTop: "1px solid var(--border-secondary)" }}>
+                <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                  Kısayol: <kbd className="px-1 py-0.5 rounded text-[9px]" style={{ background: "var(--bg-tertiary)" }}>Ctrl+K</kbd> komut paleti
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Profile dropdown */}
         <div className="relative" ref={menuRef}>

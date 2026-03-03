@@ -3,11 +3,19 @@ import "./globals.css";
 import ThemeProvider from "./providers/ThemeProvider";
 import AuthProvider from "./providers/AuthProvider";
 import ConversationProvider from "./providers/ConversationProvider";
+import ToastProvider from "./providers/ToastProvider";
+import FontSizeProvider from "./providers/FontSizeProvider";
 
 export const metadata: Metadata = {
   title: "Odaklio - Akıllı Öğrenme Platformu",
   description:
     "AI destekli hızlı okuma, flashcard, mind map, pomodoro ve daha fazlasıyla öğrenme deneyimini dönüştür.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Odaklio",
+  },
 };
 
 export const viewport: Viewport = {
@@ -31,9 +39,13 @@ export default function RootLayout({
     <html lang="tr" className="dark" suppressHydrationWarning>
       <body className="antialiased">
         <ThemeProvider>
-          <AuthProvider>
-            <ConversationProvider>{children}</ConversationProvider>
-          </AuthProvider>
+          <FontSizeProvider>
+            <AuthProvider>
+              <ConversationProvider>
+                <ToastProvider>{children}</ToastProvider>
+              </ConversationProvider>
+            </AuthProvider>
+          </FontSizeProvider>
         </ThemeProvider>
       </body>
     </html>

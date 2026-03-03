@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   IconTrendingUp,
   IconClock,
@@ -11,6 +11,7 @@ import {
   IconPomodoro,
   IconFlashcard,
 } from "../icons/Icons";
+import { getStreak, getBadges, getStats, getXP } from "@/app/hooks/useGamification";
 
 /* ===== PERIOD SELECTOR ===== */
 function PeriodSelector({ period, onChange }: { period: string; onChange: (p: string) => void }) {
@@ -401,14 +402,18 @@ function RecentSessions() {
 
 /* ===== STREAK & ACHIEVEMENTS ===== */
 function StreakAndAchievements() {
-  const achievements = [
-    { name: "7 Gün Streak", emoji: "🔥", earned: true },
-    { name: "İlk Flashcard", emoji: "🃏", earned: true },
-    { name: "100 Mesaj", emoji: "💬", earned: true },
-    { name: "Gece Kuşu", emoji: "🦉", earned: true },
-    { name: "30 Gün Streak", emoji: "⭐", earned: false },
-    { name: "1000 Mesaj", emoji: "🏆", earned: false },
-  ];
+  const [streak, setStreak] = useState({ current: 0, longest: 0 });
+  const [badges, setBadges] = useState(getBadges());
+  const [xp, setXp] = useState(0);
+
+  useEffect(() => {
+    setStreak(getStreak());
+    setBadges(getBadges());
+    setXp(getXP());
+  }, []);
+
+  const level = Math.floor(xp / 100) + 1;
+  const xpInLevel = xp % 100;
 
   return (
     <div
@@ -427,33 +432,56 @@ function StreakAndAchievements() {
         </h3>
       </div>
 
-      <div
-        className="rounded-xl p-4 mb-3 flex items-center gap-4"
-        style={{ background: "var(--bg-tertiary)" }}
-      >
-        <span className="text-3xl">🔥</span>
-        <div>
-          <div className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>7 Gün</div>
-          <div className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>Kesintisiz çalışma serisi</div>
+      {/* Streak + XP */}
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div
+          className="rounded-xl p-4 flex items-center gap-3"
+          style={{ background: "var(--bg-tertiary)" }}
+        >
+          <span className="text-3xl">🔥</span>
+          <div>
+            <div className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{streak.current} Gün</div>
+            <div className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>Mevcut seri</div>
+            <div className="text-[10px] font-semibold mt-0.5" style={{ color: "var(--accent-primary)" }}>
+              En uzun: {streak.longest}g
+            </div>
+          </div>
         </div>
-        <div className="ml-auto text-right">
-          <div className="text-sm font-bold" style={{ color: "var(--accent-primary)" }}>En Uzun: 12</div>
-          <div className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>gün</div>
+        <div
+          className="rounded-xl p-4 flex flex-col justify-between"
+          style={{ background: "var(--bg-tertiary)" }}
+        >
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-semibold" style={{ color: "var(--text-secondary)" }}>Seviye {level}</span>
+            <span className="text-[10px] font-bold" style={{ color: "var(--accent-primary)" }}>{xp} XP</span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: "var(--bg-card)" }}>
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${xpInLevel}%`, background: "var(--gradient-primary)" }}
+            />
+          </div>
+          <p className="text-[9px] mt-1" style={{ color: "var(--text-tertiary)" }}>
+            {100 - xpInLevel} XP sonraki seviye
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-        {achievements.map((a) => (
+      {/* Badges */}
+      <div className="grid grid-cols-5 gap-2">
+        {badges.map((a) => (
           <div
-            key={a.name}
+            key={a.id}
             className="flex flex-col items-center gap-1 rounded-xl py-3 transition-all"
             style={{
-              background: "var(--bg-tertiary)",
+              background: a.earned ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
+              border: a.earned ? "1px solid rgba(16,185,129,0.2)" : "1px solid transparent",
               opacity: a.earned ? 1 : 0.35,
             }}
+            title={`${a.name}: ${a.description}`}
           >
             <span className="text-lg">{a.emoji}</span>
-            <span className="text-[8px] font-semibold text-center px-1" style={{ color: "var(--text-secondary)" }}>
+            <span className="text-[8px] font-semibold text-center px-1 leading-tight" style={{ color: a.earned ? "var(--accent-primary)" : "var(--text-secondary)" }}>
               {a.name}
             </span>
           </div>
@@ -466,6 +494,13 @@ function StreakAndAchievements() {
 /* ===== ANALYSIS PAGE ===== */
 export default function AnalysisPage() {
   const [period, setPeriod] = useState("week");
+  const [stats, setStats] = useState(getStats());
+  const [xp, setXp] = useState(getXP());
+
+  useEffect(() => {
+    setStats(getStats());
+    setXp(getXP());
+  }, []);
 
   return (
     <div className="h-full overflow-y-auto">
@@ -485,35 +520,32 @@ export default function AnalysisPage() {
         {/* Quick Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <StatCard
-            label="Toplam Çalışma"
-            value="48.5s"
-            subtext="Bu ay"
-            icon={<IconClock size={18} />}
-            color="var(--accent-primary)"
-            trend="+12%"
-          />
-          <StatCard
-            label="Tamamlanan Konu"
-            value="88"
-            subtext="6 ders"
-            icon={<IconBrain size={18} />}
-            color="var(--accent-secondary)"
-            trend="+8"
-          />
-          <StatCard
-            label="Sohbet Sayısı"
-            value="156"
-            subtext="Bu ay"
+            label="Toplam Mesaj"
+            value={stats.totalMessages.toString()}
+            subtext="Tüm zamanlar"
             icon={<IconChat size={18} />}
+            color="var(--accent-primary)"
+          />
+          <StatCard
+            label="Flashcard"
+            value={stats.totalFlashcards.toString()}
+            subtext="Oluşturulan"
+            icon={<IconFlashcard size={18} />}
+            color="var(--accent-secondary)"
+          />
+          <StatCard
+            label="Pomodoro"
+            value={stats.pomodorosCompleted.toString()}
+            subtext="Tamamlanan"
+            icon={<IconPomodoro size={18} />}
             color="var(--accent-purple)"
           />
           <StatCard
-            label="Doğruluk Oranı"
-            value="%82"
-            subtext="Flashcard"
+            label="Toplam XP"
+            value={xp.toString()}
+            subtext={`Seviye ${Math.floor(xp / 100) + 1}`}
             icon={<IconLightning size={18} />}
             color="var(--accent-warning)"
-            trend="+5%"
           />
         </div>
 

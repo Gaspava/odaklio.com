@@ -7,6 +7,8 @@ import SpeedReadingOverlay from "../speed-reading/SpeedReadingOverlay";
 import QuickLearnOverlay from "./QuickLearnOverlay";
 import ChatMessageRenderer from "./ChatMessageRenderer";
 import { useConversation, type ChatMessage } from "@/app/providers/ConversationProvider";
+import { useToast } from "@/app/providers/ToastProvider";
+import { useGamification } from "@/app/hooks/useGamification";
 
 interface MainChatProps {
   isMobile?: boolean;
@@ -118,6 +120,8 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
     refreshConversations,
     loadConversation,
   } = useConversation();
+  const { showSuccess, showAchievement } = useToast();
+  const { recordActivity } = useGamification();
 
   const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
   const [input, setInput] = useState("");
@@ -297,6 +301,13 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
           generateTitle(conversationId, userContent);
         }
 
+        // Record activity for gamification
+        if (fullContent) {
+          recordActivity("message", (badge) => {
+            showAchievement(badge.emoji, badge.name, badge.description);
+          });
+        }
+
         // Refresh sidebar
         refreshConversations();
       } catch (error) {
@@ -337,6 +348,30 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
       inputRef.current?.blur();
     }
   }, [input, isLoading, sendToAI, isMobile, messages]);
+
+  const handleCopyMessage = useCallback((content: string) => {
+    navigator.clipboard.writeText(content).then(() => {
+      showSuccess("Kopyalandı", "Yanıt panoya kopyalandı");
+    });
+  }, [showSuccess]);
+
+  const handleRegenerateMessage = useCallback((msgIndex: number) => {
+    if (isLoading) return;
+    // Find the last user message before this AI message
+    let userContent = "";
+    for (let i = msgIndex - 1; i >= 0; i--) {
+      if (messages[i].role === "user") {
+        userContent = messages[i].content;
+        break;
+      }
+    }
+    if (!userContent) return;
+
+    // Remove all messages from the AI message onward
+    const slicedMessages = messages.slice(0, msgIndex);
+    setMessages(slicedMessages);
+    sendToAI(userContent, slicedMessages.filter((m) => m.id !== "welcome"));
+  }, [isLoading, messages, sendToAI]);
 
   const handleSelectionAction = (
     action: "quick-learn" | "what-is-this" | "speed-read"
@@ -435,34 +470,76 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                     )}
                   </div>
 
-                  {/* "Anlamadım" button on AI messages */}
+                  {/* Action buttons on AI messages */}
                   {msg.role === "assistant" && msg.id !== "welcome" && msg.content && (
-                    <button
-                      onClick={() => {
-                        const userContent =
-                          "Bu açıklamayı anlamadım, daha basit anlatır mısın?";
-                        const userMsg: ChatMessage = {
-                          id: Date.now().toString(),
-                          role: "user",
-                          content: userContent,
-                          timestamp: new Date(),
-                        };
-                        setMessages((prev) => [...prev, userMsg]);
-                        sendToAI(userContent, messages);
-                      }}
-                      className={`absolute -bottom-2.5 right-4 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold transition-all ${
+                    <div
+                      className={`absolute -bottom-2.5 right-2 flex items-center gap-1 transition-all ${
                         isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                       }`}
-                      style={{
-                        background: "var(--bg-card)",
-                        border: "1px solid var(--border-primary)",
-                        color: "var(--accent-warning)",
-                        boxShadow: "var(--shadow-md)",
-                      }}
                     >
-                      <IconHelp size={10} />
-                      Anlamadım
-                    </button>
+                      {/* Copy */}
+                      <button
+                        onClick={() => handleCopyMessage(msg.content)}
+                        className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[10px] font-semibold transition-all active:scale-95"
+                        style={{
+                          background: "var(--bg-card)",
+                          border: "1px solid var(--border-primary)",
+                          color: "var(--text-secondary)",
+                          boxShadow: "var(--shadow-md)",
+                        }}
+                        title="Kopyala"
+                      >
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                        Kopyala
+                      </button>
+                      {/* Regenerate */}
+                      <button
+                        onClick={() => handleRegenerateMessage(idx)}
+                        disabled={isLoading}
+                        className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[10px] font-semibold transition-all active:scale-95 disabled:opacity-40"
+                        style={{
+                          background: "var(--bg-card)",
+                          border: "1px solid var(--border-primary)",
+                          color: "var(--accent-primary)",
+                          boxShadow: "var(--shadow-md)",
+                        }}
+                        title="Yeniden üret"
+                      >
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="1 4 1 10 7 10" />
+                          <path d="M3.51 15a9 9 0 1 0 .49-4.5" />
+                        </svg>
+                        Yenile
+                      </button>
+                      {/* Anlamadım */}
+                      <button
+                        onClick={() => {
+                          const userContent =
+                            "Bu açıklamayı anlamadım, daha basit anlatır mısın?";
+                          const userMsg: ChatMessage = {
+                            id: Date.now().toString(),
+                            role: "user",
+                            content: userContent,
+                            timestamp: new Date(),
+                          };
+                          setMessages((prev) => [...prev, userMsg]);
+                          sendToAI(userContent, messages);
+                        }}
+                        className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[10px] font-semibold transition-all active:scale-95"
+                        style={{
+                          background: "var(--bg-card)",
+                          border: "1px solid var(--border-primary)",
+                          color: "var(--accent-warning)",
+                          boxShadow: "var(--shadow-md)",
+                        }}
+                      >
+                        <IconHelp size={10} />
+                        Anlamadım
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

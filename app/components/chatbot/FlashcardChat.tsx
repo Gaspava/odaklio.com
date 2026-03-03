@@ -8,6 +8,73 @@ import {
 } from "@/app/providers/ConversationProvider";
 import { saveFlashcard } from "@/lib/db/conversations";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { useGamification } from "@/app/hooks/useGamification";
+import { useToast } from "@/app/providers/ToastProvider";
+
+/* ===== SM-2 SPACED REPETITION ===== */
+interface SM2Card {
+  question: string;
+  answer: string;
+  interval: number;   // days until next review
+  easeFactor: number; // e-factor (starts at 2.5)
+  repetitions: number;
+  nextReview: string; // ISO date string
+}
+
+function hashStr(s: string): string {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h).toString(36);
+}
+
+function sm2Update(card: SM2Card, quality: number): SM2Card {
+  // quality: 0=blackout, 1=wrong but remembered, 2=wrong with hint, 3=correct hard, 4=correct, 5=easy
+  let { interval, easeFactor, repetitions } = card;
+
+  if (quality >= 3) {
+    if (repetitions === 0) interval = 1;
+    else if (repetitions === 1) interval = 6;
+    else interval = Math.round(interval * easeFactor);
+    repetitions += 1;
+  } else {
+    repetitions = 0;
+    interval = 1;
+  }
+
+  easeFactor = Math.max(1.3, easeFactor + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+
+  const next = new Date();
+  next.setDate(next.getDate() + interval);
+
+  return {
+    ...card,
+    interval,
+    easeFactor,
+    repetitions,
+    nextReview: next.toISOString(),
+  };
+}
+
+function loadSM2Cards(): Record<string, SM2Card> {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem("odaklio-sm2") || "{}");
+  } catch { return {}; }
+}
+
+function saveSM2Card(card: SM2Card) {
+  if (typeof window === "undefined") return;
+  const all = loadSM2Cards();
+  all[hashStr(card.question)] = card;
+  localStorage.setItem("odaklio-sm2", JSON.stringify(all));
+}
+
+function getCardSchedule(question: string): SM2Card | null {
+  const all = loadSM2Cards();
+  return all[hashStr(question)] || null;
+}
 
 /* ===== TYPES ===== */
 interface FlashcardChatProps {
@@ -326,6 +393,8 @@ export default function FlashcardChat({
     loadConversation,
   } = useConversation();
   const { user } = useAuth();
+  const { recordActivity } = useGamification();
+  const { showSuccess, showAchievement } = useToast();
 
   const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
   const [input, setInput] = useState("");
@@ -525,21 +594,43 @@ export default function FlashcardChat({
     }
   }, [currentCardIndex]);
 
-  const handleAdd = useCallback(async () => {
+  const handleRateCard = useCallback(async (quality: number) => {
     if (saving || flashcards.length === 0) return;
     const card = flashcards[currentCardIndex];
-    setSaving(true);
-    try {
-      const convId = activeConversationId;
-      if (convId && user) {
-        await saveFlashcard(user.id, convId, card.question, card.answer);
+
+    // SM-2 update
+    const existing = getCardSchedule(card.question);
+    const sm2Card: SM2Card = existing || {
+      question: card.question,
+      answer: card.answer,
+      interval: 1,
+      easeFactor: 2.5,
+      repetitions: 0,
+      nextReview: new Date().toISOString(),
+    };
+    const updated = sm2Update(sm2Card, quality);
+    saveSM2Card(updated);
+
+    // Save to DB if quality >= 3 (knew it)
+    if (quality >= 3) {
+      setSaving(true);
+      try {
+        const convId = activeConversationId;
+        if (convId && user) {
+          await saveFlashcard(user.id, convId, card.question, card.answer);
+        }
+        setSavedCount((prev) => prev + 1);
+        recordActivity("flashcard", (badge) => {
+          showAchievement(badge.emoji, badge.name, badge.description);
+        });
+        showSuccess("Kart kaydedildi", `Sonraki tekrar: ${updated.interval} gün sonra`);
+      } catch (err) {
+        console.error("Failed to save flashcard:", err);
+      } finally {
+        setSaving(false);
       }
-      setSavedCount((prev) => prev + 1);
-    } catch (err) {
-      console.error("Failed to save flashcard:", err);
-    } finally {
-      setSaving(false);
     }
+
     // Move to next card
     if (currentCardIndex < flashcards.length - 1) {
       setCurrentCardIndex((prev) => prev + 1);
@@ -548,7 +639,11 @@ export default function FlashcardChat({
       setIsReviewComplete(true);
     }
     setTotalAnswered((prev) => prev + 1);
-  }, [saving, flashcards, currentCardIndex, activeConversationId, user]);
+  }, [saving, flashcards, currentCardIndex, activeConversationId, user, recordActivity, showAchievement, showSuccess]);
+
+  const handleAdd = useCallback(async () => {
+    await handleRateCard(4);
+  }, [handleRateCard]);
 
   const handleSkip = useCallback(() => {
     if (currentCardIndex < flashcards.length - 1) {
@@ -645,38 +740,66 @@ export default function FlashcardChat({
               </button>
             </div>
 
-            {/* Skip / Add Buttons */}
-            <div className="flex items-center gap-3 w-full max-w-[320px]">
-              <button
-                onClick={handleSkip}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
-                style={{
-                  background: "var(--bg-tertiary)",
-                  color: "var(--text-secondary)",
-                  border: "1px solid var(--border-primary)",
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 17 18 12 13 7" /><polyline points="6 17 11 12 6 7" /></svg>
-                Gec
-              </button>
-              <button
-                onClick={handleAdd}
-                disabled={saving}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95 disabled:opacity-60"
-                style={{
-                  background: "rgba(16, 185, 129, 0.1)",
-                  color: "var(--accent-primary)",
-                  border: "1px solid rgba(16, 185, 129, 0.25)",
-                }}
-              >
-                {saving ? (
-                  <div className="auth-spinner" style={{ width: 14, height: 14 }} />
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>
-                )}
-                Ekle
-              </button>
-            </div>
+            {/* SM-2 Difficulty Rating Buttons (show after flip) */}
+            {isFlipped ? (
+              <div className="w-full max-w-[400px] space-y-2">
+                <p className="text-[10px] text-center font-semibold uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>
+                  Ne kadar biliyordun?
+                </p>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[
+                    { label: "Bilmedim", quality: 0, color: "#ef4444", bg: "rgba(239,68,68,0.1)" },
+                    { label: "Zor", quality: 2, color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
+                    { label: "Kolay", quality: 3, color: "#10b981", bg: "rgba(16,185,129,0.1)" },
+                    { label: "Çok Kolay", quality: 5, color: "#3b82f6", bg: "rgba(59,130,246,0.1)" },
+                  ].map((btn) => (
+                    <button
+                      key={btn.quality}
+                      onClick={() => handleRateCard(btn.quality)}
+                      disabled={saving}
+                      className="flex flex-col items-center gap-1 py-2.5 rounded-xl text-[10px] font-bold transition-all active:scale-95 disabled:opacity-60"
+                      style={{
+                        background: btn.bg,
+                        color: btn.color,
+                        border: `1px solid ${btn.color}40`,
+                      }}
+                    >
+                      <span className="text-base">
+                        {btn.quality === 0 ? "😰" : btn.quality === 2 ? "😓" : btn.quality === 3 ? "😊" : "🤩"}
+                      </span>
+                      {btn.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 w-full max-w-[320px]">
+                <button
+                  onClick={handleSkip}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
+                  style={{
+                    background: "var(--bg-tertiary)",
+                    color: "var(--text-secondary)",
+                    border: "1px solid var(--border-primary)",
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 17 18 12 13 7" /><polyline points="6 17 11 12 6 7" /></svg>
+                  Geç
+                </button>
+                <button
+                  onClick={() => setIsFlipped(true)}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
+                  style={{
+                    background: "rgba(16, 185, 129, 0.1)",
+                    color: "var(--accent-primary)",
+                    border: "1px solid rgba(16, 185, 129, 0.25)",
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 1 0 .49-4.5" /></svg>
+                  Cevabı Gör
+                </button>
+              </div>
+            )}
 
             {/* Progress Bar */}
             <div className="w-full max-w-[320px]">

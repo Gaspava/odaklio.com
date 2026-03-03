@@ -5,6 +5,7 @@ import { IconSearch, IconChat, IconX, IconGitBranch } from "../icons/Icons";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { getUserConversations, type ConversationWithPreview } from "@/lib/db/conversations";
 import { useConversation } from "@/app/providers/ConversationProvider";
+import { ChatHistorySkeleton } from "../ui/Skeleton";
 
 interface ChatHistoryPageProps {
   onOpenConversation?: (id: string, type?: string) => void;
@@ -144,12 +145,8 @@ export default function ChatHistoryPage({ onOpenConversation }: ChatHistoryPageP
           )}
         </div>
 
-        {/* Loading */}
-        {loading && (
-          <div className="flex justify-center py-12">
-            <div className="auth-spinner" style={{ width: 28, height: 28 }} />
-          </div>
-        )}
+        {/* Skeleton Loading */}
+        {loading && <ChatHistorySkeleton />}
 
         {/* Chat List Grouped */}
         {!loading && groupOrder.map((group) => {

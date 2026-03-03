@@ -26,6 +26,8 @@ import {
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { useConversation } from "@/app/providers/ConversationProvider";
 import NoteSelectionPopup from "../notes/NoteSelectionPopup";
+import CommandPalette from "../ui/CommandPalette";
+import OnboardingTour from "../ui/OnboardingTour";
 
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(false);
@@ -209,6 +211,43 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       }
     }
   }, [loadConversation, startNewConversation, isMobile, conversations]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if ((e.ctrlKey || e.metaKey) && e.key === "n") {
+        e.preventDefault();
+        handleNewChat();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "1") {
+        e.preventDefault();
+        handlePageChange("focus");
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "2") {
+        e.preventDefault();
+        handlePageChange("history");
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "3") {
+        e.preventDefault();
+        handlePageChange("tools");
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "4") {
+        e.preventDefault();
+        handlePageChange("mentor");
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "5") {
+        e.preventDefault();
+        handlePageChange("analysis");
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "T") {
+        e.preventDefault();
+        toggleTheme();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [handleNewChat, handlePageChange, toggleTheme]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const showSidePanels = activePage === "focus";
 
@@ -528,6 +567,14 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       )}
 
       <NoteSelectionPopup />
+
+      <CommandPalette
+        onNewChat={handleNewChat}
+        onNavigate={handlePageChange}
+        onToggleTheme={toggleTheme}
+      />
+
+      <OnboardingTour />
     </div>
   );
 }

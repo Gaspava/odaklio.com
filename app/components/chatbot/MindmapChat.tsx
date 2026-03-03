@@ -1070,6 +1070,66 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
     });
   };
 
+  const handleExportSVG = () => {
+    if (nodes.length === 0) return;
+
+    const PAD = 60;
+    const NW = NODE_WIDTH * 0.4;
+    const NH = 56;
+
+    const allX = nodes.map((n) => n.x);
+    const allY = nodes.map((n) => n.y);
+    const minX = Math.min(...allX) - PAD;
+    const minY = Math.min(...allY) - PAD;
+    const maxX = Math.max(...allX) + NW + PAD;
+    const maxY = Math.max(...allY) + NH + PAD;
+    const W = maxX - minX;
+    const H = maxY - minY;
+
+    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+
+    const conns = connections.map((c) => {
+      const from = nodeMap.get(c.fromId);
+      const to = nodeMap.get(c.toId);
+      if (!from || !to) return "";
+      const fx = from.x + NW / 2 - minX;
+      const fy = from.y + NH - minY;
+      const tx = to.x + NW / 2 - minX;
+      const ty = to.y - minY;
+      const mid = (fy + ty) / 2;
+      return `<path d="M ${fx} ${fy} C ${fx} ${mid}, ${tx} ${mid}, ${tx} ${ty}" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="8 4" opacity="0.6"/>`;
+    }).join("\n");
+
+    const rects = nodes.map((n) => {
+      const x = n.x - minX;
+      const y = n.y - minY;
+      const isMain = n.id === "main";
+      const msgCount = n.messages.length;
+      const label = n.label.length > 30 ? n.label.slice(0, 30) + "…" : n.label;
+      return `
+        <g>
+          <rect x="${x}" y="${y}" width="${NW}" height="${NH}" rx="12" fill="${isMain ? "#10b981" : "#1a1a2e"}" stroke="${isMain ? "#059669" : "#8b5cf6"}" stroke-width="1.5"/>
+          <text x="${x + NW / 2}" y="${y + 22}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="${isMain ? "#fff" : "#e8eaed"}">${label}</text>
+          <text x="${x + NW / 2}" y="${y + 40}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="${isMain ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.4)"}">${msgCount} mesaj</text>
+        </g>`;
+    }).join("\n");
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+      <rect width="${W}" height="${H}" fill="#0a0a0c"/>
+      ${conns}
+      ${rects}
+      <text x="${W - 10}" y="${H - 8}" text-anchor="end" font-family="system-ui,sans-serif" font-size="9" fill="rgba(255,255,255,0.2)">Odaklio Mindmap</text>
+    </svg>`;
+
+    const blob = new Blob([svg], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "mindmap.svg";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (isInitialLoading) {
     return (
       <div className="flex items-center justify-center h-full" style={{ background: "var(--bg-primary)" }}>
@@ -1161,6 +1221,26 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
             </div>
           ))}
         </div>
+
+        {/* Export Button */}
+        <button
+          onClick={handleExportSVG}
+          className="absolute top-3 right-3 flex items-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-semibold transition-all active:scale-95 z-10"
+          style={{
+            background: "var(--bg-glass-heavy)",
+            border: "1px solid var(--border-primary)",
+            color: "var(--text-secondary)",
+            boxShadow: "var(--shadow-md)",
+          }}
+          title="Mindmap'i SVG olarak dışa aktar"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          {!isMobile && "SVG İndir"}
+        </button>
 
         {/* Help Hint */}
         <div
