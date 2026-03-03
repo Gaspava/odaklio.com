@@ -3,6 +3,8 @@ import "./globals.css";
 import ThemeProvider from "./providers/ThemeProvider";
 import AuthProvider from "./providers/AuthProvider";
 import ConversationProvider from "./providers/ConversationProvider";
+import PomodoroProvider from "./providers/PomodoroProvider";
+import PageTrackingProvider from "./providers/PageTrackingProvider";
 
 export const metadata: Metadata = {
   title: "Odaklio - Akıllı Öğrenme Platformu",
@@ -37,7 +39,11 @@ export default function RootLayout({
       <body className="antialiased">
         <ThemeProvider>
           <AuthProvider>
-            <ConversationProvider>{children}</ConversationProvider>
+            <ConversationProvider>
+              <PomodoroProvider>
+                <PageTrackingProvider>{children}</PageTrackingProvider>
+              </PomodoroProvider>
+            </ConversationProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
