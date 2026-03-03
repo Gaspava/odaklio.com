@@ -22,6 +22,7 @@ import {
   type MindmapNode,
   type CanvasState,
 } from "@/lib/db/conversations";
+import { insertInteraction } from "@/lib/db/tracking";
 
 export interface ChatMessage {
   id: string;
@@ -188,6 +189,7 @@ export default function ConversationProvider({ children }: { children: ReactNode
       }
 
       const msg = await insertMessage(convId, "user", content, {}, nodeId);
+      insertInteraction(user.id, 'message_sent', convId).catch(console.error);
       return { conversationId: convId, messageId: msg.id };
     },
     [user, activeConversationId]
@@ -252,8 +254,11 @@ export default function ConversationProvider({ children }: { children: ReactNode
         saveMindmapNodes(conversationId, data.nodes),
         updateCanvasState(conversationId, data.canvasState),
       ]);
+      if (user) {
+        insertInteraction(user.id, 'mindmap_node_added', conversationId).catch(console.error);
+      }
     },
-    []
+    [user]
   );
 
   const loadMindmapData = useCallback(
