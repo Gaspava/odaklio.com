@@ -5,9 +5,10 @@ import { useState, useEffect } from "react";
 interface PomodoroPopupProps {
   onClose: () => void;
   onTimerChange?: (running: boolean, minutes: number, seconds: number) => void;
+  inline?: boolean;
 }
 
-export default function PomodoroPopup({ onClose, onTimerChange }: PomodoroPopupProps) {
+export default function PomodoroPopup({ onClose, onTimerChange, inline }: PomodoroPopupProps) {
   const [isRunning, setIsRunning] = useState(false);
   const [minutes, setMinutes] = useState(25);
   const [seconds, setSeconds] = useState(0);
@@ -47,7 +48,7 @@ export default function PomodoroPopup({ onClose, onTimerChange }: PomodoroPopupP
   const modeColor = mode === "work" ? "var(--accent-primary)" : "var(--accent-cyan)";
 
   return (
-    <div className="tool-popup tool-popup-pomodoro" onClick={(e) => e.stopPropagation()}>
+    <div className={inline ? "" : "tool-popup tool-popup-pomodoro"} onClick={(e) => e.stopPropagation()}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>

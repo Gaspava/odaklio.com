@@ -5,6 +5,7 @@ import { useState } from "react";
 interface AmbientSoundPopupProps {
   onClose: () => void;
   onSoundChange?: (playing: boolean) => void;
+  inline?: boolean;
 }
 
 const sounds = [
@@ -18,7 +19,7 @@ const sounds = [
   { id: "birds", emoji: "🐦", name: "Kuslar" },
 ];
 
-export default function AmbientSoundPopup({ onClose, onSoundChange }: AmbientSoundPopupProps) {
+export default function AmbientSoundPopup({ onClose, onSoundChange, inline }: AmbientSoundPopupProps) {
   const [activeSound, setActiveSound] = useState<string | null>(null);
   const [volume, setVolume] = useState(40);
 
@@ -29,7 +30,7 @@ export default function AmbientSoundPopup({ onClose, onSoundChange }: AmbientSou
   };
 
   return (
-    <div className="tool-popup tool-popup-sound" onClick={(e) => e.stopPropagation()}>
+    <div className={inline ? "" : "tool-popup tool-popup-sound"} onClick={(e) => e.stopPropagation()}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>

@@ -3,6 +3,7 @@
 interface NewChatPopupProps {
   onSelectMode: (mode: string) => void;
   onClose: () => void;
+  inline?: boolean;
 }
 
 const modes = [
@@ -12,9 +13,9 @@ const modes = [
   { id: "roadmap", name: "Roadmap", desc: "Adim adim ogrenme plani", color: "#ef4444" },
 ];
 
-export default function NewChatPopup({ onSelectMode, onClose }: NewChatPopupProps) {
+export default function NewChatPopup({ onSelectMode, onClose, inline }: NewChatPopupProps) {
   return (
-    <div className="tool-popup tool-popup-new-chat" onClick={(e) => e.stopPropagation()}>
+    <div className={inline ? "" : "tool-popup tool-popup-new-chat"} onClick={(e) => e.stopPropagation()}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>

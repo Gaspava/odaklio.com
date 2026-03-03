@@ -9,14 +9,15 @@ import MainChat from "../chatbot/MainChat";
 import MindmapChat from "../chatbot/MindmapChat";
 import FlashcardChat from "../chatbot/FlashcardChat";
 import RoadmapChat from "../chatbot/RoadmapChat";
-import ChatStyleSelector, {
-  type ChatStyle,
-} from "../chatbot/ChatStyleSelector";
+import { type ChatStyle } from "../chatbot/ChatStyleSelector";
 import ModeSelector from "./ModeSelector";
 import ChatHistoryPage from "../pages/ChatHistoryPage";
 import ToolsPage from "../pages/ToolsPage";
 import MentorPage from "../pages/MentorPage";
 import AnalysisPage from "../pages/AnalysisPage";
+import PomodoroPopup from "../tools/PomodoroPopup";
+import AmbientSoundPopup from "../tools/AmbientSoundPopup";
+import NewChatPopup from "../tools/NewChatPopup";
 import {
   IconChat,
   IconPomodoro,
@@ -50,13 +51,25 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
   const [chatStyle, setChatStyle] = useState<ChatStyle>("standard");
-  const [showStyleSelector, setShowStyleSelector] = useState(false);
   const [showModeSelector, setShowModeSelector] = useState(true);
   const [chatKey, setChatKey] = useState(0);
   const [activePage, setActivePage] = useState<PageType>(initialPage || "focus");
+  const [mobileBottomSheet, setMobileBottomSheet] = useState<"pomodoro" | "sound" | "new-chat" | null>(null);
+  const [pomodoroRunning, setPomodoroRunning] = useState(false);
+  const [pomodoroTime, setPomodoroTime] = useState({ minutes: 25, seconds: 0 });
+  const [soundPlaying, setSoundPlaying] = useState(false);
   const isMobile = useIsMobile();
   const { theme, toggleTheme } = useTheme();
   const { loadConversation, startNewConversation, conversations, activeConversationType, activeConversationId } = useConversation();
+
+  const handleTimerChange = useCallback((running: boolean, minutes: number, seconds: number) => {
+    setPomodoroRunning(running);
+    setPomodoroTime({ minutes, seconds });
+  }, []);
+
+  const handleSoundChange = useCallback((playing: boolean) => {
+    setSoundPlaying(playing);
+  }, []);
 
   // Sync chatStyle with conversation type (for /chat/[id] URL loads)
   useEffect(() => {
@@ -169,7 +182,6 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const handleSelectStyle = (style: ChatStyle) => {
     setChatStyle(style);
     setChatKey((k) => k + 1);
-    setShowStyleSelector(false);
     setShowModeSelector(false);
     // Hide right panel when entering a focused mode
     if (style !== "standard") {
@@ -275,6 +287,31 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
             <button onClick={toggleTheme} className="mobile-theme-toggle">
               {theme === "dark" ? <IconSun size={14} /> : <IconMoon size={14} />}
             </button>
+            <button onClick={() => setMobileBottomSheet("pomodoro")} className="mobile-theme-toggle" style={{ position: "relative" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="13" r="8" /><path d="M12 9v4l2 2" /><path d="M5 3L2 6" /><path d="M22 6l-3-3" />
+              </svg>
+              {pomodoroRunning && (
+                <span style={{
+                  position: "absolute", top: -2, right: -2, width: 8, height: 8,
+                  borderRadius: "50%", background: "var(--accent-primary)",
+                  animation: "pulse 1.5s infinite"
+                }} />
+              )}
+            </button>
+            <button onClick={() => setMobileBottomSheet("sound")} className="mobile-theme-toggle" style={{ position: "relative" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+              </svg>
+              {soundPlaying && (
+                <span style={{
+                  position: "absolute", top: -2, right: -2, width: 8, height: 8,
+                  borderRadius: "50%", background: "var(--accent-cyan)",
+                  animation: "pulse 1.5s infinite"
+                }} />
+              )}
+            </button>
           </div>
           <button onClick={toggleRight} className="mobile-sidebar-toggle"
             style={{ opacity: showSidePanels ? 1 : 0.4, pointerEvents: showSidePanels ? "auto" : "none" }}>
@@ -359,7 +396,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
 
       {isMobile && activePage === "focus" && (
         <button
-          onClick={() => setShowStyleSelector(true)}
+          onClick={() => setMobileBottomSheet("new-chat")}
           className="fixed z-50 flex items-center justify-center w-12 h-12 rounded-full text-white active:scale-95 transition-all"
           style={{ bottom: 72, right: 16, background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -433,11 +470,37 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
         </nav>
       )}
 
-      {showStyleSelector && (
-        <ChatStyleSelector
-          onSelect={handleSelectStyle}
-          onClose={() => setShowStyleSelector(false)}
-        />
+      {/* Mobile Bottom Sheets */}
+      {isMobile && mobileBottomSheet && (
+        <div className="bottom-sheet-overlay" onClick={() => setMobileBottomSheet(null)}>
+          <div className="bottom-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="bottom-sheet-handle" />
+            {mobileBottomSheet === "pomodoro" && (
+              <PomodoroPopup
+                onClose={() => setMobileBottomSheet(null)}
+                onTimerChange={handleTimerChange}
+                inline
+              />
+            )}
+            {mobileBottomSheet === "sound" && (
+              <AmbientSoundPopup
+                onClose={() => setMobileBottomSheet(null)}
+                onSoundChange={handleSoundChange}
+                inline
+              />
+            )}
+            {mobileBottomSheet === "new-chat" && (
+              <NewChatPopup
+                onSelectMode={(mode) => {
+                  handleSelectStyle(mode as ChatStyle);
+                  setMobileBottomSheet(null);
+                }}
+                onClose={() => setMobileBottomSheet(null)}
+                inline
+              />
+            )}
+          </div>
+        </div>
       )}
 
       <NoteSelectionPopup />
