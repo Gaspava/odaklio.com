@@ -10,6 +10,7 @@ import FlashcardChat from "../chatbot/FlashcardChat";
 import RoadmapChat from "../chatbot/RoadmapChat";
 import { type ChatStyle } from "../chatbot/ChatStyleSelector";
 import ModeSelector from "./ModeSelector";
+import HomePage from "../pages/HomePage";
 import ChatHistoryPage from "../pages/ChatHistoryPage";
 import ToolsPage from "../pages/ToolsPage";
 import MentorPage from "../pages/MentorPage";
@@ -257,7 +258,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const renderPageContent = () => {
     switch (activePage) {
       case "home":
-        return <div style={{ padding: 40, color: "var(--text-primary)" }}>Homepage placeholder</div>;
+        return <HomePage onSelectMode={(mode) => handleSelectStyle(mode as ChatStyle)} onOpenConversation={handleOpenConversation} />;
       case "history":
         return <ChatHistoryPage onOpenConversation={handleOpenConversation} />;
       case "tools":
