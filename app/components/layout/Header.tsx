@@ -131,10 +131,6 @@ export default function Header({
 
       {/* Right - Profile Area */}
       <div className="header-profile-area ml-auto">
-        <span className="header-profile-name hidden sm:block">
-          {displayName || "Kullanici"}
-        </span>
-
         <button onClick={toggleTheme} className="header-icon-btn" title="Tema">
           {theme === "dark" ? <IconSun size={15} /> : <IconMoon size={15} />}
         </button>
