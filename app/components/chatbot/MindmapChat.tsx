@@ -200,6 +200,47 @@ function ChatNodeComponent({
     setShowBranchButton(false);
   }, []);
 
+  // Mobile: detect text selection via selectionchange (long-press)
+  useEffect(() => {
+    if (!isMobile) return;
+
+    let timer: ReturnType<typeof setTimeout>;
+    const onSelectionChange = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed || !selection.toString().trim()) {
+          return;
+        }
+
+        const text = selection.toString().trim();
+        if (text.length < 2) return;
+
+        // Only handle selections within this node
+        const nodeEl = nodeRef.current;
+        if (!nodeEl) return;
+        const range = selection.getRangeAt(0);
+        if (!nodeEl.contains(range.commonAncestorContainer)) return;
+
+        const rect = range.getBoundingClientRect();
+        const nodeRect = nodeEl.getBoundingClientRect();
+
+        setSelectedText(text);
+        setBranchBtnPos({
+          x: (rect.left + rect.width / 2 - nodeRect.left) / scale,
+          y: (rect.top - nodeRect.top) / scale,
+        });
+        setShowBranchButton(true);
+      }, 500);
+    };
+
+    document.addEventListener("selectionchange", onSelectionChange);
+    return () => {
+      document.removeEventListener("selectionchange", onSelectionChange);
+      clearTimeout(timer);
+    };
+  }, [isMobile, scale]);
+
   return (
     <div
       ref={nodeRef}
@@ -222,8 +263,8 @@ function ChatNodeComponent({
         e.stopPropagation();
         onActivate();
       }}
-      onMouseUp={!isMobile ? handleMouseUp : undefined}
-      onMouseDown={!isMobile ? handleMouseDown : undefined}
+      onMouseUp={handleMouseUp}
+      onMouseDown={handleMouseDown}
     >
       {/* Node Header */}
       <div className="mindmap-node-header">
@@ -338,13 +379,16 @@ function ChatNodeComponent({
           }}
         >
           <button
-            className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition-all shadow-lg"
+            className={`flex items-center gap-1.5 rounded-lg font-semibold transition-all shadow-lg ${
+              isMobile ? "px-4 py-3 text-sm" : "px-3.5 py-2 text-xs"
+            }`}
             style={{
               background: "var(--accent-purple)",
               color: "white",
               boxShadow: "0 4px 16px rgba(139, 92, 246, 0.35)",
             }}
             onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               onCreateBranch(selectedText);
@@ -1132,7 +1176,7 @@ export default function MindmapChat({ isMobile = false }: MindmapChatProps) {
             style={{ color: "var(--text-tertiary)" }}
           >
             {isMobile
-              ? "Parmakla sürükle \u2022 Çimdikle yakınlaştır"
+              ? "Basılı tut \u2192 metin seç \u2192 dal oluştur \u2022 Sürükle \u2022 Çimdikle yakınlaştır"
               : <>Metin seç &rarr; &quot;Yeni Yol Oluştur&quot; ile paralel sohbet oluştur &bull; Boş alana tıkla ve sürükle &bull; Scroll ile yakınlaştır</>
             }
           </span>

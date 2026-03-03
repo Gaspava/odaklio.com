@@ -204,11 +204,22 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
       isMouseDownRef.current = false;
       setTimeout(handleTextSelection, 200);
     };
+
+    // Mobile: detect text selection via selectionchange (long-press)
+    let selectionTimer: ReturnType<typeof setTimeout>;
+    const onSelectionChange = () => {
+      clearTimeout(selectionTimer);
+      selectionTimer = setTimeout(handleTextSelection, 500);
+    };
+
     document.addEventListener("mousedown", onMouseDown);
     document.addEventListener("mouseup", onMouseUp);
+    document.addEventListener("selectionchange", onSelectionChange);
     return () => {
       document.removeEventListener("mousedown", onMouseDown);
       document.removeEventListener("mouseup", onMouseUp);
+      document.removeEventListener("selectionchange", onSelectionChange);
+      clearTimeout(selectionTimer);
     };
   }, [handleTextSelection]);
 
