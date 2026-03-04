@@ -54,7 +54,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const [chatStyle, setChatStyle] = useState<ChatStyle>("standard");
   const [showModeSelector, setShowModeSelector] = useState(true);
   const [chatKey, setChatKey] = useState(0);
-  const [activePage, setActivePage] = useState<PageType>(initialPage || "home");
+  const [activePage, setActivePage] = useState<PageType>(initialPage || "focus");
   const [mobileBottomSheet, setMobileBottomSheet] = useState<"pomodoro" | "sound" | "new-chat" | "notes" | null>(null);
   const [pomodoroRunning, setPomodoroRunning] = useState(false);
   const [pomodoroTime, setPomodoroTime] = useState({ minutes: 25, seconds: 0 });
@@ -205,7 +205,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
     setChatStyle(style);
     setChatKey((k) => k + 1);
     setShowModeSelector(false);
-    setActivePage("focus");
+    // Hide right panel when entering a focused mode
     if (style !== "standard") {
       setRightOpen(false);
     }
@@ -256,8 +256,6 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
 
   const renderPageContent = () => {
     switch (activePage) {
-      case "home":
-        return <div style={{ padding: 40, color: "var(--text-primary)" }}>Homepage placeholder</div>;
       case "history":
         return <ChatHistoryPage onOpenConversation={handleOpenConversation} />;
       case "tools":

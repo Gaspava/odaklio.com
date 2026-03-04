@@ -5,7 +5,7 @@ import { useTheme } from "@/app/providers/ThemeProvider";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { IconSun, IconMoon } from "../icons/Icons";
 
-export type PageType = "home" | "history" | "tools" | "focus" | "mentor" | "analysis";
+export type PageType = "history" | "tools" | "focus" | "mentor" | "analysis";
 
 interface HeaderProps {
   activePage: PageType;
@@ -33,6 +33,15 @@ const pages: { id: PageType; label: string; icon: React.ReactNode }[] = [
         <rect x="14" y="3" width="7" height="7" rx="1.5" />
         <rect x="3" y="14" width="7" height="7" rx="1.5" />
         <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      </svg>
+    ),
+  },
+  {
+    id: "focus",
+    label: "Odak",
+    icon: (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
       </svg>
     ),
   },
@@ -92,9 +101,6 @@ export default function Header({
         .slice(0, 2)
     : "?";
 
-  const leftPages = pages.filter((p) => p.id === "history" || p.id === "tools");
-  const rightPages = pages.filter((p) => p.id === "mentor" || p.id === "analysis");
-
   return (
     <header
       className="flex items-center px-4 h-14 flex-shrink-0 relative z-10"
@@ -103,9 +109,19 @@ export default function Header({
         borderBottom: "1px solid var(--border-primary)",
       }}
     >
-      {/* Left - Nav Pills (history + tools) */}
-      <nav className="flex items-center gap-1">
-        {leftPages.map((page) => (
+      {/* Left - Logo */}
+      <div className="flex items-center flex-shrink-0">
+        <span
+          className="text-lg font-black tracking-widest select-none"
+          style={{ letterSpacing: "0.2em", fontFamily: "'Inter', sans-serif", background: "linear-gradient(90deg, #e2e8f0, #f8fafc)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
+        >
+          ODAKLIO
+        </span>
+      </div>
+
+      {/* Center - Nav Pills (absolutely centered on full page width) */}
+      <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1">
+        {pages.map((page) => (
           <button
             key={page.id}
             onClick={() => onPageChange(page.id)}
@@ -118,38 +134,8 @@ export default function Header({
         ))}
       </nav>
 
-      {/* Center - Odaklio SVG Logo (absolutely centered) */}
-      <button
-        onClick={() => onPageChange("home")}
-        className="absolute left-1/2 -translate-x-1/2 flex items-center cursor-pointer"
-        style={{
-          background: "none",
-          border: "none",
-          padding: "4px 8px",
-          borderRadius: "var(--radius-lg)",
-          transition: "var(--transition-normal)",
-          filter: activePage === "home" ? "drop-shadow(0 0 8px rgba(16, 185, 129, 0.4))" : "none",
-        }}
-        title="Ana Sayfa"
-      >
-        <img src="/odaklio-logo.svg" alt="Odaklio" style={{ height: 28 }} />
-      </button>
-
-      {/* Right - Nav Pills (mentor + analysis) + Profile Area */}
+      {/* Right - Profile Area */}
       <div className="header-profile-area ml-auto">
-        <nav className="flex items-center gap-1">
-          {rightPages.map((page) => (
-            <button
-              key={page.id}
-              onClick={() => onPageChange(page.id)}
-              className={`nav-pill ${activePage === page.id ? "active" : ""}`}
-              title={page.label}
-            >
-              <span className="flex-shrink-0">{page.icon}</span>
-              <span className="hidden sm:inline">{page.label}</span>
-            </button>
-          ))}
-        </nav>
         <button onClick={toggleTheme} className="header-icon-btn" title="Tema">
           {theme === "dark" ? <IconSun size={15} /> : <IconMoon size={15} />}
         </button>
