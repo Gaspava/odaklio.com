@@ -309,7 +309,7 @@ export default function ProfilePage() {
             <>
               {/* Overall Assessment */}
               {profile.overall_assessment && (
-                <SectionCard title="Genel Degerlendirme" icon="\u{1F4CB}">
+                <SectionCard title="Genel Degerlendirme" icon="📋">
                   <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                     {profile.overall_assessment}
                   </p>
@@ -317,7 +317,7 @@ export default function ProfilePage() {
               )}
 
               {/* Learning Style */}
-              <SectionCard title="Ogrenme Stili" icon="\u{1F9E0}">
+              <SectionCard title="Ogrenme Stili" icon="🧠">
                 <div className="space-y-0.5">
                   {profile.learning_modality && (() => {
                     const m = MODALITY_LABELS[profile.learning_modality!];
@@ -348,7 +348,7 @@ export default function ProfilePage() {
               </SectionCard>
 
               {/* Study Habits */}
-              <SectionCard title="Calisma Aliskanliklari" icon="\u{23F0}">
+              <SectionCard title="Calisma Aliskanliklari" icon="⏰">
                 <div className="space-y-0.5">
                   {profile.study_consistency && (() => {
                     const c = CONSISTENCY_LABELS[profile.study_consistency!];
@@ -392,7 +392,7 @@ export default function ProfilePage() {
               </SectionCard>
 
               {/* Academic Profile */}
-              <SectionCard title="Akademik Profil" icon="\u{1F393}">
+              <SectionCard title="Akademik Profil" icon="🎓">
                 {/* Strengths */}
                 {(strengthEntries.length > 0 || profile.strengths_text) && (
                   <div className="mb-4">
@@ -473,7 +473,7 @@ export default function ProfilePage() {
               </SectionCard>
 
               {/* Motivation */}
-              <SectionCard title="Motivasyon Profili" icon="\u{1F525}">
+              <SectionCard title="Motivasyon Profili" icon="🔥">
                 {profile.motivation_pattern && (() => {
                   const m = MOTIVATION_LABELS[profile.motivation_pattern!];
                   return m ? (
@@ -507,7 +507,7 @@ export default function ProfilePage() {
 
               {/* Tool Preferences */}
               {toolEntries.length > 0 && (
-                <SectionCard title="Arac Tercihleri" icon="\u{1F6E0}">
+                <SectionCard title="Arac Tercihleri" icon="🛠️">
                   <div className="space-y-2">
                     {toolEntries.map(([tool, pct]) => {
                       const t = TOOL_LABELS[tool];
@@ -549,7 +549,7 @@ export default function ProfilePage() {
 
               {/* Recommendations */}
               {profile.recommendations && profile.recommendations.length > 0 && (
-                <SectionCard title="Oneriler" icon="\u{1F4A1}">
+                <SectionCard title="Oneriler" icon="💡">
                   <ul className="space-y-2.5">
                     {profile.recommendations.map((rec, i) => (
                       <li key={i} className="flex items-start gap-2.5">
