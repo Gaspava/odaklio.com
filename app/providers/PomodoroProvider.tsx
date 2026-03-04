@@ -51,6 +51,42 @@ const defaultSettings: PomodoroSettings = {
   longBreakMinutes: 15,
 };
 
+const TIMER_STORAGE_KEY = "odaklio-pomodoro-timer";
+const SETTINGS_STORAGE_KEY = "odaklio-pomodoro-settings";
+
+interface TimerState {
+  isRunning: boolean;
+  isPaused: boolean;
+  mode: "work" | "break";
+  endTime: number; // timestamp when timer should end
+  pausedTimeLeft: number; // seconds left when paused
+  totalTime: number;
+  sessionId: string | null;
+  pomodoroCount: number;
+  currentSubject: string | null;
+  elapsedSeconds: number;
+}
+
+function saveTimerState(state: TimerState) {
+  try {
+    localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(state));
+  } catch { /* ignore */ }
+}
+
+function loadTimerState(): TimerState | null {
+  try {
+    const saved = localStorage.getItem(TIMER_STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch { /* ignore */ }
+  return null;
+}
+
+function clearTimerState() {
+  try {
+    localStorage.removeItem(TIMER_STORAGE_KEY);
+  } catch { /* ignore */ }
+}
+
 const PomodoroContext = createContext<PomodoroContextType>({
   isRunning: false,
   isPaused: false,
@@ -83,12 +119,9 @@ export default function PomodoroProvider({
   const { user } = useAuth();
   const { activeConversationId } = useConversation();
 
-  const [isRunning, setIsRunning] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [mode, setMode] = useState<"work" | "break">("work");
   const [settings, setSettings] = useState<PomodoroSettings>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("odaklio-pomodoro-settings");
+      const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
       if (saved) {
         try {
           return JSON.parse(saved);
@@ -99,15 +132,50 @@ export default function PomodoroProvider({
     }
     return defaultSettings;
   });
-  const [timeLeft, setTimeLeft] = useState(settings.workMinutes * 60);
-  const [totalTime, setTotalTime] = useState(settings.workMinutes * 60);
-  const [completedPomodoros, setCompletedPomodoros] = useState(0);
-  const [currentSubject, setCurrentSubject] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState("focus");
-  const [pomodoroCount, setPomodoroCount] = useState(0);
 
-  const sessionIdRef = useRef<string | null>(null);
-  const elapsedRef = useRef(0);
+  // Restore timer state from localStorage
+  const [isRunning, setIsRunning] = useState(() => {
+    const saved = loadTimerState();
+    return saved ? saved.isRunning : false;
+  });
+  const [isPaused, setIsPaused] = useState(() => {
+    const saved = loadTimerState();
+    return saved ? saved.isPaused : false;
+  });
+  const [mode, setMode] = useState<"work" | "break">(() => {
+    const saved = loadTimerState();
+    return saved ? saved.mode : "work";
+  });
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const saved = loadTimerState();
+    if (!saved || !saved.isRunning) {
+      return saved?.pausedTimeLeft || settings.workMinutes * 60;
+    }
+    if (saved.isPaused) {
+      return saved.pausedTimeLeft;
+    }
+    // Calculate remaining time from endTime
+    const remaining = Math.ceil((saved.endTime - Date.now()) / 1000);
+    return remaining > 0 ? remaining : 0;
+  });
+  const [totalTime, setTotalTime] = useState(() => {
+    const saved = loadTimerState();
+    return saved ? saved.totalTime : settings.workMinutes * 60;
+  });
+  const [completedPomodoros, setCompletedPomodoros] = useState(0);
+  const [currentSubject, setCurrentSubject] = useState<string | null>(() => {
+    const saved = loadTimerState();
+    return saved ? saved.currentSubject : null;
+  });
+  const [currentPage, setCurrentPage] = useState("focus");
+  const [pomodoroCount, setPomodoroCount] = useState(() => {
+    const saved = loadTimerState();
+    return saved ? saved.pomodoroCount : 0;
+  });
+
+  const _savedForRefs = loadTimerState();
+  const sessionIdRef = useRef<string | null>(_savedForRefs?.sessionId ?? null);
+  const elapsedRef = useRef(_savedForRefs?.elapsedSeconds ?? 0);
   const modeRef = useRef(mode);
   const settingsRef = useRef(settings);
   const pomodoroCountRef = useRef(pomodoroCount);
@@ -123,6 +191,27 @@ export default function PomodoroProvider({
   useEffect(() => { currentPageRef.current = currentPage; }, [currentPage]);
   useEffect(() => { activeConversationIdRef.current = activeConversationId; }, [activeConversationId]);
 
+  // Persist timer state whenever it changes
+  useEffect(() => {
+    if (isRunning) {
+      const endTime = isPaused ? 0 : Date.now() + timeLeft * 1000;
+      saveTimerState({
+        isRunning,
+        isPaused,
+        mode,
+        endTime,
+        pausedTimeLeft: isPaused ? timeLeft : 0,
+        totalTime,
+        sessionId: sessionIdRef.current,
+        pomodoroCount,
+        currentSubject,
+        elapsedSeconds: elapsedRef.current,
+      });
+    } else {
+      clearTimerState();
+    }
+  }, [isRunning, isPaused, mode, totalTime, pomodoroCount, currentSubject]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Load today's completed count on mount
   useEffect(() => {
     if (user) {
@@ -132,13 +221,17 @@ export default function PomodoroProvider({
     }
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Handle timer that completed while page was closed
+  useEffect(() => {
+    if (isRunning && !isPaused && timeLeft <= 0) {
+      handleTimerComplete();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Persist settings
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem(
-        "odaklio-pomodoro-settings",
-        JSON.stringify(settings)
-      );
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
     }
   }, [settings]);
 
@@ -210,6 +303,7 @@ export default function PomodoroProvider({
       elapsedRef.current = 0;
       setIsRunning(false);
       setIsPaused(false);
+      clearTimerState();
     }
   }, [user]);
 
@@ -278,6 +372,7 @@ export default function PomodoroProvider({
     setMode("work");
     setTimeLeft(settings.workMinutes * 60);
     setTotalTime(settings.workMinutes * 60);
+    clearTimerState();
 
     // Cancel DB session in background
     if (prevSessionId) {
@@ -298,6 +393,7 @@ export default function PomodoroProvider({
       setTotalTime(settings.workMinutes * 60);
       setIsRunning(false);
       setIsPaused(false);
+      clearTimerState();
 
       // Complete DB session in background
       if (prevSessionId) {
