@@ -1,4 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getUserProfile } from "@/lib/db/profile";
+import { supabase } from "@/lib/supabase";
 
 const SYSTEM_INSTRUCTION = `Sen Odaklio AI, Türkçe konuşan bir akıllı öğrenme asistanısın. Görevin öğrencilere ders konularını anlaşılır, samimi ve motive edici bir şekilde açıklamak.
 
@@ -162,6 +164,51 @@ Kuralların:
 - Kullanıcı bir adım hakkında detay isterse, o adımı genişlet.`,
 };
 
+function buildPersonalizationContext(profile: import("@/lib/db/profile").UserProfile): string {
+  const parts: string[] = [];
+  parts.push("\n\n--- ÖĞRENCİ PROFİLİ (Yanıtlarını bu profile göre kişiselleştir) ---");
+
+  if (profile.learning_modality) {
+    const labels: Record<string, string> = { gorsel: "görsel", metinsel: "metinsel", interaktif: "interaktif", karma: "karma" };
+    parts.push(`Öğrenme stili: ${labels[profile.learning_modality] || profile.learning_modality}`);
+  }
+  if (profile.preferred_depth) {
+    const labels: Record<string, string> = { yuzeysel: "yüzeysel/kısa", orta: "orta detay", derin: "derin/detaylı" };
+    parts.push(`Tercih ettiği derinlik: ${labels[profile.preferred_depth] || profile.preferred_depth}`);
+  }
+  if (profile.preferred_pace) {
+    const labels: Record<string, string> = { hizli: "hızlı", orta: "orta", detayli: "detaylı/yavaş" };
+    parts.push(`Hız tercihi: ${labels[profile.preferred_pace] || profile.preferred_pace}`);
+  }
+
+  const strengths = Object.entries(profile.subjects_strength || {}).sort(([,a],[,b]) => b - a).slice(0, 3);
+  if (strengths.length > 0) {
+    parts.push(`Güçlü konuları: ${strengths.map(([s, v]) => `${s}(${v})`).join(", ")}`);
+  }
+
+  const weaknesses = Object.entries(profile.subjects_weakness || {}).sort(([,a],[,b]) => b - a).slice(0, 3);
+  if (weaknesses.length > 0) {
+    parts.push(`Gelişim alanları: ${weaknesses.map(([s, v]) => `${s}(${v})`).join(", ")}`);
+  }
+
+  if (profile.motivation_pattern) {
+    const labels: Record<string, string> = {
+      kendini_motive_eden: "kendini motive edebiliyor",
+      tesvige_ihtiyac_duyan: "teşvike ihtiyaç duyuyor, motive et",
+      rekabetci: "rekabetçi, hedeflerle motive ol",
+      karma: "karma motivasyon",
+    };
+    parts.push(`Motivasyon: ${labels[profile.motivation_pattern] || profile.motivation_pattern}`);
+  }
+
+  if (profile.personality_summary) {
+    parts.push(`Profil: ${profile.personality_summary}`);
+  }
+
+  parts.push("Bu bilgileri kullanarak yanıtlarını öğrencinin seviyesine, öğrenme stiline ve motivasyon durumuna göre ayarla. Profili açıkça referans verme, doğal şekilde kişiselleştir.");
+  return parts.join("\n");
+}
+
 export async function POST(request: Request) {
   try {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -183,7 +230,21 @@ export async function POST(request: Request) {
       );
     }
 
-    const systemPrompt = MODE_PROMPTS[mode] || SYSTEM_INSTRUCTION;
+    let systemPrompt = MODE_PROMPTS[mode] || SYSTEM_INSTRUCTION;
+
+    // Load user profile for personalization (non-blocking, best-effort)
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const profile = await getUserProfile(session.user.id);
+        if (profile) {
+          systemPrompt += buildPersonalizationContext(profile);
+        }
+      }
+    } catch {
+      // Profile loading failed - continue without personalization
+    }
+
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: "gemini-3-flash-preview",

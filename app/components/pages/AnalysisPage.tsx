@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   IconTrendingUp,
   IconClock,
@@ -18,6 +18,7 @@ import {
   getStreakDays,
 } from "@/lib/db/analytics";
 import type { AnalyticsSummary, DailyReport } from "@/lib/db/analytics";
+import type { UserProfile } from "@/lib/db/profile";
 
 /* ===== HELPERS ===== */
 function formatStudyTime(minutes: number): string {
@@ -577,6 +578,377 @@ function StreakCard({ streak }: { streak: number }) {
   );
 }
 
+/* ===== PROFILE LABELS ===== */
+const MODALITY_LABELS: Record<string, string> = {
+  gorsel: "Gorsel",
+  metinsel: "Metinsel",
+  interaktif: "Interaktif",
+  karma: "Karma",
+};
+const DEPTH_LABELS: Record<string, string> = {
+  yuzeysel: "Yuzeysel",
+  orta: "Orta",
+  derin: "Derin",
+};
+const PACE_LABELS: Record<string, string> = {
+  hizli: "Hizli",
+  orta: "Orta",
+  detayli: "Detayli",
+};
+const CONSISTENCY_LABELS: Record<string, string> = {
+  duzensiz: "Duzensiz",
+  ara_sira: "Ara Sira",
+  orta: "Orta",
+  duzenli: "Duzenli",
+  gunluk: "Gunluk",
+};
+const MOTIVATION_LABELS: Record<string, string> = {
+  kendini_motive_eden: "Kendini Motive Eden",
+  tesvige_ihtiyac_duyan: "Tesvige Ihtiyac Duyan",
+  rekabetci: "Rekabetci",
+  karma: "Karma",
+};
+
+function ProfileBadge({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1 p-2 rounded-lg" style={{ background: "var(--bg-tertiary)" }}>
+      <span className="text-[9px] font-medium" style={{ color: "var(--text-tertiary)" }}>{label}</span>
+      <span className="text-[11px] font-bold" style={{ color }}>{value}</span>
+    </div>
+  );
+}
+
+function SubjectBar({ name, score, color }: { name: string; score: number; color: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[11px] font-medium w-20 truncate" style={{ color: "var(--text-secondary)" }}>{name}</span>
+      <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "var(--bg-tertiary)" }}>
+        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, background: color }} />
+      </div>
+      <span className="text-[10px] font-bold w-8 text-right" style={{ color }}>{score}</span>
+    </div>
+  );
+}
+
+/* ===== PROFILE CARD ===== */
+function ProfileCard({
+  profile,
+  isGenerating,
+  onRefresh,
+}: {
+  profile: UserProfile | null;
+  isGenerating: boolean;
+  onRefresh: () => void;
+}) {
+  if (isGenerating) {
+    return (
+      <div
+        className="rounded-xl p-5 transition-all"
+        style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <div
+            className="flex h-6 w-6 items-center justify-center rounded-lg"
+            style={{ background: "var(--accent-primary-light)", color: "var(--accent-primary)" }}
+          >
+            <IconBrain size={14} />
+          </div>
+          <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+            Ogrenci Profili
+          </h3>
+        </div>
+        <div className="flex flex-col items-center justify-center py-8 gap-3">
+          <div
+            className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
+            style={{ borderColor: "var(--accent-primary)", borderTopColor: "transparent" }}
+          />
+          <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
+            Profiliniz olusturuluyor...
+          </span>
+          <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+            Tum verileriniz analiz ediliyor
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div
+        className="rounded-xl p-5 transition-all"
+        style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <div
+            className="flex h-6 w-6 items-center justify-center rounded-lg"
+            style={{ background: "var(--accent-primary-light)", color: "var(--accent-primary)" }}
+          >
+            <IconBrain size={14} />
+          </div>
+          <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+            Ogrenci Profili
+          </h3>
+        </div>
+        <EmptyState message="Profil henuz olusturulmadi" />
+      </div>
+    );
+  }
+
+  const lastUpdated = new Date(profile.last_updated_at);
+  const isStale = Date.now() - lastUpdated.getTime() > 24 * 60 * 60 * 1000;
+
+  // Prepare subject data
+  const strengthEntries = Object.entries(profile.subjects_strength || {}).sort(([, a], [, b]) => b - a);
+  const weaknessEntries = Object.entries(profile.subjects_weakness || {}).sort(([, a], [, b]) => b - a);
+  const toolEntries = Object.entries(profile.preferred_tools || {}).sort(([, a], [, b]) => b - a);
+
+  const TOOL_LABELS: Record<string, string> = {
+    chat: "Sohbet",
+    flashcard: "Flashcard",
+    mindmap: "Zihin Haritasi",
+    roadmap: "Yol Haritasi",
+    note: "Not",
+    pomodoro: "Pomodoro",
+  };
+
+  return (
+    <div
+      className="rounded-xl p-5 transition-all"
+      style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div
+            className="flex h-6 w-6 items-center justify-center rounded-lg"
+            style={{ background: "var(--accent-primary-light)", color: "var(--accent-primary)" }}
+          >
+            <IconBrain size={14} />
+          </div>
+          <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+            Ogrenci Profili
+          </h3>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[9px]" style={{ color: "var(--text-tertiary)" }}>
+            {lastUpdated.toLocaleDateString("tr-TR")}
+          </span>
+          <button
+            onClick={onRefresh}
+            className="text-[10px] font-semibold px-2 py-1 rounded-md transition-all hover:scale-105"
+            style={{
+              background: isStale ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
+              color: isStale ? "var(--accent-primary)" : "var(--text-tertiary)",
+            }}
+          >
+            {isStale ? "Guncelle" : "Yenile"}
+          </button>
+        </div>
+      </div>
+
+      {/* Overall Assessment */}
+      {profile.overall_assessment && (
+        <div
+          className="rounded-lg p-3 mb-4 text-[11px] leading-relaxed"
+          style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)" }}
+        >
+          {profile.overall_assessment}
+        </div>
+      )}
+
+      {/* Profile Badges */}
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-4">
+        {profile.learning_modality && (
+          <ProfileBadge
+            label="Ogrenme"
+            value={MODALITY_LABELS[profile.learning_modality] || profile.learning_modality}
+            color="var(--accent-primary)"
+          />
+        )}
+        {profile.preferred_depth && (
+          <ProfileBadge
+            label="Derinlik"
+            value={DEPTH_LABELS[profile.preferred_depth] || profile.preferred_depth}
+            color="var(--accent-secondary)"
+          />
+        )}
+        {profile.preferred_pace && (
+          <ProfileBadge
+            label="Hiz"
+            value={PACE_LABELS[profile.preferred_pace] || profile.preferred_pace}
+            color="var(--accent-purple)"
+          />
+        )}
+        {profile.study_consistency && (
+          <ProfileBadge
+            label="Duzenilik"
+            value={CONSISTENCY_LABELS[profile.study_consistency] || profile.study_consistency}
+            color="var(--accent-success)"
+          />
+        )}
+        {profile.motivation_pattern && (
+          <ProfileBadge
+            label="Motivasyon"
+            value={MOTIVATION_LABELS[profile.motivation_pattern] || profile.motivation_pattern}
+            color="var(--accent-warning)"
+          />
+        )}
+      </div>
+
+      {/* Personality Summary */}
+      {profile.personality_summary && (
+        <div className="mb-4">
+          <div className="text-[11px] font-semibold mb-1.5" style={{ color: "var(--text-primary)" }}>
+            Profil Ozeti
+          </div>
+          <p className="text-[11px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+            {profile.personality_summary}
+          </p>
+        </div>
+      )}
+
+      {/* Strengths & Weaknesses */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        {/* Strengths */}
+        {(strengthEntries.length > 0 || profile.strengths_text) && (
+          <div className="rounded-lg p-3" style={{ background: "var(--bg-tertiary)" }}>
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className="text-[10px]">&#x2705;</span>
+              <span className="text-[11px] font-semibold" style={{ color: "var(--accent-success)" }}>
+                Guclu Yonler
+              </span>
+            </div>
+            {profile.strengths_text && (
+              <p className="text-[10px] leading-relaxed mb-2" style={{ color: "var(--text-secondary)" }}>
+                {profile.strengths_text}
+              </p>
+            )}
+            <div className="space-y-1.5">
+              {strengthEntries.slice(0, 5).map(([name, score], i) => (
+                <SubjectBar
+                  key={name}
+                  name={name}
+                  score={score}
+                  color={SUBJECT_COLORS[i % SUBJECT_COLORS.length]}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Weaknesses */}
+        {(weaknessEntries.length > 0 || profile.weaknesses_text) && (
+          <div className="rounded-lg p-3" style={{ background: "var(--bg-tertiary)" }}>
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className="text-[10px]">&#x1F4A1;</span>
+              <span className="text-[11px] font-semibold" style={{ color: "var(--accent-warning)" }}>
+                Gelisim Alanlari
+              </span>
+            </div>
+            {profile.weaknesses_text && (
+              <p className="text-[10px] leading-relaxed mb-2" style={{ color: "var(--text-secondary)" }}>
+                {profile.weaknesses_text}
+              </p>
+            )}
+            <div className="space-y-1.5">
+              {weaknessEntries.slice(0, 5).map(([name, score]) => (
+                <SubjectBar
+                  key={name}
+                  name={name}
+                  score={score}
+                  color="#f59e0b"
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Tool Preferences */}
+      {toolEntries.length > 0 && (
+        <div className="mb-4">
+          <div className="text-[11px] font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
+            Arac Tercihleri
+          </div>
+          <div className="flex gap-1.5 flex-wrap">
+            {toolEntries.map(([tool, pct]) => (
+              <span
+                key={tool}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold"
+                style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)" }}
+              >
+                {TOOL_LABELS[tool] || tool}
+                <span style={{ color: "var(--accent-primary)" }}>%{pct}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Peak Hours */}
+      {profile.peak_study_hours && profile.peak_study_hours.length > 0 && (
+        <div className="mb-4">
+          <div className="text-[11px] font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
+            Verimli Saatler
+          </div>
+          <div className="flex gap-1.5 flex-wrap">
+            {profile.peak_study_hours.map((h) => (
+              <span
+                key={h}
+                className="inline-flex items-center justify-center w-10 h-7 rounded-md text-[10px] font-bold"
+                style={{ background: "var(--accent-primary-light)", color: "var(--accent-primary)" }}
+              >
+                {h}:00
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recommendations */}
+      {profile.recommendations && profile.recommendations.length > 0 && (
+        <div>
+          <div className="text-[11px] font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
+            Oneriler
+          </div>
+          <ul className="space-y-1.5">
+            {profile.recommendations.map((rec, i) => (
+              <li
+                key={i}
+                className="flex items-start gap-2 text-[11px] leading-relaxed"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                <span
+                  className="flex-shrink-0 w-1.5 h-1.5 rounded-full mt-1.5"
+                  style={{ background: "var(--accent-primary)" }}
+                />
+                {rec}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Frustration Signals */}
+      {profile.frustration_signals && profile.frustration_signals.length > 0 && (
+        <div className="mt-3 rounded-lg p-2.5" style={{ background: "rgba(239, 68, 68, 0.05)" }}>
+          <div className="text-[10px] font-semibold mb-1" style={{ color: "var(--accent-danger)" }}>
+            Dikkat Edilmesi Gerekenler
+          </div>
+          <ul className="space-y-0.5">
+            {profile.frustration_signals.map((signal, i) => (
+              <li key={i} className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                {signal.replace(/_/g, " ")}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ===== LLM REPORT ===== */
 function LlmReportCard({ report }: { report: DailyReport | null }) {
   return (
@@ -655,8 +1027,25 @@ export default function AnalysisPage() {
   const [report, setReport] = useState<DailyReport | null>(null);
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isGeneratingProfile, setIsGeneratingProfile] = useState(false);
 
   const periodDays = period === "week" ? 7 : period === "month" ? 30 : 365;
+
+  const generateProfile = useCallback(async () => {
+    setIsGeneratingProfile(true);
+    try {
+      const res = await fetch("/api/user-profile", { method: "POST" });
+      const data = await res.json();
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      console.error("Failed to generate profile:", err);
+    } finally {
+      setIsGeneratingProfile(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -665,11 +1054,27 @@ export default function AnalysisPage() {
       getAnalyticsSummary(user.id, periodDays),
       getLatestDailyReport(user.id),
       getStreakDays(user.id),
+      // Fetch existing profile
+      fetch("/api/user-profile").then((r) => r.json()).catch(() => ({ profile: null })),
     ])
-      .then(([s, r, st]) => {
+      .then(([s, r, st, profileRes]) => {
         setSummary(s);
         setReport(r);
         setStreak(st);
+        setProfile(profileRes.profile || null);
+
+        // Auto-generate profile if it doesn't exist or is stale (>24h)
+        const existingProfile = profileRes.profile;
+        if (!existingProfile) {
+          // No profile yet - generate immediately
+          generateProfile();
+        } else {
+          const age = Date.now() - new Date(existingProfile.last_updated_at).getTime();
+          if (age > 24 * 60 * 60 * 1000) {
+            // Profile is stale - auto-refresh
+            generateProfile();
+          }
+        }
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -702,6 +1107,13 @@ export default function AnalysisPage() {
           </div>
           <PeriodSelector period={period} onChange={setPeriod} />
         </div>
+
+        {/* Profile Card - Top of page */}
+        <ProfileCard
+          profile={profile}
+          isGenerating={isGeneratingProfile}
+          onRefresh={generateProfile}
+        />
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
