@@ -162,7 +162,7 @@ function SubjectBarChart({
 
 /* ===== PROFILE PAGE ===== */
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -171,18 +171,25 @@ export default function ProfilePage() {
 
   const fetchProfile = useCallback(async () => {
     try {
-      const res = await fetch("/api/user-profile");
+      const token = session?.access_token;
+      const res = await fetch("/api/user-profile", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {} as Record<string, string>,
+      });
       const data = await res.json();
       return data.profile || null;
     } catch {
       return null;
     }
-  }, []);
+  }, [session?.access_token]);
 
   const generateProfile = useCallback(async () => {
     setGenerating(true);
     try {
-      const res = await fetch("/api/user-profile", { method: "POST" });
+      const token = session?.access_token;
+      const res = await fetch("/api/user-profile", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {} as Record<string, string>,
+      });
       const data = await res.json();
       if (data.profile) {
         setProfile(data.profile);

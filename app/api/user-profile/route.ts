@@ -1,7 +1,22 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { aggregateAllUserData, upsertUserProfile } from "@/lib/db/profile";
+import { aggregateAllUserData, upsertUserProfile, getUserProfile } from "@/lib/db/profile";
 import type { AggregatedUserData } from "@/lib/db/profile";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
+
+function createUserClient(accessToken: string) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const anonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY)!;
+  const client = createClient(url, anonKey, {
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+  });
+  return client;
+}
+
+function extractToken(request: Request): string | null {
+  const auth = request.headers.get("Authorization");
+  if (!auth?.startsWith("Bearer ")) return null;
+  return auth.slice(7);
+}
 
 function buildProfilePrompt(data: AggregatedUserData): string {
   // Build compact but comprehensive data summary
@@ -169,15 +184,21 @@ export async function POST(request: Request) {
       return Response.json({ error: "API key missing" }, { status: 500 });
     }
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
+    const token = extractToken(request);
+    if (!token) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userClient = createUserClient(token);
+    const { data: { user } } = await userClient.auth.getUser();
+    if (!user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = user.id;
 
     // Aggregate all user data
-    const aggregatedData = await aggregateAllUserData(userId);
+    const aggregatedData = await aggregateAllUserData(userId, userClient);
     const dataPrompt = buildProfilePrompt(aggregatedData);
 
     // Call Gemini
@@ -231,7 +252,7 @@ export async function POST(request: Request) {
         totalConversations: aggregatedData.totalConversations,
         studyDaysLast30: aggregatedData.studyDaysLast30,
       },
-    });
+    }, userClient);
 
     return Response.json({ profile: savedProfile });
   } catch (error) {
@@ -242,15 +263,20 @@ export async function POST(request: Request) {
 }
 
 // GET endpoint to fetch existing profile
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
+    const token = extractToken(request);
+    if (!token) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { getUserProfile } = await import("@/lib/db/profile");
-    const profile = await getUserProfile(session.user.id);
+    const userClient = createUserClient(token);
+    const { data: { user } } = await userClient.auth.getUser();
+    if (!user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const profile = await getUserProfile(user.id, userClient);
     return Response.json({ profile });
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";

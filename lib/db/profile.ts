@@ -1,4 +1,5 @@
-import { supabase } from "@/lib/supabase";
+import { supabase as defaultSupabase } from "@/lib/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface UserProfile {
   id: string;
@@ -44,8 +45,9 @@ export interface UserProfile {
   created_at: string;
 }
 
-export async function getUserProfile(userId: string): Promise<UserProfile | null> {
-  const { data, error } = await supabase
+export async function getUserProfile(userId: string, client?: SupabaseClient): Promise<UserProfile | null> {
+  const db = client ?? defaultSupabase;
+  const { data, error } = await db
     .from("user_profiles")
     .select("*")
     .eq("user_id", userId)
@@ -59,9 +61,11 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 
 export async function upsertUserProfile(
   userId: string,
-  profile: Partial<UserProfile>
+  profile: Partial<UserProfile>,
+  client?: SupabaseClient
 ): Promise<UserProfile> {
-  const { data, error } = await supabase
+  const db = client ?? defaultSupabase;
+  const { data, error } = await db
     .from("user_profiles")
     .upsert(
       {
@@ -129,7 +133,8 @@ export interface AggregatedUserData {
   recentReportSummaries: string[];
 }
 
-export async function aggregateAllUserData(userId: string): Promise<AggregatedUserData> {
+export async function aggregateAllUserData(userId: string, client?: SupabaseClient): Promise<AggregatedUserData> {
+  const db = client ?? defaultSupabase;
   // Fetch all data in parallel
   const [
     pomodoroRes,
@@ -141,7 +146,7 @@ export async function aggregateAllUserData(userId: string): Promise<AggregatedUs
     dailyReportRes,
   ] = await Promise.all([
     // All pomodoro sessions
-    supabase
+    db
       .from("pomodoro_sessions")
       .select("subject, session_type, duration_minutes, actual_seconds, status, started_at, page_context")
       .eq("user_id", userId)
@@ -149,39 +154,39 @@ export async function aggregateAllUserData(userId: string): Promise<AggregatedUs
       .order("started_at", { ascending: false }),
 
     // All conversations
-    supabase
+    db
       .from("conversations")
       .select("id, title, type, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false }),
 
     // All interactions
-    supabase
+    db
       .from("user_interactions")
       .select("interaction_type, subject, created_at")
       .eq("user_id", userId),
 
     // Page tracking
-    supabase
+    db
       .from("page_tracking")
       .select("page_name, duration_seconds, started_at")
       .eq("user_id", userId)
       .gt("duration_seconds", 2),
 
     // Saved flashcards count
-    supabase
+    db
       .from("saved_flashcards")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId),
 
     // Notes count
-    supabase
+    db
       .from("user_notes")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId),
 
     // Recent daily reports
-    supabase
+    db
       .from("daily_reports")
       .select("llm_analysis, report_date, total_study_minutes, streak_days")
       .eq("user_id", userId)
@@ -306,7 +311,7 @@ export async function aggregateAllUserData(userId: string): Promise<AggregatedUs
   }
 
   // Account age
-  const { data: userData } = await supabase.auth.getUser();
+  const { data: userData } = await db.auth.getUser();
   const accountCreatedAt = userData?.user?.created_at || null;
   const totalDaysActive = accountCreatedAt
     ? Math.floor((Date.now() - new Date(accountCreatedAt).getTime()) / (1000 * 60 * 60 * 24))

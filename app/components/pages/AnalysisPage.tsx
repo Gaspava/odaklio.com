@@ -1021,7 +1021,7 @@ function LlmReportCard({ report }: { report: DailyReport | null }) {
 
 /* ===== ANALYSIS PAGE ===== */
 export default function AnalysisPage() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [period, setPeriod] = useState<"week" | "month" | "all">("week");
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [report, setReport] = useState<DailyReport | null>(null);
@@ -1035,7 +1035,11 @@ export default function AnalysisPage() {
   const generateProfile = useCallback(async () => {
     setIsGeneratingProfile(true);
     try {
-      const res = await fetch("/api/user-profile", { method: "POST" });
+      const token = session?.access_token;
+      const res = await fetch("/api/user-profile", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {} as Record<string, string>,
+      });
       const data = await res.json();
       if (data.profile) {
         setProfile(data.profile);
@@ -1045,17 +1049,19 @@ export default function AnalysisPage() {
     } finally {
       setIsGeneratingProfile(false);
     }
-  }, []);
+  }, [session?.access_token]);
 
   useEffect(() => {
     if (!user) return;
     setLoading(true);
+    const token = session?.access_token;
+    const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
     Promise.all([
       getAnalyticsSummary(user.id, periodDays),
       getLatestDailyReport(user.id),
       getStreakDays(user.id),
       // Fetch existing profile
-      fetch("/api/user-profile").then((r) => r.json()).catch(() => ({ profile: null })),
+      fetch("/api/user-profile", { headers: authHeaders }).then((r) => r.json()).catch(() => ({ profile: null })),
     ])
       .then(([s, r, st, profileRes]) => {
         setSummary(s);
