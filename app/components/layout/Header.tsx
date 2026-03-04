@@ -115,7 +115,7 @@ export default function Header({
       <div className="flex items-center flex-shrink-0">
         <span
           className="text-lg font-black tracking-widest select-none"
-          style={{ letterSpacing: "0.2em", fontFamily: "'Inter', sans-serif", background: "linear-gradient(90deg, #e2e8f0, #f8fafc)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
+          style={{ letterSpacing: "0.2em", fontFamily: "'Inter', sans-serif", background: theme === "dark" ? "linear-gradient(90deg, #e2e8f0, #f8fafc)" : "linear-gradient(90deg, #1e293b, #334155)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
         >
           ODAKLIO
         </span>
