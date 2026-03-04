@@ -85,11 +85,12 @@ export async function getAnalyticsSummary(
       i.interaction_type === "flashcard_flipped"
   ).length;
 
+  // Build subject breakdown from pomodoro sessions (LLM-classified subjects)
   const subjectBreakdown: Record<string, number> = {};
-  for (const p of pages) {
-    const subject = p.content_subject || "Genel";
+  for (const p of completedPomodoros) {
+    const subject = p.subject || "Genel";
     subjectBreakdown[subject] =
-      (subjectBreakdown[subject] || 0) + Math.round(p.duration_seconds / 60);
+      (subjectBreakdown[subject] || 0) + Math.round(p.actual_seconds / 60);
   }
 
   const dailyMap: Record<string, number> = {};

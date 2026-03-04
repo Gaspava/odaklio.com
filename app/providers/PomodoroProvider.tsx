@@ -15,6 +15,7 @@ import {
   createPomodoroSession,
   completePomodoroSession,
   cancelPomodoroSession,
+  updatePomodoroSubject,
   getTodayPomodoros,
 } from "@/lib/db/pomodoro";
 
@@ -149,9 +150,10 @@ export default function PomodoroProvider({
     const currentCount = pomodoroCountRef.current;
 
     // Complete current session in DB
-    if (sessionIdRef.current) {
+    const completedSessionId = sessionIdRef.current;
+    if (completedSessionId) {
       try {
-        await completePomodoroSession(sessionIdRef.current, elapsedRef.current);
+        await completePomodoroSession(completedSessionId, elapsedRef.current);
       } catch (e) {
         console.error("Failed to complete pomodoro session:", e);
       }
@@ -159,6 +161,22 @@ export default function PomodoroProvider({
     }
 
     if (currentMode === "work") {
+      // Classify subject via LLM in background (fire-and-forget)
+      const subjectTitle = currentSubjectRef.current;
+      if (completedSessionId && subjectTitle) {
+        fetch("/api/classify-subject", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: subjectTitle }),
+        })
+          .then((res) => res.json())
+          .then(({ subject }) => {
+            if (subject) {
+              updatePomodoroSubject(completedSessionId, subject).catch(console.error);
+            }
+          })
+          .catch(console.error);
+      }
       const newCount = currentCount + 1;
       setPomodoroCount(newCount);
       setCompletedPomodoros((prev) => prev + 1);

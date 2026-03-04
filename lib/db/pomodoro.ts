@@ -73,6 +73,17 @@ export async function cancelPomodoroSession(
   if (error) throw error;
 }
 
+export async function updatePomodoroSubject(
+  sessionId: string,
+  subject: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("pomodoro_sessions")
+    .update({ subject })
+    .eq("id", sessionId);
+  if (error) throw error;
+}
+
 export async function getTodayPomodoros(userId: string): Promise<number> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
