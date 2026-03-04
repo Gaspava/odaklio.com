@@ -92,7 +92,7 @@ export default function KayitPage() {
       setError(translateError(result.error));
       setLoading(false);
     } else {
-      router.push("/");
+      router.push("/odak");
     }
   };
 

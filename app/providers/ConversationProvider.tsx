@@ -118,17 +118,8 @@ export default function ConversationProvider({ children }: { children: ReactNode
     }
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync URL with active conversation
-  useEffect(() => {
-    if (activeConversationId) {
-      const url = `/chat/${activeConversationId}`;
-      if (window.location.pathname !== url) {
-        window.history.replaceState({}, "", url);
-      }
-    } else if (window.location.pathname.startsWith("/chat/")) {
-      window.history.replaceState({}, "", "/");
-    }
-  }, [activeConversationId]);
+  // URL sync is now handled by Dashboard via router.push
+  // No manual history manipulation needed
 
   const refreshConversations = useCallback(async () => {
     if (!user) return;

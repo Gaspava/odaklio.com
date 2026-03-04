@@ -3,12 +3,13 @@
 import { useEffect, use } from "react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useConversation } from "@/app/providers/ConversationProvider";
-import LandingPage from "@/app/components/landing/LandingPage";
+import AuthGuard from "@/app/components/auth/AuthGuard";
 import Dashboard from "@/app/components/dashboard/Dashboard";
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { isAuthenticated, loading, logout } = useAuth();
+  const { logout } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { loadConversation, activeConversationId } = useConversation();
 
   useEffect(() => {
@@ -17,17 +18,9 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     }
   }, [isAuthenticated, id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (loading) {
-    return (
-      <div style={{ background: "var(--bg-primary)", height: "100dvh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div className="auth-spinner" style={{ width: 32, height: 32 }} />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <LandingPage />;
-  }
-
-  return <Dashboard onLogout={logout} initialPage="focus" />;
+  return (
+    <AuthGuard>
+      <Dashboard onLogout={logout} initialPage="focus" />
+    </AuthGuard>
+  );
 }

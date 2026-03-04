@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Header, { type PageType } from "../layout/Header";
 import MiniSidebar from "../layout/MiniSidebar";
 import ChatHistorySidebar from "../layout/ChatHistorySidebar";
@@ -29,6 +30,7 @@ import { useTheme } from "@/app/providers/ThemeProvider";
 import { useConversation } from "@/app/providers/ConversationProvider";
 import { usePageTracking } from "@/app/providers/PageTrackingProvider";
 import { usePomodoro } from "@/app/providers/PomodoroProvider";
+import { PAGE_ROUTES } from "@/lib/routes";
 
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(false);
@@ -49,6 +51,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
+  const router = useRouter();
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
   const [chatStyle, setChatStyle] = useState<ChatStyle>("standard");
@@ -213,6 +216,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
 
   const handlePageChange = (page: PageType) => {
     setActivePage(page);
+    router.push(PAGE_ROUTES[page]);
     if (isMobile) {
       setLeftOpen(false);
       setRightOpen(false);
@@ -234,6 +238,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
         setChatKey((k) => k + 1);
         setShowModeSelector(false);
         setActivePage("focus");
+        router.push(`/chat/${id}`);
         if (isMobile) {
           setLeftOpen(false);
           setRightOpen(false);
@@ -245,12 +250,13 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       setChatStyle("standard");
       setChatKey((k) => k + 1);
       setActivePage("focus");
+      router.push("/odak");
       if (isMobile) {
         setLeftOpen(false);
         setRightOpen(false);
       }
     }
-  }, [loadConversation, startNewConversation, isMobile, conversations]);
+  }, [loadConversation, startNewConversation, isMobile, conversations, router]);
 
   const showSidePanels = activePage === "focus";
 

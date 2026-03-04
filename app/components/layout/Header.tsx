@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { IconSun, IconMoon } from "../icons/Icons";
+import { PAGE_ROUTES } from "@/lib/routes";
 
 export type PageType = "history" | "tools" | "focus" | "mentor" | "analysis";
 
@@ -122,15 +124,16 @@ export default function Header({
       {/* Center - Nav Pills (absolutely centered on full page width) */}
       <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1">
         {pages.map((page) => (
-          <button
+          <Link
             key={page.id}
+            href={PAGE_ROUTES[page.id]}
             onClick={() => onPageChange(page.id)}
             className={`nav-pill ${activePage === page.id ? "active" : ""}`}
             title={page.label}
           >
             <span className="flex-shrink-0">{page.icon}</span>
             <span className="hidden sm:inline">{page.label}</span>
-          </button>
+          </Link>
         ))}
       </nav>
 
