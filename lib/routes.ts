@@ -1,7 +1,7 @@
 import type { PageType } from "@/app/components/layout/Header";
 
 export const PAGE_ROUTES: Record<PageType, string> = {
-  focus: "/odak",
+  focus: "/",
   history: "/gecmis",
   tools: "/araclar",
   mentor: "/mentor",
@@ -9,7 +9,7 @@ export const PAGE_ROUTES: Record<PageType, string> = {
 };
 
 export const ROUTE_TO_PAGE: Record<string, PageType> = {
-  "/odak": "focus",
+  "/": "focus",
   "/gecmis": "history",
   "/araclar": "tools",
   "/mentor": "mentor",

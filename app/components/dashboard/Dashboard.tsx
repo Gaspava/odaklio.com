@@ -250,7 +250,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       setChatStyle("standard");
       setChatKey((k) => k + 1);
       setActivePage("focus");
-      router.push("/odak");
+      router.push("/");
       if (isMobile) {
         setLeftOpen(false);
         setRightOpen(false);

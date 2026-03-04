@@ -1,21 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/providers/AuthProvider";
 import LandingPage from "./components/landing/LandingPage";
+import AuthGuard from "./components/auth/AuthGuard";
+import Dashboard from "./components/dashboard/Dashboard";
 
 export default function Home() {
-  const { isAuthenticated, loading } = useAuth();
-  const router = useRouter();
+  const { isAuthenticated, loading, logout } = useAuth();
 
-  useEffect(() => {
-    if (!loading && isAuthenticated) {
-      router.replace("/odak");
-    }
-  }, [loading, isAuthenticated, router]);
-
-  if (loading || isAuthenticated) {
+  if (loading) {
     return (
       <div style={{ background: "var(--bg-primary)", height: "100dvh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="auth-spinner" style={{ width: 32, height: 32 }} />
@@ -23,5 +16,13 @@ export default function Home() {
     );
   }
 
-  return <LandingPage />;
+  if (!isAuthenticated) {
+    return <LandingPage />;
+  }
+
+  return (
+    <AuthGuard>
+      <Dashboard onLogout={logout} initialPage="focus" />
+    </AuthGuard>
+  );
 }

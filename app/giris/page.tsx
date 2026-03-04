@@ -33,7 +33,7 @@ export default function GirisPage() {
       setError(translateError(result.error));
       setLoading(false);
     } else {
-      router.push("/odak");
+      router.push("/");
     }
   };
 
@@ -77,7 +77,7 @@ export default function GirisPage() {
       setError(translateError(result.error));
       setLoading(false);
     } else {
-      router.push("/odak");
+      router.push("/");
     }
   };
 
