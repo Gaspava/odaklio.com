@@ -579,7 +579,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                           className="flex items-center gap-1 h-8 px-2 rounded-xl text-[11px] font-medium transition-all"
                           style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
                         >
-                          <span style={{ filter: "grayscale(1)" }}>{STYLE_OPTIONS.find(s => s.id === selectedStyle)?.emoji}</span>
+                          
                           <span className="hidden sm:inline">{STYLE_OPTIONS.find(s => s.id === selectedStyle)?.label}</span>
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: styleDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
                             <polyline points="6 9 12 15 18 9"/>
@@ -602,7 +602,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                                   fontWeight: selectedStyle === s.id ? 600 : 400,
                                 }}
                               >
-                                <span style={{ filter: "grayscale(1)" }}>{s.emoji}</span>
+                                
                                 <span>{s.label}</span>
                               </button>
                             ))}
@@ -628,27 +628,6 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                 </div>
               </div>
 
-              {/* Quick Prompts - desktop only */}
-              {!isMobile && (
-                <div className="flex flex-wrap justify-center gap-2.5 max-w-[600px]">
-                  {quickPrompts.map((prompt, i) => (
-                    <button
-                      key={prompt.text}
-                      onClick={() => setInput(prompt.text)}
-                      className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md stagger-children"
-                      style={{
-                        background: "var(--bg-card)",
-                        border: "1px solid var(--border-primary)",
-                        color: "var(--text-secondary)",
-                        animationDelay: `${0.4 + i * 0.08}s`,
-                      }}
-                    >
-                      <span className="text-sm" style={{ filter: "grayscale(1)" }}>{prompt.icon}</span>
-                      <span>{prompt.text}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           ) : (
             /* Chat Messages */
@@ -809,7 +788,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                     className="flex items-center gap-1 h-8 px-2 rounded-xl text-[11px] font-medium transition-all"
                     style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
                   >
-                    <span style={{ filter: "grayscale(1)" }}>{STYLE_OPTIONS.find(s => s.id === selectedStyle)?.emoji}</span>
+                    
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: styleDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
                       <polyline points="6 9 12 15 18 9"/>
                     </svg>
@@ -831,7 +810,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                             fontWeight: selectedStyle === s.id ? 600 : 400,
                           }}
                         >
-                          <span style={{ filter: "grayscale(1)" }}>{s.emoji}</span>
+                          
                           <span>{s.label}</span>
                         </button>
                       ))}
