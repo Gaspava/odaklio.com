@@ -15,20 +15,24 @@ export interface DailyReport {
   created_at: string;
 }
 
+export interface PageSession {
+  page_name: string;
+  content_title: string | null;
+  content_subject: string | null;
+  duration_seconds: number;
+  started_at: string;
+}
+
 export interface AnalyticsSummary {
   totalStudyMinutes: number;
-  totalPomodoros: number;
+  activeDaysLast30: number;
   totalMessages: number;
   totalFlashcards: number;
   subjectBreakdown: Record<string, number>;
   dailyStudyHours: { date: string; hours: number }[];
   heatmapData: { date: string; level: number }[];
-  recentSessions: {
-    type: string;
-    subject: string | null;
-    duration: number;
-    date: string;
-  }[];
+  recentPageSessions: PageSession[];
+  pageTimeDistribution: Record<string, number>;
 }
 
 export async function getAnalyticsSummary(
@@ -40,41 +44,41 @@ export async function getAnalyticsSummary(
   since.setHours(0, 0, 0, 0);
   const sinceISO = since.toISOString();
 
-  const [pageRes, pomodoroRes, interactionRes] = await Promise.all([
+  const since30 = new Date();
+  since30.setDate(since30.getDate() - 30);
+  since30.setHours(0, 0, 0, 0);
+  const since30ISO = since30.toISOString();
+
+  const [pageRes, interactionRes, page30Res] = await Promise.all([
     supabase
       .from("page_tracking")
-      .select("page_name, content_subject, duration_seconds, started_at")
+      .select("page_name, content_subject, content_title, duration_seconds, started_at")
       .eq("user_id", userId)
       .gte("started_at", sinceISO)
       .order("started_at", { ascending: true }),
-    supabase
-      .from("pomodoro_sessions")
-      .select("subject, actual_seconds, started_at, status, session_type")
-      .eq("user_id", userId)
-      .eq("session_type", "work")
-      .gte("started_at", sinceISO)
-      .order("started_at", { ascending: false }),
     supabase
       .from("user_interactions")
       .select("interaction_type, subject, created_at")
       .eq("user_id", userId)
       .gte("created_at", sinceISO),
+    supabase
+      .from("page_tracking")
+      .select("started_at")
+      .eq("user_id", userId)
+      .gte("started_at", since30ISO),
   ]);
 
   if (pageRes.error) throw pageRes.error;
-  if (pomodoroRes.error) throw pomodoroRes.error;
   if (interactionRes.error) throw interactionRes.error;
+  if (page30Res.error) throw page30Res.error;
 
   const pages = pageRes.data || [];
-  const pomodoros = pomodoroRes.data || [];
   const interactions = interactionRes.data || [];
+  const pages30 = page30Res.data || [];
 
   const totalStudyMinutes = Math.round(
     pages.reduce((sum, p) => sum + p.duration_seconds, 0) / 60
   );
-
-  const completedPomodoros = pomodoros.filter((p) => p.status === "completed");
-  const totalPomodoros = completedPomodoros.length;
 
   const totalMessages = interactions.filter(
     (i) => i.interaction_type === "message_sent"
@@ -85,12 +89,30 @@ export async function getAnalyticsSummary(
       i.interaction_type === "flashcard_flipped"
   ).length;
 
-  // Build subject breakdown from pomodoro sessions (LLM-classified subjects)
+  // activeDaysLast30 — distinct days from page_tracking in last 30 days
+  const distinctDays30 = new Set(
+    pages30.map((p) => new Date(p.started_at).toISOString().split("T")[0])
+  );
+  const activeDaysLast30 = distinctDays30.size;
+
+  // subjectBreakdown — from page_tracking.content_subject
   const subjectBreakdown: Record<string, number> = {};
-  for (const p of completedPomodoros) {
-    const subject = p.subject || "Genel";
-    subjectBreakdown[subject] =
-      (subjectBreakdown[subject] || 0) + Math.round(p.actual_seconds / 60);
+  for (const p of pages) {
+    if (!p.content_subject) continue;
+    subjectBreakdown[p.content_subject] =
+      (subjectBreakdown[p.content_subject] || 0) + Math.round(p.duration_seconds / 60);
+  }
+
+  // pageTimeDistribution — page_name → total minutes
+  const pageTimeDistribution: Record<string, number> = {};
+  for (const p of pages) {
+    const name = p.page_name || "diger";
+    pageTimeDistribution[name] =
+      (pageTimeDistribution[name] || 0) + p.duration_seconds / 60;
+  }
+  // Round all values
+  for (const key of Object.keys(pageTimeDistribution)) {
+    pageTimeDistribution[key] = Math.round(pageTimeDistribution[key]);
   }
 
   const dailyMap: Record<string, number> = {};
@@ -118,22 +140,29 @@ export async function getAnalyticsSummary(
     heatmapData.push({ date: dateStr, level });
   }
 
-  const recentSessions = completedPomodoros.slice(0, 10).map((p) => ({
-    type: "Pomodoro",
-    subject: p.subject,
-    duration: Math.round(p.actual_seconds / 60),
-    date: p.started_at,
-  }));
+  // recentPageSessions — last 10 page_tracking records with duration > 30s
+  const recentPageSessions: PageSession[] = pages
+    .filter((p) => p.duration_seconds > 30)
+    .slice(-10)
+    .reverse()
+    .map((p) => ({
+      page_name: p.page_name,
+      content_title: p.content_title ?? null,
+      content_subject: p.content_subject ?? null,
+      duration_seconds: p.duration_seconds,
+      started_at: p.started_at,
+    }));
 
   return {
     totalStudyMinutes,
-    totalPomodoros,
+    activeDaysLast30,
     totalMessages,
     totalFlashcards,
     subjectBreakdown,
     dailyStudyHours,
     heatmapData,
-    recentSessions,
+    recentPageSessions,
+    pageTimeDistribution,
   };
 }
 

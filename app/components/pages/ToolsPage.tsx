@@ -584,9 +584,7 @@ function PomodoroDetail({ onBack }: { onBack: () => void }) {
   } = usePomodoro();
 
   const [showSettings, setShowSettings] = useState(false);
-  const [recentSessions, setRecentSessions] = useState<PomodoroSession[]>([]);
-  const [loadingSessions, setLoadingSessions] = useState(true);
-  const [todayStats, setTodayStats] = useState({ totalMinutes: 0, count: 0 });
+  const [todayStats, setTodayStats] = useState({ totalMinutes: 0, count: 0, total: 0 });
 
   const displayMinutes = Math.floor(timeLeft / 60);
   const displaySeconds = timeLeft % 60;
@@ -594,27 +592,27 @@ function PomodoroDetail({ onBack }: { onBack: () => void }) {
   const circumference = 2 * Math.PI * 70;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
   const modeColor = mode === "work" ? "var(--accent-primary)" : "var(--accent-cyan)";
-  const dailyGoal = 4;
-  const goalProgress = Math.min((completedPomodoros / dailyGoal) * 100, 100);
 
-  // Load recent sessions and today's stats
+  const completionPct = todayStats.total > 0
+    ? Math.round((todayStats.count / todayStats.total) * 100)
+    : completedPomodoros > 0 ? 100 : 0;
+
+  // Load today's stats from pomodoro_sessions
   useEffect(() => {
     if (!user) return;
-    setLoadingSessions(true);
-    getRecentSessions(user.id, 8).then((sessions) => {
-      setRecentSessions(sessions);
-      // Calculate today's stats
+    getRecentSessions(user.id, 20).then((sessions) => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todaySessions = sessions.filter(
-        (s) => s.status === "completed" && new Date(s.started_at) >= today
+        (s) => new Date(s.started_at) >= today
       );
+      const completed = todaySessions.filter((s) => s.status === "completed");
       setTodayStats({
-        count: todaySessions.length,
-        totalMinutes: todaySessions.reduce((sum, s) => sum + Math.round(s.actual_seconds / 60), 0),
+        count: completed.length,
+        totalMinutes: completed.reduce((sum, s) => sum + Math.round(s.actual_seconds / 60), 0),
+        total: todaySessions.length,
       });
-      setLoadingSessions(false);
-    }).catch(() => setLoadingSessions(false));
+    }).catch(() => {});
   }, [user, completedPomodoros]);
 
   const handlePlayPause = () => {
@@ -623,16 +621,6 @@ function PomodoroDetail({ onBack }: { onBack: () => void }) {
     } else {
       start();
     }
-  };
-
-  const formatSessionDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    const today = new Date();
-    if (d.toDateString() === today.toDateString()) return "Bugun";
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (d.toDateString() === yesterday.toDateString()) return "Dun";
-    return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
   };
 
   return (
@@ -659,26 +647,6 @@ function PomodoroDetail({ onBack }: { onBack: () => void }) {
         >
           <IconSettings size={16} />
         </button>
-      </div>
-
-      {/* Today's Quick Stats */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-xl p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
-          <div className="text-lg font-bold" style={{ color: "var(--accent-primary)" }}>{completedPomodoros}</div>
-          <div className="text-[9px] font-medium" style={{ color: "var(--text-tertiary)" }}>Pomodoro</div>
-        </div>
-        <div className="rounded-xl p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
-          <div className="text-lg font-bold" style={{ color: "var(--accent-cyan)" }}>
-            {todayStats.totalMinutes > 0 ? `${todayStats.totalMinutes}` : "0"}
-          </div>
-          <div className="text-[9px] font-medium" style={{ color: "var(--text-tertiary)" }}>Dakika</div>
-        </div>
-        <div className="rounded-xl p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
-          <div className="text-lg font-bold" style={{ color: "var(--accent-warning)" }}>
-            {dailyGoal - completedPomodoros > 0 ? dailyGoal - completedPomodoros : 0}
-          </div>
-          <div className="text-[9px] font-medium" style={{ color: "var(--text-tertiary)" }}>Kalan</div>
-        </div>
       </div>
 
       {/* Timer Card */}
@@ -776,26 +744,27 @@ function PomodoroDetail({ onBack }: { onBack: () => void }) {
             </button>
           )}
         </div>
+      </div>
 
-        {/* Daily Goal Progress */}
-        <div className="w-full max-w-[300px]">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-medium" style={{ color: "var(--text-tertiary)" }}>Gunluk Hedef</span>
-            <span className="text-[11px] font-bold" style={{ color: goalProgress >= 100 ? "var(--accent-success)" : "var(--accent-primary)" }}>
-              {completedPomodoros}/{dailyGoal}
-              {goalProgress >= 100 && " ✓"}
-            </span>
+      {/* Today's Stats */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-xl p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
+          <div className="text-lg font-bold" style={{ color: "var(--accent-primary)" }}>
+            {todayStats.count} <span className="text-base">&#x1F345;</span>
           </div>
-          <div className="h-2.5 w-full overflow-hidden rounded-full" style={{ background: "var(--bg-tertiary)" }}>
-            <div
-              className="h-full rounded-full transition-all duration-700 ease-out"
-              style={{
-                width: `${goalProgress}%`,
-                background: goalProgress >= 100 ? "var(--accent-success)" : "var(--gradient-primary)",
-                boxShadow: goalProgress > 0 ? "var(--shadow-glow-sm)" : "none",
-              }}
-            />
+          <div className="text-[9px] font-medium" style={{ color: "var(--text-tertiary)" }}>Bugun</div>
+        </div>
+        <div className="rounded-xl p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
+          <div className="text-lg font-bold" style={{ color: "var(--accent-cyan)" }}>
+            {todayStats.totalMinutes}
           </div>
+          <div className="text-[9px] font-medium" style={{ color: "var(--text-tertiary)" }}>Dakika</div>
+        </div>
+        <div className="rounded-xl p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
+          <div className="text-lg font-bold" style={{ color: completionPct >= 80 ? "var(--accent-success)" : "var(--accent-warning)" }}>
+            %{completionPct}
+          </div>
+          <div className="text-[9px] font-medium" style={{ color: "var(--text-tertiary)" }}>Tamamlama</div>
         </div>
       </div>
 
@@ -844,58 +813,6 @@ function PomodoroDetail({ onBack }: { onBack: () => void }) {
           </p>
         </div>
       )}
-
-      {/* Recent Sessions */}
-      <div
-        className="rounded-2xl p-5"
-        style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
-      >
-        <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--text-tertiary)" }}>
-          Son Oturumlar
-        </h3>
-        {loadingSessions ? (
-          <div className="text-[11px] text-center py-4" style={{ color: "var(--text-tertiary)" }}>Yukleniyor...</div>
-        ) : recentSessions.length === 0 ? (
-          <div className="text-center py-6">
-            <div className="text-2xl mb-2">🍅</div>
-            <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>Henuz oturum yok</p>
-            <p className="text-[10px] mt-1" style={{ color: "var(--text-tertiary)" }}>Ilk pomodoronu baslatarak basla!</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {recentSessions.map((session) => (
-              <div key={session.id} className="flex items-center justify-between p-3 rounded-xl transition-all"
-                style={{ background: "var(--bg-tertiary)" }}>
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{
-                      background: session.status === "completed" ? "var(--accent-primary)" : "var(--text-tertiary)",
-                      boxShadow: session.status === "completed" ? "0 0 6px rgba(16,185,129,0.5)" : "none",
-                    }}
-                  />
-                  <div>
-                    <span className="text-[12px] font-semibold block" style={{ color: "var(--text-primary)" }}>
-                      {session.subject || "Odak Oturumu"}
-                    </span>
-                    <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
-                      {formatSessionDate(session.started_at)} · {new Date(session.started_at).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="text-[12px] font-bold tabular-nums" style={{ color: "var(--text-secondary)" }}>
-                    {Math.round(session.actual_seconds / 60)} dk
-                  </span>
-                  <span className="block text-[9px]" style={{ color: session.status === "completed" ? "var(--accent-primary)" : "var(--text-tertiary)" }}>
-                    {session.status === "completed" ? "Tamamlandi" : "Iptal"}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

@@ -8,7 +8,6 @@ import {
   IconStar,
   IconLightning,
   IconChat,
-  IconPomodoro,
   IconFlashcard,
 } from "../icons/Icons";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -17,7 +16,7 @@ import {
   getLatestDailyReport,
   getStreakDays,
 } from "@/lib/db/analytics";
-import type { AnalyticsSummary, DailyReport } from "@/lib/db/analytics";
+import type { AnalyticsSummary, DailyReport, PageSession } from "@/lib/db/analytics";
 import type { UserProfile } from "@/lib/db/profile";
 
 /* ===== HELPERS ===== */
@@ -307,10 +306,10 @@ function SubjectProgress({
             <IconBrain size={14} />
           </div>
           <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-            Ders Bazli Ilerleme
+            Konulara Gore Ekran Suresi
           </h3>
         </div>
-        <EmptyState message="Henuz ders verisi yok" />
+        <EmptyState message="Henuz konu bazli icerik izlenmedi" />
       </div>
     );
   }
@@ -330,7 +329,7 @@ function SubjectProgress({
           <IconBrain size={14} />
         </div>
         <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-          Ders Bazli Ilerleme
+          Konulara Gore Ekran Suresi
         </h3>
       </div>
 
@@ -441,24 +440,24 @@ function ActivityHeatmap({
   );
 }
 
-/* ===== RECENT SESSIONS ===== */
-function RecentSessions({
-  sessions,
-}: {
-  sessions: { type: string; subject: string | null; duration: number; date: string }[];
-}) {
-  const typeIcons: Record<string, React.ReactNode> = {
-    Pomodoro: <IconPomodoro size={12} />,
-    chat: <IconChat size={12} />,
-    flashcard: <IconFlashcard size={12} />,
-  };
+const PAGE_LABELS: Record<string, string> = {
+  chat: "Odak / Sohbet",
+  mentor: "Mentor",
+  araclar: "Araclar",
+  analiz: "Analiz",
+  gecmis: "Gecmis",
+};
 
-  const typeColors: Record<string, string> = {
-    Pomodoro: "#ef4444",
-    chat: "#3b82f6",
-    flashcard: "#06b6d4",
-  };
+const PAGE_COLORS: Record<string, string> = {
+  chat: "#3b82f6",
+  mentor: "#8b5cf6",
+  araclar: "#f59e0b",
+  analiz: "#10b981",
+  gecmis: "#06b6d4",
+};
 
+/* ===== RECENT ACTIVITIES ===== */
+function RecentActivities({ sessions }: { sessions: PageSession[] }) {
   if (sessions.length === 0) {
     return (
       <div
@@ -473,10 +472,10 @@ function RecentSessions({
             <IconClock size={14} />
           </div>
           <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-            Son Calisma Oturumlari
+            Son Aktiviteler
           </h3>
         </div>
-        <EmptyState message="Henuz oturum verisi yok" />
+        <EmptyState message="Henuz aktivite verisi yok" />
       </div>
     );
   }
@@ -494,15 +493,16 @@ function RecentSessions({
           <IconClock size={14} />
         </div>
         <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-          Son Calisma Oturumlari
+          Son Aktiviteler
         </h3>
       </div>
 
       <div className="space-y-2">
         {sessions.map((session, i) => {
-          const color = typeColors[session.type] || "#6b7280";
-          const icon = typeIcons[session.type] || <IconClock size={12} />;
-          const subjectName = session.subject || "Genel";
+          const color = PAGE_COLORS[session.page_name] || "#6b7280";
+          const pageLabel = PAGE_LABELS[session.page_name] || session.page_name.toUpperCase();
+          const title = session.content_title || pageLabel;
+          const durationMin = Math.round(session.duration_seconds / 60);
 
           return (
             <div
@@ -512,27 +512,78 @@ function RecentSessions({
             >
               <div className="w-1 h-8 rounded-full flex-shrink-0" style={{ background: color }} />
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[12px] font-semibold truncate" style={{ color: "var(--text-primary)" }}>
-                    {subjectName}
-                  </span>
+                <span className="text-[12px] font-semibold truncate block" style={{ color: "var(--text-primary)" }}>
+                  {title}
+                </span>
+                <div className="flex items-center gap-1.5 mt-0.5">
                   <span
-                    className="flex-shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold"
-                    style={{ background: `${color}15`, color }}
+                    className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                    style={{ background: `${color}18`, color }}
                   >
-                    {icon}
-                    {session.type}
+                    {pageLabel}
                   </span>
-                </div>
-                <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
-                    {session.duration} dk
+                    · {durationMin} dk · {formatRelativeDate(session.started_at)}
                   </span>
                 </div>
               </div>
-              <span className="text-[10px] flex-shrink-0" style={{ color: "var(--text-tertiary)" }}>
-                {formatRelativeDate(session.date)}
-              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ===== PAGE TIME DISTRIBUTION ===== */
+function PageTimeDistribution({ distribution }: { distribution: Record<string, number> }) {
+  const entries = Object.entries(distribution)
+    .filter(([, min]) => min >= 1)
+    .sort(([, a], [, b]) => b - a);
+
+  if (entries.length === 0) return null;
+
+  const max = Math.max(...entries.map(([, v]) => v));
+
+  return (
+    <div
+      className="rounded-xl p-5 transition-all"
+      style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <div
+          className="flex h-6 w-6 items-center justify-center rounded-lg"
+          style={{ background: "var(--accent-primary-light)", color: "var(--accent-primary)" }}
+        >
+          <IconTrendingUp size={14} />
+        </div>
+        <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+          Sayfa Suresi Dagilimi
+        </h3>
+      </div>
+
+      <div className="space-y-2.5">
+        {entries.map(([page, minutes]) => {
+          const color = PAGE_COLORS[page] || "#6b7280";
+          const label = PAGE_LABELS[page] || page.toUpperCase();
+          const pct = max > 0 ? Math.round((minutes / max) * 100) : 0;
+
+          return (
+            <div key={page}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-semibold" style={{ color: "var(--text-primary)" }}>
+                  {label}
+                </span>
+                <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                  {formatStudyTime(minutes)}
+                </span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: "var(--bg-tertiary)" }}>
+                <div
+                  className="h-full rounded-full transition-all duration-700 ease-out"
+                  style={{ width: `${pct}%`, background: color }}
+                />
+              </div>
             </div>
           );
         })}
@@ -1131,10 +1182,10 @@ export default function AnalysisPage() {
             color="var(--accent-primary)"
           />
           <StatCard
-            label="Pomodoro"
-            value={summary ? String(summary.totalPomodoros) : "0"}
-            subtext={periodLabel}
-            icon={<IconPomodoro size={18} />}
+            label="Aktif Gun"
+            value={summary ? String(summary.activeDaysLast30) : "0"}
+            subtext="Son 30 gun"
+            icon={<IconStar size={18} />}
             color="var(--accent-secondary)"
           />
           <StatCard
@@ -1155,8 +1206,9 @@ export default function AnalysisPage() {
 
         <WeeklyActivity dailyStudyHours={summary?.dailyStudyHours || []} />
         <ActivityHeatmap heatmapData={summary?.heatmapData || []} />
+        <PageTimeDistribution distribution={summary?.pageTimeDistribution || {}} />
         <SubjectProgress subjectBreakdown={summary?.subjectBreakdown || {}} />
-        <RecentSessions sessions={summary?.recentSessions || []} />
+        <RecentActivities sessions={summary?.recentPageSessions || []} />
         <StreakCard streak={streak} />
         <LlmReportCard report={report} />
       </div>
