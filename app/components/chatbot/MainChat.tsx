@@ -193,13 +193,13 @@ function RoadmapInlineRenderer({ content }: { content: string }) {
 /* ===== AI AVATAR ===== */
 function AiAvatar({ spinning = false }: { spinning?: boolean }) {
   return (
-    <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full mr-3 mt-1">
+    <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full mr-3 mt-1">
       <img
         src="/odaklio-logo.svg"
         alt=""
         style={{
-          width: 32,
-          height: 32,
+          width: 40,
+          height: 40,
           animation: spinning ? "logo-spin 2s linear infinite" : "logo-spin 12s linear infinite",
         }}
       />
@@ -866,7 +866,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                     className={`group relative ${
                       msg.role === "user"
                         ? "max-w-[85%] sm:max-w-[70%]"
-                        : "max-w-[92%] sm:max-w-[88%]"
+                        : isMobile ? "w-full" : "max-w-[92%] sm:max-w-[88%]"
                     }`}
                   >
                     <div
