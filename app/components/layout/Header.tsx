@@ -115,13 +115,21 @@ export default function Header({
     >
       {/* Left - Logo */}
       <div className="flex items-center flex-shrink-0">
-        <span
-          className="text-lg font-black tracking-widest select-none"
-          key={theme}
-          style={{ letterSpacing: "0.2em", fontFamily: "'Inter', sans-serif", backgroundImage: theme === "dark" ? "linear-gradient(90deg, #e2e8f0, #f8fafc)" : "linear-gradient(90deg, #1e293b, #334155)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", color: "transparent" }}
-        >
-          ODAKLIO
-        </span>
+        <img
+          src="/logo.svg"
+          alt="Odaklio"
+          style={{
+            width: 32,
+            height: 32,
+            animation: "logo-spin 12s linear infinite",
+          }}
+        />
+        <style>{`
+          @keyframes logo-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
 
       {/* Center - Nav Pills (absolutely centered on full page width) */}
