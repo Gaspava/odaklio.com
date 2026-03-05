@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import PomodoroPopup from "../tools/PomodoroPopup";
 import AmbientSoundPopup from "../tools/AmbientSoundPopup";
-import NewChatPopup from "../tools/NewChatPopup";
 import NotesPopup from "../tools/NotesPopup";
 import { usePomodoro } from "@/app/providers/PomodoroProvider";
 
@@ -131,7 +130,7 @@ export default function MiniSidebar({ onNewChat, onClearChat }: MiniSidebarProps
       <div className="relative">
         <button
           className={`mini-sidebar-btn ${activePopup === "new-chat" ? "active" : ""}`}
-          onClick={() => togglePopup("new-chat")}
+          onClick={() => onNewChat("sohbet")}
           style={{
             background: "var(--accent-primary)",
             color: "white",
@@ -144,15 +143,6 @@ export default function MiniSidebar({ onNewChat, onClearChat }: MiniSidebarProps
           </svg>
           <span className="mini-sidebar-tooltip">Yeni Sohbet</span>
         </button>
-        {activePopup === "new-chat" && (
-          <NewChatPopup
-            onSelectMode={(mode) => {
-              onNewChat(mode);
-              setActivePopup(null);
-            }}
-            onClose={() => setActivePopup(null)}
-          />
-        )}
       </div>
 
       {/* Clear Chat Confirm Dialog */}

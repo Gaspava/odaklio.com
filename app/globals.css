@@ -3370,6 +3370,11 @@ body {
   cursor: text;
   transition: border-color 200ms ease, box-shadow 200ms ease;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  user-select: none;
+}
+
+.welcome-card-input textarea {
+  user-select: text;
 }
 
 .welcome-card-input:focus-within {
@@ -3411,6 +3416,11 @@ body {
 
 .chat-input-bar {
   border: 1px solid transparent;
+  user-select: none;
+}
+
+.chat-input-bar textarea {
+  user-select: text;
 }
 
 .welcome-input-wrapper:focus-within .welcome-input-glow {
