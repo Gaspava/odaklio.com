@@ -3389,6 +3389,40 @@ body {
   }
 }
 
+/* ===== NEW DEEPSEEK-STYLE WELCOME INPUT CARD ===== */
+.welcome-card-input {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: 18px;
+  padding: 18px 20px 14px;
+  cursor: text;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.welcome-card-input:focus-within {
+  border-color: rgba(180, 55, 0, 0.35);
+  box-shadow: 0 4px 32px rgba(180, 55, 0, 0.08);
+}
+
+.welcome-style-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.welcome-style-pill:hover {
+  background: rgba(180, 55, 0, 0.07) !important;
+  color: var(--accent-primary) !important;
+}
+
 .welcome-input-inner {
   position: relative;
   display: flex;

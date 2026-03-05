@@ -516,33 +516,24 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
           {/* Welcome Screen - shown when no real messages */}
           {messages.length <= 1 ? (
             <div className="flex flex-col items-center justify-center min-h-full px-4 animate-fade-in">
-              {/* Logo */}
-              <div className="welcome-logo-glow mb-6 sm:mb-8">
+
+              {/* Logo + Title row — DeepSeek style */}
+              <div className="flex items-center gap-3 mb-8 sm:mb-10">
                 <img
                   src="/odaklio-logo.svg"
                   alt="Odaklio"
-                  className="w-24 h-24 sm:w-28 sm:h-28"
-                  style={{ animation: "logo-spin 12s linear infinite" }}
+                  className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0"
+                  style={{ animation: "logo-spin 12s linear infinite", filter: "drop-shadow(0 0 8px rgba(180,55,0,0.4))" }}
                 />
+                <h1 className="text-xl sm:text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+                  {firstName
+                    ? <>Merhaba, <span className="welcome-name-glow">{firstName}</span>! Nasıl yardımcı olabilirim?</>
+                    : "Bugün sana nasıl yardımcı olabilirim?"}
+                </h1>
               </div>
 
-              {/* Greeting */}
-              <h1 className="text-2xl sm:text-3xl font-extrabold mb-2 text-center tracking-wide">
-                {firstName ? (
-                  <>
-                    <span style={{ color: "var(--text-primary)" }}>MERHABA, </span>
-                    <span className="welcome-name-glow">{firstName.toUpperCase()}!</span>
-                  </>
-                ) : (
-                  <span style={{ color: "var(--text-primary)" }}>MERHABA!</span>
-                )}
-              </h1>
-              <p className="text-sm sm:text-base mb-8 sm:mb-10 text-center" style={{ color: "var(--text-tertiary)" }}>
-                Bugün sana nasıl yardımcı olabilirim?
-              </p>
-
-              {/* Animated Input */}
-              <div className="w-full max-w-[600px] mb-3 sm:mb-4">
+              {/* Main input card */}
+              <div className="w-full max-w-[680px]">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -550,118 +541,89 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                   className="hidden"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); e.target.value = ""; }}
                 />
-                <div className="welcome-input-wrapper" onClick={() => inputRef.current?.focus()}>
-                  <div className="welcome-input-inner">
-                    {/* Left buttons */}
-                    <div className="flex gap-1 flex-shrink-0 items-center">
+                <div className="welcome-card-input" onClick={() => inputRef.current?.focus()}>
+                  {/* Image preview */}
+                  {imagePreview && (
+                    <div className="relative w-fit mb-3">
+                      <img src={imagePreview} alt="preview" className="h-20 rounded-xl object-cover" style={{ maxWidth: 140 }} />
                       <button
-                        onClick={(e) => { e.stopPropagation(); setIsListening(!isListening); }}
-                        className="flex h-8 w-8 items-center justify-center rounded-xl transition-all"
-                        style={{
-                          background: isListening ? "var(--accent-danger)" : "var(--bg-tertiary)",
-                          color: isListening ? "white" : "var(--text-tertiary)",
-                        }}
-                      >
-                        <IconMic size={14} />
-                      </button>
+                        onClick={(e) => { e.stopPropagation(); setImagePreview(null); }}
+                        className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full flex items-center justify-center text-white text-[10px]"
+                        style={{ background: "var(--accent-danger)" }}
+                      >✕</button>
+                    </div>
+                  )}
+
+                  {/* Textarea */}
+                  <textarea
+                    ref={inputRef}
+                    rows={2}
+                    value={input}
+                    onChange={(e) => { setInput(e.target.value); autoResize(e.target); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+                    }}
+                    onPaste={(e) => {
+                      const items = Array.from(e.clipboardData.items);
+                      const img = items.find(i => i.type.startsWith("image/"));
+                      if (img) { e.preventDefault(); const f = img.getAsFile(); if (f) handleImageFile(f); }
+                    }}
+                    placeholder={isMobile ? "Odaklio'ya mesaj yaz..." : "Odaklio'ya mesaj yaz..."}
+                    disabled={isLoading}
+                    className="w-full bg-transparent outline-none disabled:opacity-50 resize-none leading-relaxed text-sm sm:text-[15px]"
+                    style={{ color: "var(--text-primary)", minHeight: "52px", maxHeight: "200px", overflowY: "auto", padding: 0 }}
+                  />
+
+                  {/* Bottom row */}
+                  <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: "1px solid var(--border-secondary)" }}>
+                    {/* Style pills */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {STYLE_OPTIONS.map((s) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setSelectedStyle(s.id); }}
+                          className="welcome-style-pill"
+                          style={{
+                            background: selectedStyle === s.id ? "rgba(180,55,0,0.1)" : "var(--bg-tertiary)",
+                            color: selectedStyle === s.id ? "var(--accent-primary)" : "var(--text-tertiary)",
+                            border: selectedStyle === s.id ? "1px solid rgba(180,55,0,0.25)" : "1px solid transparent",
+                          }}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Actions: attach + send */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                        className="flex h-8 w-8 items-center justify-center rounded-xl transition-all"
-                        style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+                        className="flex h-8 w-8 items-center justify-center rounded-full transition-all"
+                        style={{ color: "var(--text-tertiary)" }}
                         title="Görsel ekle"
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
                         </svg>
                       </button>
-                    </div>
-
-                    {/* Textarea + image preview */}
-                    <div className="flex-1 flex flex-col gap-2">
-                      {imagePreview && (
-                        <div className="relative w-fit">
-                          <img src={imagePreview} alt="preview" className="h-16 rounded-lg object-cover" style={{ maxWidth: 120 }} />
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setImagePreview(null); }}
-                            className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full flex items-center justify-center text-white text-[10px]"
-                            style={{ background: "var(--accent-danger)" }}
-                          >✕</button>
-                        </div>
-                      )}
-                      <textarea
-                        ref={inputRef}
-                        rows={1}
-                        value={input}
-                        onChange={(e) => { setInput(e.target.value); autoResize(e.target); }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
-                        }}
-                        onPaste={(e) => {
-                          const items = Array.from(e.clipboardData.items);
-                          const img = items.find(i => i.type.startsWith("image/"));
-                          if (img) { e.preventDefault(); const f = img.getAsFile(); if (f) handleImageFile(f); }
-                        }}
-                        placeholder={isMobile ? "Ne öğrenmek istiyorsun?" : "Ne öğrenmek istiyorsun? Herhangi bir şey sor..."}
-                        disabled={isLoading}
-                        className="w-full bg-transparent text-sm sm:text-base outline-none disabled:opacity-50 resize-none leading-relaxed"
-                        style={{ color: "var(--text-primary)", minHeight: "24px", maxHeight: "200px", overflowY: "auto", padding: 0 }}
-                      />
-                    </div>
-
-                    {/* Right buttons */}
-                    <div className="flex gap-1 flex-shrink-0 items-center relative">
-                      {/* Style Dropdown */}
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setStyleDropdownOpen(v => !v); }}
-                          className="flex items-center gap-1 h-8 px-2 rounded-xl text-[11px] font-medium transition-all"
-                          style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
-                        >
-                          
-                          <span className="hidden sm:inline">{STYLE_OPTIONS.find(s => s.id === selectedStyle)?.label}</span>
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: styleDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
-                            <polyline points="6 9 12 15 18 9"/>
-                          </svg>
-                        </button>
-                        {styleDropdownOpen && (
-                          <div
-                            className="absolute bottom-10 right-0 rounded-xl overflow-hidden z-50"
-                            style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", boxShadow: "var(--shadow-lg)", minWidth: 140 }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {STYLE_OPTIONS.map((s) => (
-                              <button
-                                key={s.id}
-                                onClick={() => { setSelectedStyle(s.id); setStyleDropdownOpen(false); }}
-                                className="flex items-center gap-2 w-full px-3 py-2 text-[12px] transition-all text-left"
-                                style={{
-                                  background: selectedStyle === s.id ? "rgba(180, 55, 0, 0.08)" : "transparent",
-                                  color: selectedStyle === s.id ? "var(--accent-primary)" : "var(--text-secondary)",
-                                  fontWeight: selectedStyle === s.id ? 600 : 400,
-                                }}
-                              >
-                                
-                                <span>{s.label}</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
                       <button
                         type="button"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={(e) => { e.stopPropagation(); handleSend(); }}
                         disabled={(!input.trim() && !imagePreview) || isLoading}
-                        className="flex h-8 w-8 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-white transition-all active:scale-95"
                         style={{
                           background: (input.trim() || imagePreview) && !isLoading ? "var(--gradient-primary)" : "var(--bg-tertiary)",
                           color: (input.trim() || imagePreview) && !isLoading ? "white" : "var(--text-tertiary)",
-                          boxShadow: (input.trim() || imagePreview) && !isLoading ? "var(--shadow-glow-sm)" : "none",
+                          boxShadow: (input.trim() || imagePreview) && !isLoading ? "0 2px 12px rgba(180,55,0,0.4)" : "none",
+                          opacity: (!input.trim() && !imagePreview) || isLoading ? 0.4 : 1,
                         }}
                       >
-                        <IconSend size={14} />
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+                        </svg>
                       </button>
                     </div>
                   </div>
