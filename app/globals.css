@@ -984,13 +984,14 @@ body {
     display: flex;
     flex-shrink: 0;
     z-index: 30;
-    height: 60px;
+    height: 64px;
     padding: 0 8px;
+    padding-bottom: env(safe-area-inset-bottom);
     align-items: center;
     justify-content: space-around;
-    background: var(--bg-secondary);
-    border-top: 1px solid var(--border-primary);
-    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--bg-glass-heavy);
+    border-top: none;
+    box-shadow: 0 -1px 0 var(--border-secondary);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
@@ -1000,15 +1001,33 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
-    padding: 4px 8px;
-    border-radius: 12px;
+    gap: 3px;
+    padding: 6px 10px;
+    border-radius: 14px;
     border: none;
     background: transparent;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-width: 44px;
+    min-width: 48px;
     flex: 1;
+    position: relative;
+  }
+
+  .mobile-bottom-nav button::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 20px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--accent-primary);
+    transition: transform 0.2s ease;
+  }
+
+  .mobile-bottom-nav button[data-active="true"]::after {
+    transform: translateX(-50%) scaleX(1);
   }
 
   .mobile-bottom-nav button span {
@@ -1021,11 +1040,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 12px;
-    height: 44px;
+    padding: 0 14px;
+    height: 48px;
     flex-shrink: 0;
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-primary);
+    background: transparent;
+    border-bottom: none;
     z-index: 10;
   }
 

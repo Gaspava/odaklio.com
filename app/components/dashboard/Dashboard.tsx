@@ -311,7 +311,13 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
             </svg>
           </button>
           <div className="mobile-top-center">
-            <img src="/odaklio-logo.svg" alt="Odaklio" style={{ height: 24 }} />
+            <span
+              className="text-base font-black tracking-widest select-none"
+              key={theme}
+              style={{ letterSpacing: "0.2em", fontFamily: "'Inter', sans-serif", backgroundImage: theme === "dark" ? "linear-gradient(90deg, #e2e8f0, #f8fafc)" : "linear-gradient(90deg, #1e293b, #334155)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}
+            >
+              ODAKLIO
+            </span>
             <button onClick={toggleTheme} className="mobile-theme-toggle">
               {theme === "dark" ? <IconSun size={14} /> : <IconMoon size={14} />}
             </button>
@@ -400,66 +406,33 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
 
       {isMobile && (
         <nav className="mobile-bottom-nav">
-          <button
-            onClick={() => handlePageChange("history")}
-            style={{
-              color: activePage === "history" ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: activePage === "history" ? "var(--accent-primary-light)" : "transparent",
-            }}
-          >
-            <svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-            <span style={{ color: "inherit" }}>Geçmiş</span>
-          </button>
-
-          <button
-            onClick={() => handlePageChange("tools")}
-            style={{
-              color: activePage === "tools" ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: activePage === "tools" ? "var(--accent-primary-light)" : "transparent",
-            }}
-          >
-            <IconPomodoro size={19} />
-            <span style={{ color: "inherit" }}>Araçlar</span>
-          </button>
-
-          <button
-            onClick={() => { handlePageChange("focus"); setLeftOpen(false); setRightOpen(false); }}
-            style={{
-              color: activePage === "focus" ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: activePage === "focus" ? "var(--accent-primary-light)" : "transparent",
-            }}
-          >
-            <IconChat size={19} />
-            <span style={{ color: "inherit" }}>Odak</span>
-          </button>
-
-          <button
-            onClick={() => handlePageChange("mentor")}
-            style={{
-              color: activePage === "mentor" ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: activePage === "mentor" ? "var(--accent-primary-light)" : "transparent",
-            }}
-          >
-            <IconMentor size={19} />
-            <span style={{ color: "inherit" }}>Mentor</span>
-          </button>
-
-          <button
-            onClick={() => handlePageChange("analysis")}
-            style={{
-              color: activePage === "analysis" ? "var(--accent-primary)" : "var(--text-tertiary)",
-              background: activePage === "analysis" ? "var(--accent-primary-light)" : "transparent",
-            }}
-          >
-            <svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-              <polyline points="17 6 23 6 23 12" />
-            </svg>
-            <span style={{ color: "inherit" }}>Analiz</span>
-          </button>
+          {(["history", "tools", "focus", "mentor", "analysis"] as const).map((page) => {
+            const active = activePage === page;
+            const labels: Record<string, string> = { history: "Geçmiş", tools: "Araçlar", focus: "Odak", mentor: "Mentor", analysis: "Analiz" };
+            return (
+              <button
+                key={page}
+                data-active={active}
+                onClick={() => { handlePageChange(page); if (page === "focus") { setLeftOpen(false); setRightOpen(false); } }}
+                style={{ color: active ? "var(--accent-primary)" : "var(--text-tertiary)" }}
+              >
+                {page === "history" && (
+                  <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                  </svg>
+                )}
+                {page === "tools" && <IconPomodoro size={20} />}
+                {page === "focus" && <IconChat size={20} />}
+                {page === "mentor" && <IconMentor size={20} />}
+                {page === "analysis" && (
+                  <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" />
+                  </svg>
+                )}
+                <span style={{ color: "inherit" }}>{labels[page]}</span>
+              </button>
+            );
+          })}
         </nav>
       )}
 
