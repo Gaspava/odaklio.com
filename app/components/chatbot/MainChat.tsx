@@ -125,6 +125,8 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [selectedStyle, setSelectedStyle] = useState<"basit" | "detayli" | "akademik" | "hikaye">("basit");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectionPopup, setSelectionPopup] = useState<{
     x: number;
     y: number;
@@ -134,10 +136,36 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   const [speedReadText, setSpeedReadText] = useState<string | null>(null);
   const [quickLearnText, setQuickLearnText] = useState<string | null>(null);
   const chatAreaRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastAiMsgIdRef = useRef<string | null>(null);
   const isFirstMessageRef = useRef(true);
+
+  const STYLE_OPTIONS = [
+    { id: "basit" as const, label: "Basit", emoji: "💡" },
+    { id: "detayli" as const, label: "Detaylı", emoji: "📖" },
+    { id: "akademik" as const, label: "Akademik", emoji: "🎓" },
+    { id: "hikaye" as const, label: "Hikaye", emoji: "✨" },
+  ];
+
+  const STYLE_PREFIXES: Record<string, string> = {
+    basit: "",
+    detayli: "[Detaylı ve kapsamlı açıklama yap] ",
+    akademik: "[Akademik ve teknik üslupla açıkla] ",
+    hikaye: "[Hikaye anlatır gibi, akıcı ve eğlenceli anlat] ",
+  };
+
+  const autoResize = (el: HTMLTextAreaElement) => {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 200) + "px";
+  };
+
+  const handleImageFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
 
   // Load conversation ONLY on mount — if there's an active conversation, fetch its messages
   useEffect(() => {
@@ -225,7 +253,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   }, [handleTextSelection]);
 
   const sendToAI = useCallback(
-    async (userContent: string, allMessages: ChatMessage[]) => {
+    async (userContent: string, allMessages: ChatMessage[], style: string = "basit") => {
       setIsLoading(true);
 
       // Save user message to DB
@@ -252,10 +280,18 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
       };
       setMessages((prev) => [...prev, aiMsg]);
 
+      const stylePrefix: Record<string, string> = {
+        basit: "",
+        detayli: "[Detaylı ve kapsamlı açıklama yap] ",
+        akademik: "[Akademik ve teknik üslupla açıkla] ",
+        hikaye: "[Hikaye anlatır gibi, akıcı ve eğlenceli anlat] ",
+      };
+      const enriched = (stylePrefix[style] || "") + userContent;
+
       const apiMessages = allMessages
         .filter((m) => m.id !== "welcome")
         .map((m) => ({ role: m.role, content: m.content }));
-      apiMessages.push({ role: "user", content: userContent });
+      apiMessages.push({ role: "user", content: enriched });
 
       let fullContent = "";
 
@@ -320,9 +356,11 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   );
 
   const handleSend = useCallback(() => {
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && !imagePreview) || isLoading) return;
 
-    const userContent = input;
+    const userContent = imagePreview
+      ? input.trim() ? `${input.trim()} [Görsel eklendi]` : "[Görsel eklendi]"
+      : input;
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
@@ -331,13 +369,17 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
     };
 
     setMessages((prev) => [...prev, userMsg]);
-    sendToAI(userContent, messages);
+    sendToAI(userContent, messages, selectedStyle);
 
     setInput("");
+    setImagePreview(null);
+    if (inputRef.current) {
+      inputRef.current.style.height = "auto";
+    }
     if (isMobile) {
       inputRef.current?.blur();
     }
-  }, [input, isLoading, sendToAI, isMobile, messages]);
+  }, [input, imagePreview, isLoading, sendToAI, isMobile, messages, selectedStyle]);
 
   const handleSelectionAction = (
     action: "quick-learn" | "what-is-this" | "speed-read"
@@ -458,45 +500,103 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
               </p>
 
               {/* Animated Input */}
-              <div className="w-full max-w-[600px] mb-6 sm:mb-8">
-                <div className="welcome-input-wrapper">
+              <div className="w-full max-w-[600px] mb-3 sm:mb-4">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); e.target.value = ""; }}
+                />
+                <div className="welcome-input-wrapper" onClick={() => inputRef.current?.focus()}>
                   <div className="welcome-input-inner">
                     <button
-                      onClick={() => setIsListening(!isListening)}
-                      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition-all"
+                      onClick={(e) => { e.stopPropagation(); setIsListening(!isListening); }}
+                      className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl transition-all mb-0.5"
                       style={{
                         background: isListening ? "var(--accent-danger)" : "var(--bg-tertiary)",
                         color: isListening ? "white" : "var(--text-tertiary)",
                       }}
                     >
-                      <IconMic size={15} />
+                      <IconMic size={14} />
                     </button>
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                      placeholder={isMobile ? "Ne öğrenmek istiyorsun?" : "Ne öğrenmek istiyorsun? Herhangi bir şey sor..."}
-                      disabled={isLoading}
-                      className="flex-1 bg-transparent text-sm sm:text-base outline-none disabled:opacity-50"
-                      style={{ color: "var(--text-primary)" }}
-                    />
+                    <div className="flex-1 flex flex-col gap-2">
+                      {imagePreview && (
+                        <div className="relative w-fit">
+                          <img src={imagePreview} alt="preview" className="h-16 rounded-lg object-cover" style={{ maxWidth: 120 }} />
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setImagePreview(null); }}
+                            className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full flex items-center justify-center text-white text-[10px]"
+                            style={{ background: "var(--accent-danger)" }}
+                          >✕</button>
+                        </div>
+                      )}
+                      <textarea
+                        ref={inputRef}
+                        rows={1}
+                        value={input}
+                        onChange={(e) => { setInput(e.target.value); autoResize(e.target); }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+                        }}
+                        onPaste={(e) => {
+                          const items = Array.from(e.clipboardData.items);
+                          const img = items.find(i => i.type.startsWith("image/"));
+                          if (img) { e.preventDefault(); const f = img.getAsFile(); if (f) handleImageFile(f); }
+                        }}
+                        placeholder={isMobile ? "Ne öğrenmek istiyorsun?" : "Ne öğrenmek istiyorsun? Herhangi bir şey sor..."}
+                        disabled={isLoading}
+                        className="w-full bg-transparent text-sm sm:text-base outline-none disabled:opacity-50 resize-none leading-relaxed"
+                        style={{ color: "var(--text-primary)", minHeight: "24px", maxHeight: "200px", overflowY: "auto" }}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1 flex-shrink-0 mb-0.5">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                        className="flex h-8 w-8 items-center justify-center rounded-xl transition-all"
+                        style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+                        title="Görsel ekle"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => { e.stopPropagation(); handleSend(); }}
+                        disabled={(!input.trim() && !imagePreview) || isLoading}
+                        className="flex h-8 w-8 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
+                        style={{
+                          background: (input.trim() || imagePreview) && !isLoading ? "var(--gradient-primary)" : "var(--bg-tertiary)",
+                          color: (input.trim() || imagePreview) && !isLoading ? "white" : "var(--text-tertiary)",
+                          boxShadow: (input.trim() || imagePreview) && !isLoading ? "var(--shadow-glow-sm)" : "none",
+                        }}
+                      >
+                        <IconSend size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Style Pills */}
+                <div className="flex gap-1.5 mt-2 flex-wrap">
+                  {STYLE_OPTIONS.map((s) => (
                     <button
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={handleSend}
-                      disabled={!input.trim() || isLoading}
-                      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
+                      key={s.id}
+                      onClick={() => setSelectedStyle(s.id)}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all"
                       style={{
-                        background: input.trim() && !isLoading ? "var(--gradient-primary)" : "var(--bg-tertiary)",
-                        color: input.trim() && !isLoading ? "white" : "var(--text-tertiary)",
-                        boxShadow: input.trim() && !isLoading ? "var(--shadow-glow-sm)" : "none",
+                        background: selectedStyle === s.id ? "rgba(255, 107, 53, 0.12)" : "var(--bg-tertiary)",
+                        color: selectedStyle === s.id ? "var(--accent-primary)" : "var(--text-tertiary)",
+                        border: selectedStyle === s.id ? "1px solid rgba(255, 107, 53, 0.3)" : "1px solid transparent",
                       }}
                     >
-                      <IconSend size={15} />
+                      <span>{s.emoji}</span>
+                      <span>{s.label}</span>
                     </button>
-                  </div>
+                  ))}
                 </div>
               </div>
 
@@ -607,68 +707,90 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
         {messages.length > 1 && (
         <div className={`flex-shrink-0 px-3 sm:px-4 ${isMobile ? "pb-2" : "pb-4"}`}>
           <div
-            className="max-w-[720px] mx-auto flex items-center gap-2 rounded-2xl px-3 py-2.5 sm:px-4 transition-all"
+            className="max-w-[720px] mx-auto rounded-2xl px-3 py-2.5 sm:px-4 transition-all cursor-text"
             style={{
               background: "var(--bg-card)",
-              border: "1px solid var(--border-primary)",
+              border: "1.5px solid var(--border-primary)",
               boxShadow: input.trim() ? "var(--shadow-glow-sm)" : "var(--shadow-md)",
-              borderColor: input.trim() ? "rgba(16, 185, 129, 0.2)" : "var(--border-primary)",
+              borderColor: input.trim() ? "rgba(255, 107, 53, 0.4)" : "var(--border-primary)",
             }}
+            onClick={() => inputRef.current?.focus()}
           >
-            <button
-              onClick={() => setIsListening(!isListening)}
-              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl transition-all"
-              style={{
-                background: isListening
-                  ? "var(--accent-danger)"
-                  : "var(--bg-tertiary)",
-                color: isListening ? "white" : "var(--text-tertiary)",
-              }}
-            >
-              <IconMic size={14} />
-            </button>
+            {imagePreview && (
+              <div className="relative w-fit mb-2">
+                <img src={imagePreview} alt="preview" className="h-14 rounded-lg object-cover" style={{ maxWidth: 100 }} />
+                <button
+                  onClick={(e) => { e.stopPropagation(); setImagePreview(null); }}
+                  className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full flex items-center justify-center text-white text-[10px]"
+                  style={{ background: "var(--accent-danger)" }}
+                >✕</button>
+              </div>
+            )}
+            <div className="flex items-end gap-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsListening(!isListening); }}
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl transition-all mb-0.5"
+                style={{
+                  background: isListening ? "var(--accent-danger)" : "var(--bg-tertiary)",
+                  color: isListening ? "white" : "var(--text-tertiary)",
+                }}
+              >
+                <IconMic size={14} />
+              </button>
 
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder={
-                isLoading
-                  ? "Yanıt bekleniyor..."
-                  : isMobile
-                  ? "Mesajını yaz..."
-                  : "Mesajını yaz veya sesli konuş..."
-              }
-              disabled={isLoading}
-              className="flex-1 bg-transparent text-[13px] sm:text-sm outline-none disabled:opacity-50"
-              style={{ color: "var(--text-primary)" }}
-            />
+              <textarea
+                ref={inputRef}
+                rows={1}
+                value={input}
+                onChange={(e) => { setInput(e.target.value); autoResize(e.target); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+                }}
+                onPaste={(e) => {
+                  const items = Array.from(e.clipboardData.items);
+                  const img = items.find(i => i.type.startsWith("image/"));
+                  if (img) { e.preventDefault(); const f = img.getAsFile(); if (f) handleImageFile(f); }
+                }}
+                placeholder={
+                  isLoading
+                    ? "Yanıt bekleniyor..."
+                    : isMobile
+                    ? "Mesajını yaz..."
+                    : "Mesajını yaz veya sesli konuş..."
+                }
+                disabled={isLoading}
+                className="flex-1 bg-transparent text-[13px] sm:text-sm outline-none disabled:opacity-50 resize-none leading-relaxed"
+                style={{ color: "var(--text-primary)", minHeight: "24px", maxHeight: "200px", overflowY: "auto" }}
+              />
 
-            <button
-              type="button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
-              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
-              style={{
-                background:
-                  input.trim() && !isLoading
-                    ? "var(--gradient-primary)"
-                    : "var(--bg-tertiary)",
-                color:
-                  input.trim() && !isLoading
-                    ? "white"
-                    : "var(--text-tertiary)",
-                boxShadow:
-                  input.trim() && !isLoading
-                    ? "var(--shadow-glow-sm)"
-                    : "none",
-              }}
-            >
-              <IconSend size={14} />
-            </button>
+              <div className="flex gap-1 flex-shrink-0 mb-0.5">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                  className="flex h-8 w-8 items-center justify-center rounded-xl transition-all"
+                  style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+                  title="Görsel ekle"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={(e) => { e.stopPropagation(); handleSend(); }}
+                  disabled={(!input.trim() && !imagePreview) || isLoading}
+                  className="flex h-8 w-8 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
+                  style={{
+                    background: (input.trim() || imagePreview) && !isLoading ? "var(--gradient-primary)" : "var(--bg-tertiary)",
+                    color: (input.trim() || imagePreview) && !isLoading ? "white" : "var(--text-tertiary)",
+                    boxShadow: (input.trim() || imagePreview) && !isLoading ? "var(--shadow-glow-sm)" : "none",
+                  }}
+                >
+                  <IconSend size={14} />
+                </button>
+              </div>
+            </div>
           </div>
 
           {!isMobile && (
