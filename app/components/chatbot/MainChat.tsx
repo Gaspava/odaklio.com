@@ -651,7 +651,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
     <>
       <div className="flex flex-col h-full" ref={chatAreaRef}>
         {/* Messages + Inline Map */}
-        <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 ${isMobile ? "pb-2" : ""}`}>
+        <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto px-3 sm:px-4 ${messages.length <= 1 ? "flex items-center justify-center" : `py-4 sm:py-6 ${isMobile ? "pb-2" : ""}`}`}>
           {/* Neon inline chat map - fixed to right side, desktop only */}
           {!isMobile && hasUserMessages && (
             <div className="inline-chat-map">
@@ -678,14 +678,14 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
 
           {/* Welcome Screen - shown when no real messages */}
           {messages.length <= 1 ? (
-            <div className="flex flex-col items-center justify-center min-h-full px-4 animate-fade-in">
+            <div className="flex flex-col items-center w-full px-4 animate-fade-in">
 
               {/* Logo + Title */}
               <div className="flex flex-col items-center gap-4 mb-8 sm:mb-10">
                 <img
                   src="/odaklio-logo.svg"
                   alt="Odaklio"
-                  className="w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0"
+                  className="w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0"
                   style={{ animation: "logo-spin 12s linear infinite" }}
                 />
                 <h1 className="text-xl sm:text-2xl font-bold text-center" style={{ color: "var(--text-primary)" }}>
