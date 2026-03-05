@@ -460,7 +460,6 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
               {/* Animated Input */}
               <div className="w-full max-w-[600px] mb-6 sm:mb-8">
                 <div className="welcome-input-wrapper">
-                  <div className="welcome-input-glow" />
                   <div className="welcome-input-inner">
                     <button
                       onClick={() => setIsListening(!isListening)}
