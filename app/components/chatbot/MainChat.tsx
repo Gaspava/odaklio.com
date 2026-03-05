@@ -973,18 +973,18 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                 <button
                   onClick={(e) => { e.stopPropagation(); setIsListening(!isListening); }}
                   className="flex h-8 w-8 items-center justify-center rounded-xl transition-all"
-                  style={{ background: isListening ? "var(--accent-danger)" : "var(--bg-tertiary)", color: isListening ? "white" : "var(--text-tertiary)" }}
+                  style={{ background: "transparent", color: isListening ? "var(--accent-danger)" : "var(--text-tertiary)" }}
                 >
-                  <IconMic size={14} />
+                  <IconMic size={17} />
                 </button>
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                   className="flex h-8 w-8 items-center justify-center rounded-xl transition-all"
-                  style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+                  style={{ background: "transparent", color: "var(--text-tertiary)" }}
                   title="Görsel ekle"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                   </svg>
                 </button>
@@ -1089,12 +1089,12 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                   disabled={(!input.trim() && !imagePreview) || isLoading}
                   className="flex h-8 w-8 items-center justify-center rounded-xl text-white transition-all disabled:opacity-30 active:scale-95"
                   style={{
-                    background: (input.trim() || imagePreview) && !isLoading ? "var(--gradient-primary)" : "var(--bg-tertiary)",
+                    background: (input.trim() || imagePreview) && !isLoading ? "var(--gradient-primary)" : "transparent",
                     color: (input.trim() || imagePreview) && !isLoading ? "white" : "var(--text-tertiary)",
                     boxShadow: "none",
                   }}
                 >
-                  <IconSend size={14} />
+                  <IconSend size={17} />
                 </button>
               </div>
             </div>
