@@ -142,6 +142,8 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   const lastAiMsgIdRef = useRef<string | null>(null);
   const isFirstMessageRef = useRef(true);
 
+  const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
+
   const STYLE_OPTIONS = [
     { id: "basit" as const, label: "Basit", emoji: "💡" },
     { id: "detayli" as const, label: "Detaylı", emoji: "📖" },
@@ -510,16 +512,32 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                 />
                 <div className="welcome-input-wrapper" onClick={() => inputRef.current?.focus()}>
                   <div className="welcome-input-inner">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setIsListening(!isListening); }}
-                      className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl transition-all mb-0.5"
-                      style={{
-                        background: isListening ? "var(--accent-danger)" : "var(--bg-tertiary)",
-                        color: isListening ? "white" : "var(--text-tertiary)",
-                      }}
-                    >
-                      <IconMic size={14} />
-                    </button>
+                    {/* Left buttons */}
+                    <div className="flex gap-1 flex-shrink-0 items-end mb-0.5">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setIsListening(!isListening); }}
+                        className="flex h-8 w-8 items-center justify-center rounded-xl transition-all"
+                        style={{
+                          background: isListening ? "var(--accent-danger)" : "var(--bg-tertiary)",
+                          color: isListening ? "white" : "var(--text-tertiary)",
+                        }}
+                      >
+                        <IconMic size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                        className="flex h-8 w-8 items-center justify-center rounded-xl transition-all"
+                        style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+                        title="Görsel ekle"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* Textarea + image preview */}
                     <div className="flex-1 flex flex-col gap-2">
                       {imagePreview && (
                         <div className="relative w-fit">
@@ -550,18 +568,47 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                         style={{ color: "var(--text-primary)", minHeight: "24px", maxHeight: "200px", overflowY: "auto" }}
                       />
                     </div>
-                    <div className="flex flex-col gap-1 flex-shrink-0 mb-0.5">
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                        className="flex h-8 w-8 items-center justify-center rounded-xl transition-all"
-                        style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
-                        title="Görsel ekle"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                        </svg>
-                      </button>
+
+                    {/* Right buttons */}
+                    <div className="flex gap-1 flex-shrink-0 items-end mb-0.5 relative">
+                      {/* Style Dropdown */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setStyleDropdownOpen(v => !v); }}
+                          className="flex items-center gap-1 h-8 px-2 rounded-xl text-[11px] font-medium transition-all"
+                          style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+                        >
+                          <span>{STYLE_OPTIONS.find(s => s.id === selectedStyle)?.emoji}</span>
+                          <span className="hidden sm:inline">{STYLE_OPTIONS.find(s => s.id === selectedStyle)?.label}</span>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: styleDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
+                            <polyline points="6 9 12 15 18 9"/>
+                          </svg>
+                        </button>
+                        {styleDropdownOpen && (
+                          <div
+                            className="absolute bottom-10 right-0 rounded-xl overflow-hidden z-50"
+                            style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", boxShadow: "var(--shadow-lg)", minWidth: 140 }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {STYLE_OPTIONS.map((s) => (
+                              <button
+                                key={s.id}
+                                onClick={() => { setSelectedStyle(s.id); setStyleDropdownOpen(false); }}
+                                className="flex items-center gap-2 w-full px-3 py-2 text-[12px] transition-all text-left"
+                                style={{
+                                  background: selectedStyle === s.id ? "rgba(180, 55, 0, 0.08)" : "transparent",
+                                  color: selectedStyle === s.id ? "var(--accent-primary)" : "var(--text-secondary)",
+                                  fontWeight: selectedStyle === s.id ? 600 : 400,
+                                }}
+                              >
+                                <span>{s.emoji}</span>
+                                <span>{s.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <button
                         type="button"
                         onMouseDown={(e) => e.preventDefault()}
@@ -578,25 +625,6 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                       </button>
                     </div>
                   </div>
-                </div>
-
-                {/* Style Pills */}
-                <div className="flex gap-1.5 mt-2 flex-wrap">
-                  {STYLE_OPTIONS.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => setSelectedStyle(s.id)}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all"
-                      style={{
-                        background: selectedStyle === s.id ? "rgba(255, 107, 53, 0.12)" : "var(--bg-tertiary)",
-                        color: selectedStyle === s.id ? "var(--accent-primary)" : "var(--text-tertiary)",
-                        border: selectedStyle === s.id ? "1px solid rgba(255, 107, 53, 0.3)" : "1px solid transparent",
-                      }}
-                    >
-                      <span>{s.emoji}</span>
-                      <span>{s.label}</span>
-                    </button>
-                  ))}
                 </div>
               </div>
 
@@ -712,7 +740,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
               background: "var(--bg-card)",
               border: "1.5px solid var(--border-primary)",
               boxShadow: input.trim() ? "var(--shadow-glow-sm)" : "var(--shadow-md)",
-              borderColor: input.trim() ? "rgba(255, 107, 53, 0.4)" : "var(--border-primary)",
+              borderColor: input.trim() ? "rgba(180, 55, 0, 0.4)" : "var(--border-primary)",
             }}
             onClick={() => inputRef.current?.focus()}
           >
@@ -727,16 +755,27 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
               </div>
             )}
             <div className="flex items-end gap-2">
-              <button
-                onClick={(e) => { e.stopPropagation(); setIsListening(!isListening); }}
-                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl transition-all mb-0.5"
-                style={{
-                  background: isListening ? "var(--accent-danger)" : "var(--bg-tertiary)",
-                  color: isListening ? "white" : "var(--text-tertiary)",
-                }}
-              >
-                <IconMic size={14} />
-              </button>
+              {/* Left */}
+              <div className="flex gap-1 flex-shrink-0 mb-0.5">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setIsListening(!isListening); }}
+                  className="flex h-8 w-8 items-center justify-center rounded-xl transition-all"
+                  style={{ background: isListening ? "var(--accent-danger)" : "var(--bg-tertiary)", color: isListening ? "white" : "var(--text-tertiary)" }}
+                >
+                  <IconMic size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                  className="flex h-8 w-8 items-center justify-center rounded-xl transition-all"
+                  style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+                  title="Görsel ekle"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                </button>
+              </div>
 
               <textarea
                 ref={inputRef}
@@ -752,29 +791,51 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                   if (img) { e.preventDefault(); const f = img.getAsFile(); if (f) handleImageFile(f); }
                 }}
                 placeholder={
-                  isLoading
-                    ? "Yanıt bekleniyor..."
-                    : isMobile
-                    ? "Mesajını yaz..."
-                    : "Mesajını yaz veya sesli konuş..."
+                  isLoading ? "Yanıt bekleniyor..." : isMobile ? "Mesajını yaz..." : "Mesajını yaz veya sesli konuş..."
                 }
                 disabled={isLoading}
                 className="flex-1 bg-transparent text-[13px] sm:text-sm outline-none disabled:opacity-50 resize-none leading-relaxed"
                 style={{ color: "var(--text-primary)", minHeight: "24px", maxHeight: "200px", overflowY: "auto" }}
               />
 
-              <div className="flex gap-1 flex-shrink-0 mb-0.5">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                  className="flex h-8 w-8 items-center justify-center rounded-xl transition-all"
-                  style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
-                  title="Görsel ekle"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
-                </button>
+              {/* Right */}
+              <div className="flex gap-1 flex-shrink-0 items-end mb-0.5 relative">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setStyleDropdownOpen(v => !v); }}
+                    className="flex items-center gap-1 h-8 px-2 rounded-xl text-[11px] font-medium transition-all"
+                    style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+                  >
+                    <span>{STYLE_OPTIONS.find(s => s.id === selectedStyle)?.emoji}</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: styleDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                  {styleDropdownOpen && (
+                    <div
+                      className="absolute bottom-10 right-0 rounded-xl overflow-hidden z-50"
+                      style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", boxShadow: "var(--shadow-lg)", minWidth: 130 }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {STYLE_OPTIONS.map((s) => (
+                        <button
+                          key={s.id}
+                          onClick={() => { setSelectedStyle(s.id); setStyleDropdownOpen(false); }}
+                          className="flex items-center gap-2 w-full px-3 py-2 text-[12px] transition-all text-left"
+                          style={{
+                            background: selectedStyle === s.id ? "rgba(180, 55, 0, 0.08)" : "transparent",
+                            color: selectedStyle === s.id ? "var(--accent-primary)" : "var(--text-secondary)",
+                            fontWeight: selectedStyle === s.id ? 600 : 400,
+                          }}
+                        >
+                          <span>{s.emoji}</span>
+                          <span>{s.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <button
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
