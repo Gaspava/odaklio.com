@@ -616,9 +616,8 @@ body {
 }
 
 .msg-ai {
-  background: var(--bg-card);
-  border: 1px solid var(--border-primary);
-  border-radius: 4px 20px 20px 20px;
+  background: transparent;
+  border: none;
   color: var(--text-primary);
 }
 
