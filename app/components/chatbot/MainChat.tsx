@@ -523,11 +523,11 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                   src="/odaklio-logo.svg"
                   alt="Odaklio"
                   className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0"
-                  style={{ animation: "logo-spin 12s linear infinite", filter: "drop-shadow(0 0 8px rgba(180,55,0,0.4))" }}
+                  style={{ animation: "logo-spin 12s linear infinite" }}
                 />
                 <h1 className="text-xl sm:text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
                   {firstName
-                    ? <>Merhaba, <span className="welcome-name-glow">{firstName}</span>! Nasıl yardımcı olabilirim?</>
+                    ? <>Merhaba, <span className="welcome-name-glow">{firstName.toUpperCase()}</span>! Nasıl yardımcı olabilirim?</>
                     : "Bugün sana nasıl yardımcı olabilirim?"}
                 </h1>
               </div>
@@ -617,7 +617,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                         style={{
                           background: (input.trim() || imagePreview) && !isLoading ? "var(--gradient-primary)" : "var(--bg-tertiary)",
                           color: (input.trim() || imagePreview) && !isLoading ? "white" : "var(--text-tertiary)",
-                          boxShadow: (input.trim() || imagePreview) && !isLoading ? "0 2px 12px rgba(180,55,0,0.4)" : "none",
+                          boxShadow: "none",
                           opacity: (!input.trim() && !imagePreview) || isLoading ? 0.4 : 1,
                         }}
                       >
@@ -835,7 +835,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                   style={{
                     background: (input.trim() || imagePreview) && !isLoading ? "var(--gradient-primary)" : "var(--bg-tertiary)",
                     color: (input.trim() || imagePreview) && !isLoading ? "white" : "var(--text-tertiary)",
-                    boxShadow: (input.trim() || imagePreview) && !isLoading ? "var(--shadow-glow-sm)" : "none",
+                    boxShadow: "none",
                   }}
                 >
                   <IconSend size={14} />

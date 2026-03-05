@@ -242,7 +242,7 @@ function PomodoroMini() {
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
-              style={{ transition: "stroke-dashoffset 1s linear", filter: `drop-shadow(0 0 4px ${modeColor})` }}
+              style={{ transition: "stroke-dashoffset 1s linear" }}
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -263,7 +263,7 @@ function PomodoroMini() {
             <button
               onClick={handlePlayPause}
               className="flex h-8 w-8 sm:h-7 sm:w-7 items-center justify-center rounded-lg text-white transition-all active:scale-95"
-              style={{ background: modeColor, boxShadow: `0 0 8px ${modeColor}40` }}
+              style={{ background: modeColor }}
             >
               {isRunning && !isPaused ? <IconPause size={12} /> : <IconPlay size={12} />}
             </button>

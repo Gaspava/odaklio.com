@@ -167,7 +167,6 @@ export default function Header({
             className="flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-bold text-white cursor-pointer transition-all hover:scale-105"
             style={{
               background: "var(--gradient-primary)",
-              boxShadow: "var(--shadow-glow-sm)",
               border: "none",
             }}
           >
@@ -186,7 +185,7 @@ export default function Header({
                 </div>
                 <div className="profile-dropdown-info">
                   <span className="profile-dropdown-name">
-                    {user?.user_metadata?.full_name || "Kullanici"}
+                    {(user?.user_metadata?.full_name || "Kullanici").toUpperCase()}
                   </span>
                   <span className="profile-dropdown-email">
                     {user?.email || user?.phone || ""}

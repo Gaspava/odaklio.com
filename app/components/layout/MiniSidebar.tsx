@@ -136,7 +136,6 @@ export default function MiniSidebar({ onNewChat, onClearChat }: MiniSidebarProps
             background: "var(--accent-primary)",
             color: "white",
             border: "none",
-            boxShadow: "0 2px 8px rgba(16, 185, 129, 0.35)",
           }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
