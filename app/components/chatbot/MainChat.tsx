@@ -716,12 +716,8 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
         {messages.length > 1 && (
         <div className={`flex-shrink-0 px-3 sm:px-4 ${isMobile ? "pb-2" : "pb-4"}`}>
           <div
-            className="max-w-[720px] mx-auto rounded-2xl px-3 py-2.5 sm:px-4 transition-all cursor-text"
-            style={{
-              background: "var(--bg-card)",
-              border: "none",
-              boxShadow: input.trim() ? "var(--shadow-glow-sm)" : "var(--shadow-md)",
-            }}
+            className="chat-input-bar max-w-[720px] mx-auto rounded-2xl px-3 py-2.5 sm:px-4 cursor-text"
+            style={{ background: "var(--bg-card)" }}
             onClick={() => inputRef.current?.focus()}
           >
             {imagePreview && (
