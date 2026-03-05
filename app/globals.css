@@ -2381,6 +2381,11 @@ body {
   color: var(--accent-danger);
 }
 
+.nav-dropdown-active {
+  background: var(--accent-primary-light, rgba(210, 65, 0, 0.08));
+  color: var(--accent-primary) !important;
+}
+
 /* ===== AUTH SOCIAL / TABS / OTP ===== */
 
 .auth-social-btn {

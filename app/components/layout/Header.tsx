@@ -81,19 +81,24 @@ export default function Header({
   const { user } = useAuth();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
 
-  // Close menu on outside click
+  // Close menus on outside click
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuOpen && !navOpen) return;
     const handleClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
       }
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setNavOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [menuOpen]);
+  }, [menuOpen, navOpen]);
 
   const displayName = user?.user_metadata?.full_name || user?.email || "";
   const initials = displayName
@@ -113,21 +118,37 @@ export default function Header({
         borderBottom: "none",
       }}
     >
-      {/* Left - Nav Pills */}
-      <nav className="flex items-center gap-1 flex-shrink-0">
-        {pages.map((page) => (
-          <Link
-            key={page.id}
-            href={PAGE_ROUTES[page.id]}
-            onClick={() => onPageChange(page.id)}
-            className={`nav-pill ${activePage === page.id ? "active" : ""}`}
-            title={page.label}
-          >
-            <span className="flex-shrink-0">{page.icon}</span>
-            <span className="hidden sm:inline">{page.label}</span>
-          </Link>
-        ))}
-      </nav>
+      {/* Left - Hamburger menu */}
+      <div className="relative flex-shrink-0" ref={navRef}>
+        <button
+          onClick={() => setNavOpen((v) => !v)}
+          className="header-icon-btn"
+          title="Menü"
+          style={{ width: 36, height: 36 }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+
+        {navOpen && (
+          <div className="profile-dropdown" style={{ left: 0, right: "auto", minWidth: 200 }}>
+            {pages.map((page) => (
+              <Link
+                key={page.id}
+                href={PAGE_ROUTES[page.id]}
+                onClick={() => { onPageChange(page.id); setNavOpen(false); }}
+                className={`profile-dropdown-item ${activePage === page.id ? "nav-dropdown-active" : ""}`}
+              >
+                <span className="flex-shrink-0">{page.icon}</span>
+                {page.label}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Center - Logo (absolutely centered) */}
       <div className="absolute left-1/2 -translate-x-1/2">
