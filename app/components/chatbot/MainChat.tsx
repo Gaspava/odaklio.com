@@ -91,12 +91,19 @@ function TypingIndicator() {
 }
 
 /* ===== AI AVATAR ===== */
-function AiAvatar() {
+function AiAvatar({ spinning = false }: { spinning?: boolean }) {
   return (
-    <div
-      className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full mr-3 mt-1"
-    >
-      <img src="/odaklio-logo.svg" alt="" style={{ width: 32, height: 32 }} />
+    <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full mr-3 mt-1">
+      <img
+        src="/odaklio-logo.svg"
+        alt=""
+        style={{
+          width: 32,
+          height: 32,
+          animation: spinning ? "logo-spin 2s linear infinite" : "logo-spin 12s linear infinite",
+        }}
+      />
+      <style>{`@keyframes logo-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
@@ -379,7 +386,11 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   if (isInitialLoading) {
     return (
       <div className="flex flex-col h-full items-center justify-center gap-3">
-        <div className="auth-spinner" style={{ width: 28, height: 28 }} />
+        <img
+          src="/odaklio-logo.svg"
+          alt=""
+          style={{ width: 48, height: 48, animation: "logo-spin 2s linear infinite" }}
+        />
         <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
           Sohbet yükleniyor...
         </p>
@@ -423,7 +434,12 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
             <div className="flex flex-col items-center justify-center min-h-full px-4 animate-fade-in">
               {/* Logo */}
               <div className="welcome-logo-glow mb-6 sm:mb-8">
-                <img src="/odaklio-logo.svg" alt="Odaklio" className="w-24 h-24 sm:w-28 sm:h-28" />
+                <img
+                  src="/odaklio-logo.svg"
+                  alt="Odaklio"
+                  className="w-24 h-24 sm:w-28 sm:h-28"
+                  style={{ animation: "logo-spin 12s linear infinite" }}
+                />
               </div>
 
               {/* Greeting */}
@@ -515,7 +531,9 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-msg-in`}
                   style={{ animationDelay: `${Math.min(idx * 0.05, 0.3)}s` }}
                 >
-                  {msg.role === "assistant" && <AiAvatar />}
+                  {msg.role === "assistant" && (
+                    <AiAvatar spinning={isLoading && msg.id === messages[messages.length - 1]?.id} />
+                  )}
 
                   <div
                     className={`group relative ${
