@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Header, { type PageType } from "../layout/Header";
 import MiniSidebar from "../layout/MiniSidebar";
 import ChatHistorySidebar from "../layout/ChatHistorySidebar";
 import MainChat from "../chatbot/MainChat";
+import MindmapChat from "../chatbot/MindmapChat";
+import FlashcardChat from "../chatbot/FlashcardChat";
+import RoadmapChat from "../chatbot/RoadmapChat";
 import ChatHistoryPage from "../pages/ChatHistoryPage";
 import ToolsPage from "../pages/ToolsPage";
 import MentorPage from "../pages/MentorPage";
@@ -26,6 +29,70 @@ import { useConversation } from "@/app/providers/ConversationProvider";
 import { usePageTracking } from "@/app/providers/PageTrackingProvider";
 import { usePomodoro } from "@/app/providers/PomodoroProvider";
 import { PAGE_ROUTES } from "@/lib/routes";
+
+const TRANSITION_CONFIG: Record<string, { label: string; desc: string; color: string; bg: string; icon: React.ReactNode }> = {
+  flashcard: {
+    label: "Flashcard",
+    desc: "Kartlarla öğren",
+    color: "#f59e0b",
+    bg: "rgba(245, 158, 11, 0.12)",
+    icon: (
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="5" width="20" height="14" rx="2"/>
+        <line x1="2" y1="10" x2="22" y2="10"/>
+      </svg>
+    ),
+  },
+  roadmap: {
+    label: "Roadmap",
+    desc: "Yol haritasını keşfet",
+    color: "#ef4444",
+    bg: "rgba(239, 68, 68, 0.12)",
+    icon: (
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/>
+        <path d="M12 7v3M12 10l-5 7M12 10l5 7"/>
+      </svg>
+    ),
+  },
+  mindmap: {
+    label: "Mindmap",
+    desc: "Zihin haritası oluştur",
+    color: "#8b5cf6",
+    bg: "rgba(139, 92, 246, 0.12)",
+    icon: (
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="2.5"/><circle cx="4" cy="7" r="2"/><circle cx="20" cy="7" r="2"/>
+        <circle cx="4" cy="17" r="2"/><circle cx="20" cy="17" r="2"/>
+        <path d="M9.8 10.8L6 8.5M14.2 10.8L18 8.5M9.8 13.2L6 15.5M14.2 13.2L18 15.5"/>
+      </svg>
+    ),
+  },
+};
+
+function ModeTransitionOverlay({ mode, leaving }: { mode: string; leaving: boolean }) {
+  const cfg = TRANSITION_CONFIG[mode];
+  if (!cfg) return null;
+  return (
+    <div
+      className={`mode-transition-overlay ${leaving ? "mto-leaving" : ""}`}
+      style={{ background: "var(--bg-primary)" }}
+    >
+      <div className="mode-transition-card">
+        <div className="mode-transition-icon" style={{ background: cfg.bg }}>
+          {cfg.icon}
+        </div>
+        <div>
+          <div className="text-2xl font-bold mb-1" style={{ color: "var(--text-primary)" }}>{cfg.label}</div>
+          <div className="text-sm" style={{ color: "var(--text-tertiary)" }}>{cfg.desc}</div>
+        </div>
+        <div className="mode-transition-progress-track">
+          <div className="mode-transition-progress-bar" style={{ background: cfg.color }} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(false);
@@ -50,6 +117,9 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
   const [chatKey, setChatKey] = useState(0);
+  const [activeSpecialMode, setActiveSpecialMode] = useState<"flashcard" | "roadmap" | "mindmap" | null>(null);
+  const [transitionMode, setTransitionMode] = useState<string | null>(null);
+  const [transitionLeaving, setTransitionLeaving] = useState(false);
   const [activePage, setActivePage] = useState<PageType>(initialPage || "focus");
   const [mobileBottomSheet, setMobileBottomSheet] = useState<"pomodoro" | "sound" | "new-chat" | "notes" | null>(null);
   const [pomodoroRunning, setPomodoroRunning] = useState(false);
@@ -176,13 +246,28 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
 
   const handleNewChat = () => {
     startNewConversation();
+    setActiveSpecialMode(null);
     setChatKey((k) => k + 1);
   };
 
   const handleClearChat = () => {
     startNewConversation();
+    setActiveSpecialMode(null);
     setChatKey((k) => k + 1);
   };
+
+  const handleModeSwitch = useCallback((mode: string) => {
+    setTransitionMode(mode);
+    setTransitionLeaving(false);
+    setTimeout(() => {
+      setTransitionLeaving(true);
+      setTimeout(() => {
+        setActiveSpecialMode(mode as "flashcard" | "roadmap" | "mindmap");
+        setTransitionMode(null);
+        setTransitionLeaving(false);
+      }, 320);
+    }, 1050);
+  }, []);
 
   const handlePageChange = (page: PageType) => {
     setActivePage(page);
@@ -225,7 +310,10 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       case "tools":
         return <ToolsPage onOpenConversation={handleOpenConversation} />;
       case "focus":
-        return <MainChat key={chatKey} isMobile={isMobile} />;
+        if (activeSpecialMode === "flashcard") return <FlashcardChat key={chatKey} isMobile={isMobile} />;
+        if (activeSpecialMode === "roadmap") return <RoadmapChat key={chatKey} isMobile={isMobile} onOpenConversation={handleOpenConversation} />;
+        if (activeSpecialMode === "mindmap") return <MindmapChat key={chatKey} isMobile={isMobile} />;
+        return <MainChat key={chatKey} isMobile={isMobile} onModeSwitch={handleModeSwitch} />;
       case "mentor":
         return <MentorPage />;
       case "analysis":
@@ -450,6 +538,9 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
         </div>
       )}
 
+        {transitionMode && (
+          <ModeTransitionOverlay mode={transitionMode} leaving={transitionLeaving} />
+        )}
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { supabase } from "@/lib/supabase";
 
 interface MainChatProps {
   isMobile?: boolean;
+  onModeSwitch?: (mode: string) => void;
 }
 
 const welcomeMessage: ChatMessage = {
@@ -207,7 +208,7 @@ function AiAvatar({ spinning = false }: { spinning?: boolean }) {
   );
 }
 
-export default function MainChat({ isMobile = false }: MainChatProps) {
+export default function MainChat({ isMobile = false, onModeSwitch }: MainChatProps) {
   const { user } = useAuth();
   const {
     activeConversationId,
@@ -241,16 +242,52 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   const lastAiMsgIdRef = useRef<string | null>(null);
   const isFirstMessageRef = useRef(true);
 
-  const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
-
   const MODE_OPTIONS = [
-    { id: "sohbet", label: "Sohbet" },
+    {
+      id: "sohbet", label: "Sohbet",
+      icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    },
+    {
+      id: "flashcard", label: "Flashcard",
+      icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+    },
+    {
+      id: "roadmap", label: "Roadmap",
+      icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v3M12 10l-5 7M12 10l5 7"/></svg>
+    },
+    {
+      id: "mindmap", label: "Mindmap",
+      icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="2.5"/><circle cx="4" cy="7" r="2"/><circle cx="20" cy="7" r="2"/><circle cx="4" cy="17" r="2"/><circle cx="20" cy="17" r="2"/><path d="M9.8 10.8L6 8.5M14.2 10.8L18 8.5M9.8 13.2L6 15.5M14.2 13.2L18 15.5"/></svg>
+    },
+  ];
+
+  const SOHBET_STYLES = [
+    { id: "sohbet", label: "Normal" },
     { id: "detayli", label: "Detaylı" },
     { id: "akademik", label: "Akademik" },
-    { id: "flashcard", label: "Flashcard" },
-    { id: "roadmap", label: "Roadmap" },
-    { id: "mindmap", label: "Mindmap" },
   ];
+
+  const [activeMode, setActiveMode] = useState("sohbet");
+  const [modeDropdownOpen, setModeDropdownOpen] = useState(false);
+  const modeDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close mode dropdown on outside click
+  useEffect(() => {
+    if (!modeDropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (modeDropdownRef.current && !modeDropdownRef.current.contains(e.target as Node)) {
+        setModeDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [modeDropdownOpen]);
+
+  const handleModeSelect = (modeId: string) => {
+    setSelectedStyle(modeId);
+    setActiveMode(modeId === "detayli" || modeId === "akademik" ? "sohbet" : modeId);
+    setModeDropdownOpen(false);
+  };
 
   const STYLE_PREFIXES: Record<string, string> = {
     basit: "",
@@ -419,10 +456,17 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
       };
       const modeMap: Record<string, string> = {
         sohbet: "standard", detayli: "standard", akademik: "standard",
-        flashcard: "flashcard", roadmap: "roadmap", mindmap: "standard",
+        flashcard: "flashcard", roadmap: "roadmap", mindmap: "mindmap",
       };
       const apiMode = modeMap[style] || "standard";
       const enriched = (stylePrefix[style] || "") + userContent;
+
+      // If special mode and parent provides mode switch, delegate
+      if (["flashcard", "roadmap", "mindmap"].includes(style) && onModeSwitch) {
+        setIsLoading(false);
+        onModeSwitch(style);
+        return;
+      }
 
       // Extract base64 and mime type from data URL for API
       let imageData: string | undefined;
@@ -497,7 +541,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
         setIsLoading(false);
       }
     },
-    [saveUserMessage, saveAssistantMessage, generateTitle, refreshConversations, uploadImageToStorage]
+    [saveUserMessage, saveAssistantMessage, generateTitle, refreshConversations, uploadImageToStorage, onModeSwitch]
   );
 
   const handleSend = useCallback(() => {
@@ -681,36 +725,28 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
 
                   {/* Bottom row */}
                   <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: "1px solid var(--border-secondary)" }}>
-                    {/* Style dropdown */}
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setStyleDropdownOpen(v => !v); }}
-                        className="flex items-center gap-1.5 h-8 px-3 rounded-xl text-[12px] font-medium transition-all"
-                        style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)", border: "1px solid var(--border-secondary)" }}
-                      >
-                        <span>{MODE_OPTIONS.find(s => s.id === selectedStyle)?.label ?? "Sohbet"}</span>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: styleDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
-                          <polyline points="6 9 12 15 18 9"/>
-                        </svg>
-                      </button>
-                      {styleDropdownOpen && (
-                        <div
-                          className="absolute bottom-10 left-0 rounded-xl overflow-hidden z-50"
-                          style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", boxShadow: "var(--shadow-lg)", minWidth: 120 }}
-                          onClick={(e) => e.stopPropagation()}
+                    {/* Mode pills */}
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {MODE_OPTIONS.map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleModeSelect(m.id); }}
+                          className={`mode-pill ${activeMode === m.id ? "mode-pill-active" : ""}`}
                         >
-                          {MODE_OPTIONS.map((s) => (
+                          {m.icon}
+                          <span>{m.label}</span>
+                        </button>
+                      ))}
+                      {activeMode === "sohbet" && (
+                        <div className="flex items-center gap-1 ml-1 pl-2" style={{ borderLeft: "1px solid var(--border-secondary)" }}>
+                          {SOHBET_STYLES.map((s) => (
                             <button
                               key={s.id}
                               type="button"
-                              onClick={() => { setSelectedStyle(s.id); setStyleDropdownOpen(false); }}
-                              className="flex items-center w-full px-3 py-2 text-[12px] transition-all text-left"
-                              style={{
-                                background: selectedStyle === s.id ? "var(--accent-primary-light)" : "transparent",
-                                color: selectedStyle === s.id ? "var(--accent-primary)" : "var(--text-secondary)",
-                                fontWeight: selectedStyle === s.id ? 600 : 400,
-                              }}
+                              onClick={(e) => { e.stopPropagation(); setSelectedStyle(s.id); }}
+                              className={`mode-pill ${selectedStyle === s.id ? "mode-pill-active" : ""}`}
+                              style={{ fontSize: "11px", padding: "4px 8px" }}
                             >
                               {s.label}
                             </button>
@@ -920,38 +956,50 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
 
               {/* Right */}
               <div className="flex gap-1 flex-shrink-0 items-center relative">
-                <div className="relative">
+                <div className="relative" ref={modeDropdownRef}>
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); setStyleDropdownOpen(v => !v); }}
-                    className="flex items-center gap-1 h-8 px-2 rounded-xl text-[11px] font-medium transition-all"
-                    style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)" }}
+                    onClick={(e) => { e.stopPropagation(); setModeDropdownOpen(v => !v); }}
+                    className="flex items-center gap-1 h-8 px-2.5 rounded-xl text-[11px] font-medium transition-all"
+                    style={{ background: "var(--bg-tertiary)", color: activeMode !== "sohbet" ? "var(--accent-primary)" : "var(--text-secondary)" }}
                   >
-                    <span>{MODE_OPTIONS.find(s => s.id === selectedStyle)?.label ?? "Sohbet"}</span>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: styleDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
+                    {MODE_OPTIONS.find(m => m.id === activeMode)?.icon}
+                    <span>{activeMode === "sohbet" && selectedStyle !== "sohbet" ? SOHBET_STYLES.find(s => s.id === selectedStyle)?.label : MODE_OPTIONS.find(m => m.id === activeMode)?.label}</span>
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: modeDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
                       <polyline points="6 9 12 15 18 9"/>
                     </svg>
                   </button>
-                  {styleDropdownOpen && (
+                  {modeDropdownOpen && (
                     <div
                       className="absolute bottom-10 right-0 rounded-xl overflow-hidden z-50"
-                      style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", boxShadow: "var(--shadow-lg)", minWidth: 120 }}
+                      style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", boxShadow: "var(--shadow-lg)", minWidth: 140 }}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {MODE_OPTIONS.map((s) => (
+                      {MODE_OPTIONS.map((m) => (
                         <button
-                          key={s.id}
-                          onClick={() => { setSelectedStyle(s.id); setStyleDropdownOpen(false); }}
-                          className="flex items-center w-full px-3 py-2 text-[12px] transition-all text-left"
-                          style={{
-                            background: selectedStyle === s.id ? "var(--accent-primary-light)" : "transparent",
-                            color: selectedStyle === s.id ? "var(--accent-primary)" : "var(--text-secondary)",
-                            fontWeight: selectedStyle === s.id ? 600 : 400,
-                          }}
+                          key={m.id}
+                          onClick={() => handleModeSelect(m.id)}
+                          className={`mode-dd-item ${activeMode === m.id && (m.id !== "sohbet" || selectedStyle === "sohbet") ? "mode-dd-active" : ""}`}
                         >
-                          {s.label}
+                          {m.icon}
+                          <span>{m.label}</span>
                         </button>
                       ))}
+                      {activeMode === "sohbet" && (
+                        <>
+                          <div style={{ height: 1, background: "var(--border-secondary)", margin: "2px 0" }} />
+                          {SOHBET_STYLES.slice(1).map((s) => (
+                            <button
+                              key={s.id}
+                              onClick={() => { setSelectedStyle(s.id); setModeDropdownOpen(false); }}
+                              className={`mode-dd-item ${selectedStyle === s.id ? "mode-dd-active" : ""}`}
+                              style={{ paddingLeft: 28 }}
+                            >
+                              <span>{s.label}</span>
+                            </button>
+                          ))}
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
