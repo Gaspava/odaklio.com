@@ -6,11 +6,6 @@ import Header, { type PageType } from "../layout/Header";
 import MiniSidebar from "../layout/MiniSidebar";
 import ChatHistorySidebar from "../layout/ChatHistorySidebar";
 import MainChat from "../chatbot/MainChat";
-import MindmapChat from "../chatbot/MindmapChat";
-import FlashcardChat from "../chatbot/FlashcardChat";
-import RoadmapChat from "../chatbot/RoadmapChat";
-import { type ChatStyle } from "../chatbot/ChatStyleSelector";
-import ModeSelector from "./ModeSelector";
 import ChatHistoryPage from "../pages/ChatHistoryPage";
 import ToolsPage from "../pages/ToolsPage";
 import MentorPage from "../pages/MentorPage";
@@ -54,8 +49,6 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const router = useRouter();
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
-  const [chatStyle, setChatStyle] = useState<ChatStyle>("standard");
-  const [showModeSelector, setShowModeSelector] = useState(true);
   const [chatKey, setChatKey] = useState(0);
   const [activePage, setActivePage] = useState<PageType>(initialPage || "focus");
   const [mobileBottomSheet, setMobileBottomSheet] = useState<"pomodoro" | "sound" | "new-chat" | "notes" | null>(null);
@@ -94,14 +87,6 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const handleSoundChange = useCallback((playing: boolean) => {
     setSoundPlaying(playing);
   }, []);
-
-  // Sync chatStyle with conversation type (for /chat/[id] URL loads)
-  useEffect(() => {
-    if (activeConversationType && activeConversationType !== chatStyle) {
-      setChatStyle(activeConversationType as ChatStyle);
-      setChatKey((k) => k + 1);
-    }
-  }, [activeConversationType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Prevent body scroll when dashboard is active
   useEffect(() => {
@@ -191,27 +176,12 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
 
   const handleNewChat = () => {
     startNewConversation();
-    setShowModeSelector(true);
-    setChatStyle("standard");
     setChatKey((k) => k + 1);
   };
 
   const handleClearChat = () => {
     startNewConversation();
-    setShowModeSelector(true);
-    setChatStyle("standard");
     setChatKey((k) => k + 1);
-  };
-
-  const handleSelectStyle = (style: ChatStyle) => {
-    startNewConversation();
-    setChatStyle(style);
-    setChatKey((k) => k + 1);
-    setShowModeSelector(false);
-    // Hide right panel when entering a focused mode
-    if (style !== "standard") {
-      setRightOpen(false);
-    }
   };
 
   const handlePageChange = (page: PageType) => {
@@ -223,20 +193,10 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
     }
   };
 
-  const handleOpenConversation = useCallback((id: string, type?: string) => {
+  const handleOpenConversation = useCallback((id: string) => {
     if (id) {
       loadConversation(id).then(() => {
-        const convType = type || conversations.find((c) => c.id === id)?.type;
-        const typeToStyle: Record<string, ChatStyle> = {
-          standard: "standard",
-          mindmap: "mindmap",
-          flashcard: "flashcard",
-          note: "standard",
-          roadmap: "roadmap",
-        };
-        setChatStyle(typeToStyle[convType || "standard"] || "standard");
         setChatKey((k) => k + 1);
-        setShowModeSelector(false);
         setActivePage("focus");
         router.push(`/chat/${id}`);
         if (isMobile) {
@@ -246,8 +206,6 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       });
     } else {
       startNewConversation();
-      setShowModeSelector(true);
-      setChatStyle("standard");
       setChatKey((k) => k + 1);
       setActivePage("focus");
       router.push("/");
@@ -256,7 +214,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
         setRightOpen(false);
       }
     }
-  }, [loadConversation, startNewConversation, isMobile, conversations, router]);
+  }, [loadConversation, startNewConversation, isMobile, router]);
 
   const showSidePanels = activePage === "focus";
 
@@ -267,19 +225,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       case "tools":
         return <ToolsPage onOpenConversation={handleOpenConversation} />;
       case "focus":
-        if (!activeConversationId && showModeSelector) {
-          return <ModeSelector onSelectMode={(mode) => handleSelectStyle(mode as ChatStyle)} />;
-        }
-        switch (chatStyle) {
-          case "mindmap":
-            return <MindmapChat key={chatKey} isMobile={isMobile} />;
-          case "flashcard":
-            return <FlashcardChat key={chatKey} isMobile={isMobile} />;
-          case "roadmap":
-            return <RoadmapChat key={chatKey} isMobile={isMobile} onOpenConversation={handleOpenConversation} />;
-          default:
-            return <MainChat key={chatKey} isMobile={isMobile} />;
-        }
+        return <MainChat key={chatKey} isMobile={isMobile} />;
       case "mentor":
         return <MentorPage />;
       case "analysis":
@@ -341,7 +287,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
         {/* Mini Sidebar - always visible on desktop when on focus page */}
         {!isMobile && showSidePanels && (
           <MiniSidebar
-            onNewChat={(mode) => handleSelectStyle(mode as ChatStyle)}
+            onNewChat={() => handleNewChat()}
             onClearChat={handleClearChat}
           />
         )}
@@ -486,8 +432,8 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
             )}
             {mobileBottomSheet === "new-chat" && (
               <NewChatPopup
-                onSelectMode={(mode) => {
-                  handleSelectStyle(mode as ChatStyle);
+                onSelectMode={() => {
+                  handleNewChat();
                   setMobileBottomSheet(null);
                 }}
                 onClose={() => setMobileBottomSheet(null)}
