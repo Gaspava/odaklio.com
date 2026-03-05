@@ -7,6 +7,7 @@ import SpeedReadingOverlay from "../speed-reading/SpeedReadingOverlay";
 import QuickLearnOverlay from "./QuickLearnOverlay";
 import ChatMessageRenderer from "./ChatMessageRenderer";
 import { useConversation, type ChatMessage } from "@/app/providers/ConversationProvider";
+import type { ConversationType } from "@/lib/db/conversations";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { supabase } from "@/lib/supabase";
 
@@ -23,6 +24,7 @@ const welcomeMessage: ChatMessage = {
 
 async function streamChat(
   messages: { role: string; content: string; imageData?: string; imageMimeType?: string }[],
+  mode: string,
   onChunk: (text: string) => void,
   onError: (error: string) => void,
   onDone: () => void
@@ -30,7 +32,7 @@ async function streamChat(
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({ messages, mode }),
   });
 
   if (!res.ok) {
@@ -91,6 +93,102 @@ function TypingIndicator() {
   );
 }
 
+/* ===== FLASHCARD INLINE RENDERER ===== */
+function FlashcardInlineRenderer({ content }: { content: string }) {
+  const [flipped, setFlipped] = useState<Record<number, boolean>>({});
+  const regex = /\[FLASHCARD\]([\s\S]*?)\|([\s\S]*?)\[\/FLASHCARD\]/g;
+  const cards: { q: string; a: string }[] = [];
+  let match;
+  while ((match = regex.exec(content)) !== null) {
+    cards.push({ q: match[1].trim(), a: match[2].trim() });
+  }
+  const firstTagIdx = content.indexOf("[FLASHCARD]");
+  const intro = firstTagIdx > 0 ? content.slice(0, firstTagIdx).trim() : "";
+  const lastTagEnd = content.lastIndexOf("[/FLASHCARD]");
+  const outro = lastTagEnd >= 0 ? content.slice(lastTagEnd + 12).trim() : "";
+  if (cards.length === 0) return <ChatMessageRenderer content={content} />;
+  return (
+    <div>
+      {intro && <div className="mb-3"><ChatMessageRenderer content={intro} /></div>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 my-2">
+        {cards.map((card, i) => (
+          <div
+            key={i}
+            onClick={() => setFlipped(prev => ({ ...prev, [i]: !prev[i] }))}
+            className="rounded-xl p-4 cursor-pointer transition-all min-h-[72px] flex items-center justify-center text-center select-none"
+            style={{
+              background: flipped[i] ? "var(--accent-primary-light)" : "var(--bg-tertiary)",
+              border: `1px solid ${flipped[i] ? "rgba(210,65,0,0.2)" : "var(--border-primary)"}`,
+            }}
+          >
+            <div>
+              <div className="text-[10px] font-semibold mb-1.5 uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>
+                {flipped[i] ? "Cevap" : "Soru"}
+              </div>
+              <p className="text-[12px] leading-relaxed" style={{ color: flipped[i] ? "var(--accent-primary)" : "var(--text-primary)" }}>
+                {flipped[i] ? card.a : card.q}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+      {outro && <div className="mt-3"><ChatMessageRenderer content={outro} /></div>}
+    </div>
+  );
+}
+
+/* ===== ROADMAP INLINE RENDERER ===== */
+function RoadmapInlineRenderer({ content }: { content: string }) {
+  const titleMatch = content.match(/\[ROADMAP_TITLE\]([\s\S]*?)\[\/ROADMAP_TITLE\]/);
+  const title = titleMatch?.[1]?.trim() ?? "";
+  const stepRegex = /\[STEP\](\d+)\|(.*?)\|(.*?)\|(.*?)\|(true|false)\[\/STEP\]/g;
+  const steps: { n: number; title: string; desc: string; time: string }[] = [];
+  let match;
+  while ((match = stepRegex.exec(content)) !== null) {
+    steps.push({ n: parseInt(match[1]), title: match[2].trim(), desc: match[3].trim(), time: match[4].trim() });
+  }
+  const firstTagIdx = Math.min(
+    content.indexOf("[ROADMAP_TITLE]") >= 0 ? content.indexOf("[ROADMAP_TITLE]") : Infinity,
+    content.indexOf("[STEP]") >= 0 ? content.indexOf("[STEP]") : Infinity
+  );
+  const intro = firstTagIdx > 0 && firstTagIdx !== Infinity ? content.slice(0, firstTagIdx).trim() : "";
+  const lastStepEnd = content.lastIndexOf("[/STEP]");
+  const outro = lastStepEnd >= 0 ? content.slice(lastStepEnd + 7).trim() : "";
+  if (steps.length === 0) return <ChatMessageRenderer content={content} />;
+  return (
+    <div>
+      {intro && <div className="mb-3"><ChatMessageRenderer content={intro} /></div>}
+      {title && (
+        <div className="font-bold text-[14px] mb-3" style={{ color: "var(--text-primary)" }}>{title}</div>
+      )}
+      <div className="space-y-2 my-2">
+        {steps.map((step) => (
+          <div
+            key={step.n}
+            className="flex items-start gap-3 rounded-xl px-3.5 py-3"
+            style={{ background: "var(--bg-tertiary)", border: "1px solid var(--border-primary)" }}
+          >
+            <div
+              className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white mt-0.5"
+              style={{ background: "var(--accent-primary)" }}
+            >
+              {step.n}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-[13px]" style={{ color: "var(--text-primary)" }}>{step.title}</div>
+              <div className="text-[12px] mt-0.5 leading-relaxed" style={{ color: "var(--text-secondary)" }}>{step.desc}</div>
+              {step.time && (
+                <div className="text-[11px] mt-1" style={{ color: "var(--text-tertiary)" }}>⏱ {step.time}</div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      {outro && <div className="mt-3"><ChatMessageRenderer content={outro} /></div>}
+    </div>
+  );
+}
+
 /* ===== AI AVATAR ===== */
 function AiAvatar({ spinning = false }: { spinning?: boolean }) {
   return (
@@ -126,7 +224,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [selectedStyle, setSelectedStyle] = useState<"basit" | "detayli" | "akademik" | "hikaye">("basit");
+  const [selectedStyle, setSelectedStyle] = useState("sohbet");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectionPopup, setSelectionPopup] = useState<{
     x: number;
@@ -145,11 +243,13 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
 
   const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
 
-  const STYLE_OPTIONS = [
-    { id: "basit" as const, label: "Basit", emoji: "💡" },
-    { id: "detayli" as const, label: "Detaylı", emoji: "📖" },
-    { id: "akademik" as const, label: "Akademik", emoji: "🎓" },
-    { id: "hikaye" as const, label: "Hikaye", emoji: "✨" },
+  const MODE_OPTIONS = [
+    { id: "sohbet", label: "Sohbet" },
+    { id: "detayli", label: "Detaylı" },
+    { id: "akademik", label: "Akademik" },
+    { id: "flashcard", label: "Flashcard" },
+    { id: "roadmap", label: "Roadmap" },
+    { id: "mindmap", label: "Mindmap" },
   ];
 
   const STYLE_PREFIXES: Record<string, string> = {
@@ -292,7 +392,8 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
       let conversationId: string;
       let isFirst = isFirstMessageRef.current;
       try {
-        const result = await saveUserMessage(userContent, null, "standard", imageUrl);
+        const convType = (["flashcard", "roadmap", "mindmap"].includes(style) ? style : "standard") as ConversationType;
+      const result = await saveUserMessage(userContent, null, convType, imageUrl);
         conversationId = result.conversationId;
         if (isFirst) {
           isFirstMessageRef.current = false;
@@ -313,11 +414,14 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
       setMessages((prev) => [...prev, aiMsg]);
 
       const stylePrefix: Record<string, string> = {
-        basit: "",
         detayli: "[Detaylı ve kapsamlı açıklama yap] ",
         akademik: "[Akademik ve teknik üslupla açıkla] ",
-        hikaye: "[Hikaye anlatır gibi, akıcı ve eğlenceli anlat] ",
       };
+      const modeMap: Record<string, string> = {
+        sohbet: "standard", detayli: "standard", akademik: "standard",
+        flashcard: "flashcard", roadmap: "roadmap", mindmap: "standard",
+      };
+      const apiMode = modeMap[style] || "standard";
       const enriched = (stylePrefix[style] || "") + userContent;
 
       // Extract base64 and mime type from data URL for API
@@ -338,6 +442,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
       try {
         await streamChat(
           apiMessages,
+          apiMode,
           (text) => {
             fullContent += text;
             setMessages((prev) =>
@@ -584,7 +689,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                         className="flex items-center gap-1.5 h-8 px-3 rounded-xl text-[12px] font-medium transition-all"
                         style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)", border: "1px solid var(--border-secondary)" }}
                       >
-                        <span>{STYLE_OPTIONS.find(s => s.id === selectedStyle)?.label ?? "Basit"}</span>
+                        <span>{MODE_OPTIONS.find(s => s.id === selectedStyle)?.label ?? "Sohbet"}</span>
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: styleDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
                           <polyline points="6 9 12 15 18 9"/>
                         </svg>
@@ -595,7 +700,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                           style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", boxShadow: "var(--shadow-lg)", minWidth: 120 }}
                           onClick={(e) => e.stopPropagation()}
                         >
-                          {STYLE_OPTIONS.map((s) => (
+                          {MODE_OPTIONS.map((s) => (
                             <button
                               key={s.id}
                               type="button"
@@ -679,7 +784,13 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                       {msg.role === "assistant" ? (
                         <>
                           {msg.content ? (
-                            <ChatMessageRenderer content={msg.content} />
+                            msg.content.includes("[FLASHCARD]") ? (
+                              <FlashcardInlineRenderer content={msg.content} />
+                            ) : msg.content.includes("[STEP]") ? (
+                              <RoadmapInlineRenderer content={msg.content} />
+                            ) : (
+                              <ChatMessageRenderer content={msg.content} />
+                            )
                           ) : (
                             isLoading && msg.id === messages[messages.length - 1]?.id && (
                               <TypingIndicator />
@@ -816,7 +927,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                     className="flex items-center gap-1 h-8 px-2 rounded-xl text-[11px] font-medium transition-all"
                     style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)" }}
                   >
-                    <span>{STYLE_OPTIONS.find(s => s.id === selectedStyle)?.label ?? "Basit"}</span>
+                    <span>{MODE_OPTIONS.find(s => s.id === selectedStyle)?.label ?? "Sohbet"}</span>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: styleDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
                       <polyline points="6 9 12 15 18 9"/>
                     </svg>
@@ -827,7 +938,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                       style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", boxShadow: "var(--shadow-lg)", minWidth: 120 }}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {STYLE_OPTIONS.map((s) => (
+                      {MODE_OPTIONS.map((s) => (
                         <button
                           key={s.id}
                           onClick={() => { setSelectedStyle(s.id); setStyleDropdownOpen(false); }}
