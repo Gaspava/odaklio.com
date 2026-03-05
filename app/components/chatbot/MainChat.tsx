@@ -576,23 +576,42 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
 
                   {/* Bottom row */}
                   <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: "1px solid var(--border-secondary)" }}>
-                    {/* Style pills */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {STYLE_OPTIONS.map((s) => (
-                        <button
-                          key={s.id}
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setSelectedStyle(s.id); }}
-                          className="welcome-style-pill"
-                          style={{
-                            background: selectedStyle === s.id ? "rgba(180,55,0,0.1)" : "var(--bg-tertiary)",
-                            color: selectedStyle === s.id ? "var(--accent-primary)" : "var(--text-tertiary)",
-                            border: selectedStyle === s.id ? "1px solid rgba(180,55,0,0.25)" : "1px solid transparent",
-                          }}
+                    {/* Style dropdown */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setStyleDropdownOpen(v => !v); }}
+                        className="flex items-center gap-1.5 h-8 px-3 rounded-xl text-[12px] font-medium transition-all"
+                        style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)", border: "1px solid var(--border-secondary)" }}
+                      >
+                        <span>{STYLE_OPTIONS.find(s => s.id === selectedStyle)?.label ?? "Basit"}</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: styleDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
+                          <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                      </button>
+                      {styleDropdownOpen && (
+                        <div
+                          className="absolute bottom-10 left-0 rounded-xl overflow-hidden z-50"
+                          style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", boxShadow: "var(--shadow-lg)", minWidth: 120 }}
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          {s.label}
-                        </button>
-                      ))}
+                          {STYLE_OPTIONS.map((s) => (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => { setSelectedStyle(s.id); setStyleDropdownOpen(false); }}
+                              className="flex items-center w-full px-3 py-2 text-[12px] transition-all text-left"
+                              style={{
+                                background: selectedStyle === s.id ? "var(--accent-primary-light)" : "transparent",
+                                color: selectedStyle === s.id ? "var(--accent-primary)" : "var(--text-secondary)",
+                                fontWeight: selectedStyle === s.id ? 600 : 400,
+                              }}
+                            >
+                              {s.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Actions: attach + send */}
@@ -795,9 +814,9 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setStyleDropdownOpen(v => !v); }}
                     className="flex items-center gap-1 h-8 px-2 rounded-xl text-[11px] font-medium transition-all"
-                    style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+                    style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)" }}
                   >
-                    
+                    <span>{STYLE_OPTIONS.find(s => s.id === selectedStyle)?.label ?? "Basit"}</span>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: styleDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
                       <polyline points="6 9 12 15 18 9"/>
                     </svg>
@@ -805,22 +824,21 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                   {styleDropdownOpen && (
                     <div
                       className="absolute bottom-10 right-0 rounded-xl overflow-hidden z-50"
-                      style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", boxShadow: "var(--shadow-lg)", minWidth: 130 }}
+                      style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", boxShadow: "var(--shadow-lg)", minWidth: 120 }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       {STYLE_OPTIONS.map((s) => (
                         <button
                           key={s.id}
                           onClick={() => { setSelectedStyle(s.id); setStyleDropdownOpen(false); }}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-[12px] transition-all text-left"
+                          className="flex items-center w-full px-3 py-2 text-[12px] transition-all text-left"
                           style={{
-                            background: selectedStyle === s.id ? "rgba(180, 55, 0, 0.08)" : "transparent",
+                            background: selectedStyle === s.id ? "var(--accent-primary-light)" : "transparent",
                             color: selectedStyle === s.id ? "var(--accent-primary)" : "var(--text-secondary)",
                             fontWeight: selectedStyle === s.id ? 600 : 400,
                           }}
                         >
-                          
-                          <span>{s.label}</span>
+                          {s.label}
                         </button>
                       ))}
                     </div>

@@ -3373,8 +3373,7 @@ body {
 }
 
 .welcome-card-input:focus-within {
-  border-color: rgba(210, 65, 0, 0.35);
-  box-shadow: 0 4px 32px rgba(210, 65, 0, 0.08);
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.08);
 }
 
 .welcome-style-pill {
@@ -3410,17 +3409,8 @@ body {
   transition: box-shadow 200ms ease;
 }
 
-.welcome-input-wrapper:focus-within .welcome-input-inner {
-  outline: 1px solid rgba(210, 65, 0, 0.4);
-}
-
 .chat-input-bar {
   border: 1px solid transparent;
-  transition: border-color 150ms ease;
-}
-
-.chat-input-bar:focus-within {
-  border-color: rgba(210, 65, 0, 0.4);
 }
 
 .welcome-input-wrapper:focus-within .welcome-input-glow {
