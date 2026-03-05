@@ -628,25 +628,27 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                 </div>
               </div>
 
-              {/* Quick Prompts */}
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-2.5 max-w-[600px]">
-                {quickPrompts.map((prompt, i) => (
-                  <button
-                    key={prompt.text}
-                    onClick={() => setInput(prompt.text)}
-                    className="flex items-center gap-2 rounded-xl px-3.5 py-3 sm:px-4 sm:py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md stagger-children"
-                    style={{
-                      background: "var(--bg-card)",
-                      border: "1px solid var(--border-primary)",
-                      color: "var(--text-secondary)",
-                      animationDelay: `${0.4 + i * 0.08}s`,
-                    }}
-                  >
-                    <span className="text-sm" style={{ filter: "grayscale(1)" }}>{prompt.icon}</span>
-                    <span>{prompt.text}</span>
-                  </button>
-                ))}
-              </div>
+              {/* Quick Prompts - desktop only */}
+              {!isMobile && (
+                <div className="flex flex-wrap justify-center gap-2.5 max-w-[600px]">
+                  {quickPrompts.map((prompt, i) => (
+                    <button
+                      key={prompt.text}
+                      onClick={() => setInput(prompt.text)}
+                      className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md stagger-children"
+                      style={{
+                        background: "var(--bg-card)",
+                        border: "1px solid var(--border-primary)",
+                        color: "var(--text-secondary)",
+                        animationDelay: `${0.4 + i * 0.08}s`,
+                      }}
+                    >
+                      <span className="text-sm" style={{ filter: "grayscale(1)" }}>{prompt.icon}</span>
+                      <span>{prompt.text}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             /* Chat Messages */
