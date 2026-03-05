@@ -109,8 +109,8 @@ export default function Header({
     <header
       className="flex items-center px-4 h-14 flex-shrink-0 relative z-10"
       style={{
-        background: "var(--bg-secondary)",
-        borderBottom: "1px solid var(--border-primary)",
+        background: "transparent",
+        borderBottom: "none",
       }}
     >
       {/* Left - Logo */}
