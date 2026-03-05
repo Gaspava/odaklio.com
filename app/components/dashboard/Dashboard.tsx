@@ -305,8 +305,8 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       {isMobile && (
         <div className="mobile-top-bar">
           <button onClick={toggleLeft} className="mobile-sidebar-toggle"
-            style={{ opacity: showSidePanels ? 1 : 0.4, pointerEvents: showSidePanels ? "auto" : "none" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            style={{ opacity: showSidePanels ? 1 : 0.4, pointerEvents: showSidePanels ? "auto" : "none", width: 32, height: 32 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
@@ -323,10 +323,10 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           {/* New chat button - top right */}
           <button
             onClick={() => setMobileBottomSheet("new-chat")}
-            className="flex items-center justify-center w-8 h-8 rounded-xl active:scale-90 transition-all"
-            style={{ background: "#ffffff", color: "#1e293b", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}
+            className="flex items-center justify-center rounded-xl active:scale-90 transition-all"
+            style={{ width: 32, height: 32, background: "#ffffff", color: "#1e293b", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
           </button>
