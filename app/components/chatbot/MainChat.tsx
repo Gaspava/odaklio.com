@@ -680,15 +680,15 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
           {messages.length <= 1 ? (
             <div className="flex flex-col items-center justify-center min-h-full px-4 animate-fade-in">
 
-              {/* Logo + Title row — DeepSeek style */}
-              <div className="flex items-center gap-3 mb-8 sm:mb-10">
+              {/* Logo + Title */}
+              <div className="flex flex-col items-center gap-4 mb-8 sm:mb-10">
                 <img
                   src="/odaklio-logo.svg"
                   alt="Odaklio"
-                  className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0"
+                  className="w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0"
                   style={{ animation: "logo-spin 12s linear infinite" }}
                 />
-                <h1 className="text-xl sm:text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+                <h1 className="text-xl sm:text-2xl font-bold text-center" style={{ color: "var(--text-primary)" }}>
                   {firstName
                     ? <>Merhaba, <span className="welcome-name-glow">{firstName.toUpperCase()}</span>! Nasıl yardımcı olabilirim?</>
                     : "Bugün sana nasıl yardımcı olabilirim?"}
