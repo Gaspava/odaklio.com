@@ -725,32 +725,53 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
 
                   {/* Bottom row */}
                   <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: "1px solid var(--border-secondary)" }}>
-                    {/* Mode pills */}
-                    <div className="flex items-center gap-1 flex-wrap">
-                      {MODE_OPTIONS.map((m) => (
-                        <button
-                          key={m.id}
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); handleModeSelect(m.id); }}
-                          className={`mode-pill ${activeMode === m.id ? "mode-pill-active" : ""}`}
+                    {/* Mode dropdown */}
+                    <div className="relative" ref={modeDropdownRef}>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setModeDropdownOpen(v => !v); }}
+                        className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[11px] font-medium transition-all"
+                        style={{ background: "var(--bg-tertiary)", color: activeMode !== "sohbet" ? "var(--accent-primary)" : "var(--text-secondary)" }}
+                      >
+                        {MODE_OPTIONS.find(m => m.id === activeMode)?.icon}
+                        <span>{activeMode === "sohbet" && selectedStyle !== "sohbet" ? SOHBET_STYLES.find(s => s.id === selectedStyle)?.label : MODE_OPTIONS.find(m => m.id === activeMode)?.label}</span>
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: modeDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
+                          <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                      </button>
+                      {modeDropdownOpen && (
+                        <div
+                          className="absolute bottom-10 left-0 rounded-xl overflow-hidden z-50"
+                          style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", boxShadow: "var(--shadow-lg)", minWidth: 140 }}
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          {m.icon}
-                          <span>{m.label}</span>
-                        </button>
-                      ))}
-                      {activeMode === "sohbet" && (
-                        <div className="flex items-center gap-1 ml-1 pl-2" style={{ borderLeft: "1px solid var(--border-secondary)" }}>
-                          {SOHBET_STYLES.map((s) => (
+                          {MODE_OPTIONS.map((m) => (
                             <button
-                              key={s.id}
+                              key={m.id}
                               type="button"
-                              onClick={(e) => { e.stopPropagation(); setSelectedStyle(s.id); }}
-                              className={`mode-pill ${selectedStyle === s.id ? "mode-pill-active" : ""}`}
-                              style={{ fontSize: "11px", padding: "4px 8px" }}
+                              onClick={() => handleModeSelect(m.id)}
+                              className={`mode-dd-item ${activeMode === m.id && (m.id !== "sohbet" || selectedStyle === "sohbet") ? "mode-dd-active" : ""}`}
                             >
-                              {s.label}
+                              {m.icon}
+                              <span>{m.label}</span>
                             </button>
                           ))}
+                          {activeMode === "sohbet" && (
+                            <>
+                              <div style={{ height: 1, background: "var(--border-secondary)", margin: "2px 0" }} />
+                              {SOHBET_STYLES.slice(1).map((s) => (
+                                <button
+                                  key={s.id}
+                                  type="button"
+                                  onClick={() => { setSelectedStyle(s.id); setModeDropdownOpen(false); }}
+                                  className={`mode-dd-item ${selectedStyle === s.id ? "mode-dd-active" : ""}`}
+                                  style={{ paddingLeft: 28 }}
+                                >
+                                  <span>{s.label}</span>
+                                </button>
+                              ))}
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
