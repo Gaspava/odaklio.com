@@ -1068,10 +1068,61 @@ body {
     color: var(--accent-primary);
   }
 
+  .mobile-top-bar {
+    position: relative;
+  }
+
   .mobile-top-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 8px;
+    pointer-events: none;
+  }
+
+  /* Mobile sidebar quick-action buttons */
+  .mobile-sidebar-action {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--border-primary);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    text-align: left;
+  }
+
+  .mobile-sidebar-action:active {
+    transform: scale(0.97);
+    background: var(--bg-card-hover);
+  }
+
+  .mobile-sidebar-action-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  .mobile-sidebar-action-label {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .mobile-sidebar-action-sub {
+    font-size: 11px;
+    font-weight: 400;
+    margin-top: 1px;
+    opacity: 0.55;
   }
 
   .mobile-logo {

@@ -310,6 +310,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
               <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
+          {/* Centered logo - absolutely positioned */}
           <div className="mobile-top-center">
             <span
               className="text-base font-black tracking-widest select-none"
@@ -318,34 +319,6 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
             >
               ODAKLIO
             </span>
-            <button onClick={toggleTheme} className="mobile-theme-toggle">
-              {theme === "dark" ? <IconSun size={14} /> : <IconMoon size={14} />}
-            </button>
-            <button onClick={() => setMobileBottomSheet("pomodoro")} className="mobile-theme-toggle" style={{ position: "relative" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="13" r="8" /><path d="M12 9v4l2 2" /><path d="M5 3L2 6" /><path d="M22 6l-3-3" />
-              </svg>
-              {pomodoroRunning && (
-                <span style={{
-                  position: "absolute", top: -2, right: -2, width: 8, height: 8,
-                  borderRadius: "50%", background: "var(--accent-primary)",
-                  animation: "pulse 1.5s infinite"
-                }} />
-              )}
-            </button>
-            <button onClick={() => setMobileBottomSheet("sound")} className="mobile-theme-toggle" style={{ position: "relative" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
-                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
-              </svg>
-              {soundPlaying && (
-                <span style={{
-                  position: "absolute", top: -2, right: -2, width: 8, height: 8,
-                  borderRadius: "50%", background: "var(--accent-cyan)",
-                  animation: "pulse 1.5s infinite"
-                }} />
-              )}
-            </button>
           </div>
         </div>
       )}
@@ -367,18 +340,74 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
         {showSidePanels && isMobile && leftOpen && (
           <div className="panel-mobile-overlay panel-left flex-shrink-0 overflow-visible transition-all duration-300 ease-in-out relative"
             style={{ width: "85vw", maxWidth: 320, background: "var(--bg-secondary)" }}>
-            <div className="h-full overflow-y-auto p-3 space-y-3">
-              <div className="flex items-center justify-between pb-1">
-                <h2 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Sohbetler</h2>
+            <div className="h-full flex flex-col">
+              {/* Sidebar header */}
+              <div className="flex items-center justify-between px-4 pt-4 pb-3">
+                <span
+                  className="text-base font-black tracking-widest select-none"
+                  key={theme}
+                  style={{ letterSpacing: "0.18em", fontFamily: "'Inter', sans-serif", backgroundImage: theme === "dark" ? "linear-gradient(90deg, #e2e8f0, #f8fafc)" : "linear-gradient(90deg, #1e293b, #334155)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}
+                >
+                  ODAKLIO
+                </span>
                 <button onClick={() => setLeftOpen(false)}
-                  className="flex items-center justify-center w-7 h-7 rounded-lg"
+                  className="flex items-center justify-center w-8 h-8 rounded-xl transition-all active:scale-90"
                   style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
                 </button>
               </div>
-              <ChatHistorySidebar onOpenConversation={handleOpenConversation} />
+
+              {/* Quick actions */}
+              <div className="px-3 pb-3 space-y-2">
+                <button className="mobile-sidebar-action" onClick={() => { toggleTheme(); }}>
+                  <div className="mobile-sidebar-action-icon" style={{ background: "rgba(139,92,246,0.1)", color: "#8b5cf6" }}>
+                    {theme === "dark" ? <IconSun size={16} /> : <IconMoon size={16} />}
+                  </div>
+                  <div>
+                    <div className="mobile-sidebar-action-label" style={{ color: "var(--text-primary)" }}>
+                      {theme === "dark" ? "Açık Tema" : "Koyu Tema"}
+                    </div>
+                    <div className="mobile-sidebar-action-sub">Görünümü değiştir</div>
+                  </div>
+                </button>
+
+                <button className="mobile-sidebar-action" onClick={() => { setMobileBottomSheet("pomodoro"); setLeftOpen(false); }} style={{ position: "relative" }}>
+                  <div className="mobile-sidebar-action-icon" style={{ background: "rgba(204,61,0,0.1)", color: "var(--accent-primary)" }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="13" r="8" /><path d="M12 9v4l2 2" /><path d="M5 3L2 6" /><path d="M22 6l-3-3" />
+                    </svg>
+                    {pomodoroRunning && <span style={{ position: "absolute", top: 10, right: 10, width: 8, height: 8, borderRadius: "50%", background: "var(--accent-primary)", animation: "pulse 1.5s infinite" }} />}
+                  </div>
+                  <div>
+                    <div className="mobile-sidebar-action-label" style={{ color: "var(--text-primary)" }}>Pomodoro</div>
+                    <div className="mobile-sidebar-action-sub">{pomodoroRunning ? "Süre devam ediyor" : "Odak zamanlayıcı"}</div>
+                  </div>
+                </button>
+
+                <button className="mobile-sidebar-action" onClick={() => { setMobileBottomSheet("sound"); setLeftOpen(false); }}>
+                  <div className="mobile-sidebar-action-icon" style={{ background: "rgba(6,182,212,0.1)", color: "var(--accent-cyan)" }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+                      <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="mobile-sidebar-action-label" style={{ color: "var(--text-primary)" }}>Ortam Sesi</div>
+                    <div className="mobile-sidebar-action-sub">{soundPlaying ? "Çalıyor" : "Odak müziği"}</div>
+                  </div>
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="mx-3 mb-2" style={{ height: 1, background: "var(--border-secondary)" }} />
+
+              {/* Conversations */}
+              <div className="flex-1 overflow-y-auto px-3 pb-3">
+                <p className="text-[11px] font-semibold mb-2 px-1" style={{ color: "var(--text-tertiary)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Sohbetler</p>
+                <ChatHistorySidebar onOpenConversation={handleOpenConversation} />
+              </div>
             </div>
           </div>
         )}
