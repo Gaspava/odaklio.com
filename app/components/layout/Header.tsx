@@ -109,8 +109,10 @@ export default function Header({
     <header
       className="flex items-center px-4 h-14 flex-shrink-0 relative z-10"
       style={{
-        background: "transparent",
-        borderBottom: "none",
+        background: "rgba(var(--bg-primary-rgb, 248, 249, 250), 0.75)",
+        borderBottom: "1px solid rgba(180, 55, 0, 0.08)",
+        backdropFilter: "blur(20px) saturate(1.3)",
+        WebkitBackdropFilter: "blur(20px) saturate(1.3)",
       }}
     >
       {/* Left - Logo */}
@@ -125,19 +127,21 @@ export default function Header({
       </div>
 
       {/* Center - Nav Pills (absolutely centered on full page width) */}
-      <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1">
-        {pages.map((page) => (
-          <Link
-            key={page.id}
-            href={PAGE_ROUTES[page.id]}
-            onClick={() => onPageChange(page.id)}
-            className={`nav-pill ${activePage === page.id ? "active" : ""}`}
-            title={page.label}
-          >
-            <span className="flex-shrink-0">{page.icon}</span>
-            <span className="hidden sm:inline">{page.label}</span>
-          </Link>
-        ))}
+      <nav className="absolute left-1/2 -translate-x-1/2">
+        <div className="nav-glass-container">
+          {pages.map((page) => (
+            <Link
+              key={page.id}
+              href={PAGE_ROUTES[page.id]}
+              onClick={() => onPageChange(page.id)}
+              className={`nav-pill ${activePage === page.id ? "active" : ""}`}
+              title={page.label}
+            >
+              <span className="flex-shrink-0">{page.icon}</span>
+              <span className="hidden sm:inline">{page.label}</span>
+            </Link>
+          ))}
+        </div>
       </nav>
 
       {/* Right - Profile Area */}
