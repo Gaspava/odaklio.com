@@ -241,6 +241,9 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastAiMsgIdRef = useRef<string | null>(null);
   const isFirstMessageRef = useRef(true);
+  const loadedConvIdRef = useRef<string | null>(null);
+  const messagesRef = useRef<ChatMessage[]>([welcomeMessage]);
+  messagesRef.current = messages;
 
   const MODE_OPTIONS = [
     {
@@ -335,19 +338,25 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
     }
   }, [user]);
 
-  // Load conversation ONLY on mount — if there's an active conversation, fetch its messages
+  // Load conversation when activeConversationId changes (handles direct URL access & refresh)
   useEffect(() => {
-    if (activeConversationId) {
-      isFirstMessageRef.current = false;
-      setIsInitialLoading(true);
-      loadConversation(activeConversationId).then((loaded) => {
-        if (loaded.length > 0) {
-          setMessages([welcomeMessage, ...loaded]);
-        }
-        setIsInitialLoading(false);
-      });
+    if (!activeConversationId) return;
+    if (loadedConvIdRef.current === activeConversationId) return;
+    // If messages are already building (user just sent first msg), skip reload
+    if (messagesRef.current.length > 1) {
+      loadedConvIdRef.current = activeConversationId;
+      return;
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    loadedConvIdRef.current = activeConversationId;
+    isFirstMessageRef.current = false;
+    setIsInitialLoading(true);
+    loadConversation(activeConversationId).then((loaded) => {
+      if (loaded.length > 0) {
+        setMessages([welcomeMessage, ...loaded]);
+      }
+      setIsInitialLoading(false);
+    });
+  }, [activeConversationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll to the START of the last AI message
   useEffect(() => {
