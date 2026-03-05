@@ -855,7 +855,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                 <div
                   id={`msg-${msg.id}`}
                   key={msg.id}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-msg-in`}
+                  className={`flex ${msg.role === "user" ? "justify-end" : isMobile ? "flex-col" : "justify-start"} animate-msg-in`}
                   style={{ animationDelay: `${Math.min(idx * 0.05, 0.3)}s` }}
                 >
                   {msg.role === "assistant" && (
@@ -1013,42 +1013,44 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
 
               {/* Right */}
               <div className="flex gap-1 flex-shrink-0 items-center relative">
-                {/* 1st: Mode dropdown */}
-                <div className="relative" ref={modeDropdownRef}>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); setModeDropdownOpen(v => !v); setStyleDropdownOpen(false); }}
-                    className="flex items-center gap-1 h-8 px-2.5 rounded-xl text-[11px] font-medium transition-all"
-                    style={{ background: "var(--bg-tertiary)", color: activeMode !== "sohbet" ? "var(--accent-primary)" : "var(--text-secondary)" }}
-                  >
-                    {MODE_OPTIONS.find(m => m.id === activeMode)?.icon}
-                    <span>{MODE_OPTIONS.find(m => m.id === activeMode)?.label}</span>
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: modeDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
-                      <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                  </button>
-                  {modeDropdownOpen && (
-                    <div
-                      className="absolute bottom-10 right-0 rounded-xl overflow-hidden z-50"
-                      style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", boxShadow: "var(--shadow-lg)", minWidth: 130 }}
-                      onClick={(e) => e.stopPropagation()}
+                {/* 1st: Mode dropdown — hidden once conversation started */}
+                {!hasUserMessages && (
+                  <div className="relative" ref={modeDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setModeDropdownOpen(v => !v); setStyleDropdownOpen(false); }}
+                      className="flex items-center gap-1 h-8 px-2.5 rounded-xl text-[11px] font-medium transition-all"
+                      style={{ background: "var(--bg-tertiary)", color: activeMode !== "sohbet" ? "var(--accent-primary)" : "var(--text-secondary)" }}
                     >
-                      {MODE_OPTIONS.map((m) => (
-                        <button
-                          key={m.id}
-                          onClick={() => { handleModeSelect(m.id); setStyleDropdownOpen(false); }}
-                          className={`mode-dd-item ${activeMode === m.id ? "mode-dd-active" : ""}`}
-                        >
-                          {m.icon}
-                          <span>{m.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                      {MODE_OPTIONS.find(m => m.id === activeMode)?.icon}
+                      <span>{MODE_OPTIONS.find(m => m.id === activeMode)?.label}</span>
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: modeDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+                    {modeDropdownOpen && (
+                      <div
+                        className="absolute bottom-10 right-0 rounded-xl overflow-hidden z-50"
+                        style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", boxShadow: "var(--shadow-lg)", minWidth: 130 }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {MODE_OPTIONS.map((m) => (
+                          <button
+                            key={m.id}
+                            onClick={() => { handleModeSelect(m.id); setStyleDropdownOpen(false); }}
+                            className={`mode-dd-item ${activeMode === m.id ? "mode-dd-active" : ""}`}
+                          >
+                            {m.icon}
+                            <span>{m.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-                {/* 2nd: Style dropdown (only when sohbet) */}
-                {activeMode === "sohbet" && (
+                {/* 2nd: Style dropdown (only when sohbet and no messages yet) */}
+                {!hasUserMessages && activeMode === "sohbet" && (
                   <div className="relative" ref={styleDropdownRef}>
                     <button
                       type="button"
