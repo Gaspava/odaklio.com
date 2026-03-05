@@ -1055,8 +1055,8 @@ body {
     width: 36px;
     height: 36px;
     border-radius: 10px;
-    border: 1px solid var(--border-primary);
-    background: var(--bg-tertiary);
+    border: none;
+    background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.2s ease;
@@ -1064,7 +1064,6 @@ body {
 
   .mobile-sidebar-toggle:active {
     transform: scale(0.92);
-    background: var(--accent-primary-light);
     color: var(--accent-primary);
   }
 
