@@ -719,9 +719,8 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
             className="max-w-[720px] mx-auto rounded-2xl px-3 py-2.5 sm:px-4 transition-all cursor-text"
             style={{
               background: "var(--bg-card)",
-              border: "1.5px solid var(--border-primary)",
+              border: "none",
               boxShadow: input.trim() ? "var(--shadow-glow-sm)" : "var(--shadow-md)",
-              borderColor: input.trim() ? "rgba(180, 55, 0, 0.4)" : "var(--border-primary)",
             }}
             onClick={() => inputRef.current?.focus()}
           >

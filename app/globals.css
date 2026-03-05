@@ -3397,15 +3397,15 @@ body {
   padding: 10px 14px;
   border-radius: 18px;
   background: var(--bg-card);
-  border: 1.5px solid var(--border-primary);
+  border: none;
+  box-shadow: var(--shadow-md);
   z-index: 1;
   cursor: text;
-  transition: border-color 200ms ease, box-shadow 200ms ease;
+  transition: box-shadow 200ms ease;
 }
 
 .welcome-input-wrapper:focus-within .welcome-input-inner {
-  border-color: rgba(180, 55, 0, 0.55);
-  box-shadow: 0 0 0 3px rgba(180, 55, 0, 0.1);
+  box-shadow: 0 0 0 2px rgba(180, 55, 0, 0.35), var(--shadow-md);
 }
 
 .welcome-input-wrapper:focus-within .welcome-input-glow {
