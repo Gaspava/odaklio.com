@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, type Part } from "@google/generative-ai";
 import { getUserProfile } from "@/lib/db/profile";
 import { supabase } from "@/lib/supabase";
 
@@ -253,14 +253,23 @@ export async function POST(request: Request) {
 
     const lastMessage = messages[messages.length - 1];
 
+    type ApiMessage = { role: string; content: string; imageData?: string; imageMimeType?: string };
+
     // Build history from previous messages (exclude the last one)
     const history = messages
       .slice(0, -1)
-      .filter((msg: { role: string; content: string }) => msg.content?.trim())
-      .map((msg: { role: string; content: string }) => ({
-        role: msg.role === "assistant" ? "model" : "user",
-        parts: [{ text: msg.content }],
-      }));
+      .filter((msg: ApiMessage) => msg.content?.trim())
+      .map((msg: ApiMessage) => {
+        const parts: Part[] = [];
+        if (msg.imageData && msg.imageMimeType) {
+          parts.push({ inlineData: { mimeType: msg.imageMimeType, data: msg.imageData } });
+        }
+        parts.push({ text: msg.content });
+        return {
+          role: msg.role === "assistant" ? "model" : "user",
+          parts,
+        };
+      });
 
     // Ensure history starts with a user message (Gemini requirement)
     if (history.length > 0 && history[0].role === "model") {
@@ -268,7 +277,15 @@ export async function POST(request: Request) {
     }
 
     const chat = model.startChat({ history });
-    const result = await chat.sendMessageStream(lastMessage.content);
+
+    // Build parts for the last message (may include image)
+    const lastMessageParts: Part[] = [];
+    if (lastMessage.imageData && lastMessage.imageMimeType) {
+      lastMessageParts.push({ inlineData: { mimeType: lastMessage.imageMimeType, data: lastMessage.imageData } });
+    }
+    lastMessageParts.push({ text: lastMessage.content || (lastMessage.imageData ? "Bu görseli açıkla." : "") });
+
+    const result = await chat.sendMessageStream(lastMessageParts);
 
     // Stream the response
     const encoder = new TextEncoder();

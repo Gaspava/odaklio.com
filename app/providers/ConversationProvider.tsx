@@ -30,6 +30,7 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   dbId?: string;
+  imageUrl?: string;
 }
 
 export interface MindmapSaveData {
@@ -54,7 +55,7 @@ interface ConversationContextType {
   refreshConversations: () => Promise<void>;
   deleteConversation: (id: string) => Promise<void>;
 
-  saveUserMessage: (content: string, nodeId?: string | null, type?: ConversationType) => Promise<{ conversationId: string; messageId: string }>;
+  saveUserMessage: (content: string, nodeId?: string | null, type?: ConversationType, imageUrl?: string) => Promise<{ conversationId: string; messageId: string }>;
   saveAssistantMessage: (conversationId: string, content: string, nodeId?: string | null) => Promise<string>;
   updateAssistantMessage: (messageId: string, content: string) => Promise<void>;
   generateTitle: (conversationId: string, firstMessage: string) => Promise<void>;
@@ -166,6 +167,7 @@ export default function ConversationProvider({ children }: { children: ReactNode
         content: m.content,
         timestamp: new Date(m.created_at),
         dbId: m.id,
+        imageUrl: m.metadata?.image_url as string | undefined,
       }));
     } catch (err) {
       console.error("Failed to load conversation:", err);
@@ -176,7 +178,7 @@ export default function ConversationProvider({ children }: { children: ReactNode
   }, []);
 
   const saveUserMessage = useCallback(
-    async (content: string, nodeId: string | null = null, type: ConversationType = "standard"): Promise<{ conversationId: string; messageId: string }> => {
+    async (content: string, nodeId: string | null = null, type: ConversationType = "standard", imageUrl?: string): Promise<{ conversationId: string; messageId: string }> => {
       if (!user) throw new Error("Not authenticated");
 
       let convId = activeConversationId;
@@ -188,7 +190,8 @@ export default function ConversationProvider({ children }: { children: ReactNode
         setActiveConversationType(type);
       }
 
-      const msg = await insertMessage(convId, "user", content, {}, nodeId);
+      const metadata: Record<string, unknown> = imageUrl ? { image_url: imageUrl } : {};
+      const msg = await insertMessage(convId, "user", content, metadata, nodeId);
       insertInteraction(user.id, 'message_sent', convId).catch(console.error);
       return { conversationId: convId, messageId: msg.id };
     },

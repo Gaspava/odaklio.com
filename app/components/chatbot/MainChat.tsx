@@ -8,6 +8,7 @@ import QuickLearnOverlay from "./QuickLearnOverlay";
 import ChatMessageRenderer from "./ChatMessageRenderer";
 import { useConversation, type ChatMessage } from "@/app/providers/ConversationProvider";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { supabase } from "@/lib/supabase";
 
 interface MainChatProps {
   isMobile?: boolean;
@@ -21,7 +22,7 @@ const welcomeMessage: ChatMessage = {
 };
 
 async function streamChat(
-  messages: { role: string; content: string }[],
+  messages: { role: string; content: string; imageData?: string; imageMimeType?: string }[],
   onChunk: (text: string) => void,
   onError: (error: string) => void,
   onDone: () => void
@@ -169,6 +170,29 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
     reader.readAsDataURL(file);
   };
 
+  const uploadImageToStorage = useCallback(async (dataUrl: string): Promise<string | null> => {
+    if (!user) return null;
+    try {
+      const base64Data = dataUrl.split(",")[1];
+      const mimeType = dataUrl.split(";")[0].split(":")[1];
+      const ext = mimeType.split("/")[1] || "jpg";
+      const fileName = `${user.id}/${Date.now()}.${ext}`;
+      const byteChars = atob(base64Data);
+      const byteNums = new Uint8Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+      const blob = new Blob([byteNums], { type: mimeType });
+      const { data, error } = await supabase.storage
+        .from("chat-images")
+        .upload(fileName, blob, { contentType: mimeType, upsert: false });
+      if (error) { console.error("Image upload error:", error); return null; }
+      const { data: { publicUrl } } = supabase.storage.from("chat-images").getPublicUrl(data.path);
+      return publicUrl;
+    } catch (err) {
+      console.error("Image upload failed:", err);
+      return null;
+    }
+  }, [user]);
+
   // Load conversation ONLY on mount — if there's an active conversation, fetch its messages
   useEffect(() => {
     if (activeConversationId) {
@@ -255,14 +279,20 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
   }, [handleTextSelection]);
 
   const sendToAI = useCallback(
-    async (userContent: string, allMessages: ChatMessage[], style: string = "basit") => {
+    async (userContent: string, allMessages: ChatMessage[], style: string = "basit", pendingImageData?: string) => {
       setIsLoading(true);
+
+      // Upload image if present
+      let imageUrl: string | undefined;
+      if (pendingImageData) {
+        imageUrl = await uploadImageToStorage(pendingImageData) ?? undefined;
+      }
 
       // Save user message to DB
       let conversationId: string;
       let isFirst = isFirstMessageRef.current;
       try {
-        const result = await saveUserMessage(userContent);
+        const result = await saveUserMessage(userContent, null, "standard", imageUrl);
         conversationId = result.conversationId;
         if (isFirst) {
           isFirstMessageRef.current = false;
@@ -290,10 +320,18 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
       };
       const enriched = (stylePrefix[style] || "") + userContent;
 
-      const apiMessages = allMessages
+      // Extract base64 and mime type from data URL for API
+      let imageData: string | undefined;
+      let imageMimeType: string | undefined;
+      if (pendingImageData) {
+        imageMimeType = pendingImageData.split(";")[0].split(":")[1];
+        imageData = pendingImageData.split(",")[1];
+      }
+
+      const apiMessages: { role: string; content: string; imageData?: string; imageMimeType?: string }[] = allMessages
         .filter((m) => m.id !== "welcome")
         .map((m) => ({ role: m.role, content: m.content }));
-      apiMessages.push({ role: "user", content: enriched });
+      apiMessages.push({ role: "user", content: enriched, imageData, imageMimeType });
 
       let fullContent = "";
 
@@ -354,24 +392,25 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
         setIsLoading(false);
       }
     },
-    [saveUserMessage, saveAssistantMessage, generateTitle, refreshConversations]
+    [saveUserMessage, saveAssistantMessage, generateTitle, refreshConversations, uploadImageToStorage]
   );
 
   const handleSend = useCallback(() => {
     if ((!input.trim() && !imagePreview) || isLoading) return;
 
-    const userContent = imagePreview
-      ? input.trim() ? `${input.trim()} [Görsel eklendi]` : "[Görsel eklendi]"
-      : input;
+    const userContent = input.trim() || "";
+    const capturedImage = imagePreview;
+
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
       content: userContent,
       timestamp: new Date(),
+      imageUrl: capturedImage ?? undefined,
     };
 
     setMessages((prev) => [...prev, userMsg]);
-    sendToAI(userContent, messages, selectedStyle);
+    sendToAI(userContent, messages, selectedStyle, capturedImage ?? undefined);
 
     setInput("");
     setImagePreview(null);
@@ -454,7 +493,8 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
           {!isMobile && hasUserMessages && (
             <div className="inline-chat-map">
               {userMessages.map((msg, index) => {
-                const truncated = msg.content.length > 30 ? msg.content.substring(0, 30) + "…" : msg.content;
+                const displayText = msg.content || (msg.imageUrl ? "🖼 Görsel" : "");
+                const truncated = displayText.length > 30 ? displayText.substring(0, 30) + "…" : displayText;
                 return (
                   <button
                     key={msg.id}
@@ -666,7 +706,19 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                           )}
                         </>
                       ) : (
-                        <p className="text-[13px] sm:text-sm leading-relaxed">{msg.content}</p>
+                        <div className="flex flex-col gap-2">
+                          {msg.imageUrl && (
+                            <img
+                              src={msg.imageUrl}
+                              alt="Paylaşılan görsel"
+                              className="rounded-lg object-cover max-h-48"
+                              style={{ maxWidth: 280 }}
+                            />
+                          )}
+                          {msg.content && (
+                            <p className="text-[13px] sm:text-sm leading-relaxed">{msg.content}</p>
+                          )}
+                        </div>
                       )}
                     </div>
 
