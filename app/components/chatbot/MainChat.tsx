@@ -513,7 +513,7 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                 <div className="welcome-input-wrapper" onClick={() => inputRef.current?.focus()}>
                   <div className="welcome-input-inner">
                     {/* Left buttons */}
-                    <div className="flex gap-1 flex-shrink-0 items-end mb-0.5">
+                    <div className="flex gap-1 flex-shrink-0 items-center">
                       <button
                         onClick={(e) => { e.stopPropagation(); setIsListening(!isListening); }}
                         className="flex h-8 w-8 items-center justify-center rounded-xl transition-all"
@@ -565,12 +565,12 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                         placeholder={isMobile ? "Ne öğrenmek istiyorsun?" : "Ne öğrenmek istiyorsun? Herhangi bir şey sor..."}
                         disabled={isLoading}
                         className="w-full bg-transparent text-sm sm:text-base outline-none disabled:opacity-50 resize-none leading-relaxed"
-                        style={{ color: "var(--text-primary)", minHeight: "24px", maxHeight: "200px", overflowY: "auto" }}
+                        style={{ color: "var(--text-primary)", minHeight: "24px", maxHeight: "200px", overflowY: "auto", padding: 0 }}
                       />
                     </div>
 
                     {/* Right buttons */}
-                    <div className="flex gap-1 flex-shrink-0 items-end mb-0.5 relative">
+                    <div className="flex gap-1 flex-shrink-0 items-center relative">
                       {/* Style Dropdown */}
                       <div className="relative">
                         <button
@@ -754,9 +754,9 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                 >✕</button>
               </div>
             )}
-            <div className="flex items-end gap-2">
+            <div className="flex items-center gap-2">
               {/* Left */}
-              <div className="flex gap-1 flex-shrink-0 mb-0.5">
+              <div className="flex gap-1 flex-shrink-0 items-center">
                 <button
                   onClick={(e) => { e.stopPropagation(); setIsListening(!isListening); }}
                   className="flex h-8 w-8 items-center justify-center rounded-xl transition-all"
@@ -795,11 +795,11 @@ export default function MainChat({ isMobile = false }: MainChatProps) {
                 }
                 disabled={isLoading}
                 className="flex-1 bg-transparent text-[13px] sm:text-sm outline-none disabled:opacity-50 resize-none leading-relaxed"
-                style={{ color: "var(--text-primary)", minHeight: "24px", maxHeight: "200px", overflowY: "auto" }}
+                style={{ color: "var(--text-primary)", minHeight: "24px", maxHeight: "200px", overflowY: "auto", padding: 0 }}
               />
 
               {/* Right */}
-              <div className="flex gap-1 flex-shrink-0 items-end mb-0.5 relative">
+              <div className="flex gap-1 flex-shrink-0 items-center relative">
                 <div className="relative">
                   <button
                     type="button"

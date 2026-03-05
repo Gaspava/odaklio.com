@@ -3322,7 +3322,7 @@ body {
 .welcome-input-inner {
   position: relative;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 8px;
   padding: 10px 14px;
   border-radius: 18px;
