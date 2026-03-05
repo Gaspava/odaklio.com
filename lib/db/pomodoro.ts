@@ -114,22 +114,42 @@ export async function getRecentSessions(
   return data || [];
 }
 
+export async function getAllSessions(
+  userId: string,
+  limit: number = 100
+): Promise<PomodoroSession[]> {
+  const { data, error } = await supabase
+    .from("pomodoro_sessions")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("session_type", "work")
+    .in("status", ["completed", "cancelled"])
+    .order("started_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data || [];
+}
+
 export async function getPomodoroStats(
   userId: string,
   days: number = 7
 ): Promise<{ date: string; count: number; totalMinutes: number }[]> {
-  const since = new Date();
-  since.setDate(since.getDate() - days);
-  since.setHours(0, 0, 0, 0);
-
-  const { data, error } = await supabase
+  let query = supabase
     .from("pomodoro_sessions")
     .select("started_at, actual_seconds")
     .eq("user_id", userId)
     .eq("session_type", "work")
     .eq("status", "completed")
-    .gte("started_at", since.toISOString())
     .order("started_at", { ascending: true });
+
+  if (days > 0) {
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+    since.setHours(0, 0, 0, 0);
+    query = query.gte("started_at", since.toISOString());
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
 
   const byDate: Record<string, { count: number; totalMinutes: number }> = {};

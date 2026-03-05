@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { usePomodoro } from "@/app/providers/PomodoroProvider";
-import { getRecentSessions, type PomodoroSession } from "@/lib/db/pomodoro";
+import { getRecentSessions, getAllSessions, getPomodoroStats, type PomodoroSession } from "@/lib/db/pomodoro";
 import {
   getSavedFlashcards,
   getSavedFlashcardsByConversation,
@@ -583,8 +583,15 @@ function PomodoroDetail({ onBack }: { onBack: () => void }) {
     updateSettings,
   } = usePomodoro();
 
+  const [activeTab, setActiveTab] = useState<"timer" | "stats" | "history">("timer");
   const [showSettings, setShowSettings] = useState(false);
   const [todayStats, setTodayStats] = useState({ totalMinutes: 0, count: 0, total: 0 });
+  const [statsPeriod, setStatsPeriod] = useState<7 | 30 | 0>(7);
+  const [statsData, setStatsData] = useState<{ date: string; count: number; totalMinutes: number }[]>([]);
+  const [subjectStats, setSubjectStats] = useState<Record<string, number>>({});
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [historySessions, setHistorySessions] = useState<PomodoroSession[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const displayMinutes = Math.floor(timeLeft / 60);
   const displaySeconds = timeLeft % 60;
@@ -614,6 +621,42 @@ function PomodoroDetail({ onBack }: { onBack: () => void }) {
       });
     }).catch(() => {});
   }, [user, completedPomodoros]);
+
+  // Stats sekmesi veri yukle
+  useEffect(() => {
+    if (activeTab !== "stats" || !user) return;
+    setLoadingStats(true);
+    Promise.all([
+      getPomodoroStats(user.id, statsPeriod),
+      getAllSessions(user.id, 200),
+    ]).then(([data, sessions]) => {
+      setStatsData(data);
+      const since = statsPeriod > 0
+        ? new Date(Date.now() - statsPeriod * 24 * 60 * 60 * 1000)
+        : null;
+      const filtered = since
+        ? sessions.filter((s) => new Date(s.started_at) >= since)
+        : sessions;
+      const bySubject: Record<string, number> = {};
+      for (const s of filtered) {
+        if (s.status !== "completed") continue;
+        const sub = s.subject || "Genel";
+        bySubject[sub] = (bySubject[sub] || 0) + Math.round(s.actual_seconds / 60);
+      }
+      setSubjectStats(bySubject);
+      setLoadingStats(false);
+    }).catch(() => setLoadingStats(false));
+  }, [activeTab, statsPeriod, user]);
+
+  // Gecmis sekmesi veri yukle
+  useEffect(() => {
+    if (activeTab !== "history" || !user) return;
+    setLoadingHistory(true);
+    getAllSessions(user.id, 100).then((sessions) => {
+      setHistorySessions(sessions);
+      setLoadingHistory(false);
+    }).catch(() => setLoadingHistory(false));
+  }, [activeTab, user]);
 
   const handlePlayPause = () => {
     if (isRunning) {
@@ -649,170 +692,409 @@ function PomodoroDetail({ onBack }: { onBack: () => void }) {
         </button>
       </div>
 
-      {/* Timer Card */}
-      <div
-        className="rounded-2xl p-6 flex flex-col items-center gap-5"
-        style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
-      >
-        {/* Subject Badge */}
-        {currentSubject && (
-          <div className="px-3 py-1 rounded-full text-[10px] font-semibold"
-            style={{ background: `${modeColor}15`, color: modeColor }}>
-            {currentSubject}
-          </div>
-        )}
-
-        {/* Mode Toggle */}
-        <div className="flex rounded-xl p-1 w-full max-w-[260px]" style={{ background: "var(--bg-tertiary)" }}>
-          {(["work", "break"] as const).map((m) => (
+      {/* Tab Bar */}
+      <div className="flex rounded-xl p-1" style={{ background: "var(--bg-tertiary)" }}>
+        {(["timer", "stats", "history"] as const).map((tab) => {
+          const labels = { timer: "Timer", stats: "Istatistik", history: "Gecmis" };
+          return (
             <button
-              key={m}
-              onClick={() => { if (!isRunning && m !== mode) reset(); }}
+              key={tab}
+              onClick={() => setActiveTab(tab)}
               className="flex-1 rounded-lg py-2 text-xs font-semibold transition-all"
               style={{
-                background: mode === m ? "var(--bg-card)" : "transparent",
-                color: mode === m ? (m === "work" ? "var(--accent-primary)" : "var(--accent-cyan)") : "var(--text-tertiary)",
-                boxShadow: mode === m ? "var(--shadow-sm)" : "none",
-                opacity: isRunning && mode !== m ? 0.4 : 1,
-                cursor: isRunning && mode !== m ? "not-allowed" : "pointer",
+                background: activeTab === tab ? "var(--bg-card)" : "transparent",
+                color: activeTab === tab ? "var(--accent-primary)" : "var(--text-tertiary)",
+                boxShadow: activeTab === tab ? "var(--shadow-sm)" : "none",
               }}
             >
-              {m === "work" ? `Calis (${settings.workMinutes}dk)` : `Mola (${settings.shortBreakMinutes}dk)`}
+              {labels[tab]}
             </button>
-          ))}
-        </div>
+          );
+        })}
+      </div>
 
-        {/* Timer Circle */}
-        <div className="relative">
-          <svg width="200" height="200" className="-rotate-90">
-            <circle cx="100" cy="100" r="70" fill="none" stroke="var(--bg-tertiary)" strokeWidth="8" />
-            <circle
-              cx="100" cy="100" r="70"
-              fill="none"
-              stroke={modeColor}
-              strokeWidth="8"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round"
-              style={{
-                transition: "stroke-dashoffset 1s linear",
-                filter: `drop-shadow(0 0 10px ${modeColor === "var(--accent-primary)" ? "rgba(16,185,129,0.5)" : "rgba(6,182,212,0.5)"})`,
-              }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-4xl font-bold tabular-nums tracking-tight" style={{ color: "var(--text-primary)" }}>
-              {String(displayMinutes).padStart(2, "0")}:{String(displaySeconds).padStart(2, "0")}
-            </span>
-            <span className="text-xs font-semibold mt-1" style={{ color: modeColor }}>
-              {mode === "work" ? "Odak Zamani" : "Mola Zamani"}
-            </span>
-            {isRunning && isPaused && (
-              <span className="text-[9px] font-medium mt-0.5" style={{ color: "var(--accent-warning)" }}>
-                Duraklatildi
-              </span>
+      {/* ===== TIMER TAB ===== */}
+      {activeTab === "timer" && (
+        <>
+          {/* Timer Card */}
+          <div
+            className="rounded-2xl p-6 flex flex-col items-center gap-5"
+            style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
+          >
+            {/* Subject Badge */}
+            {currentSubject && (
+              <div className="px-3 py-1 rounded-full text-[10px] font-semibold"
+                style={{ background: `${modeColor}15`, color: modeColor }}>
+                {currentSubject}
+              </div>
             )}
-          </div>
-        </div>
 
-        {/* Controls */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handlePlayPause}
-            className="flex h-14 w-14 items-center justify-center rounded-2xl text-white transition-all active:scale-95 hover:scale-105"
-            style={{ background: modeColor, boxShadow: `0 0 24px ${modeColor}50` }}
-          >
-            {isRunning && !isPaused ? <IconPause size={22} /> : <IconPlay size={22} />}
-          </button>
-          <button
-            onClick={() => reset()}
-            className="flex h-12 w-12 items-center justify-center rounded-2xl transition-all active:scale-95"
-            style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
-          >
-            <IconRefresh size={20} />
-          </button>
-          {mode === "break" && (
-            <button
-              onClick={() => skip()}
-              className="flex h-12 w-12 items-center justify-center rounded-2xl transition-all active:scale-95"
-              style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
-              title="Molayi atla"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="5 4 15 12 5 20 5 4" /><rect x="15" y="4" width="4" height="16" />
+            {/* Mode Toggle */}
+            <div className="flex rounded-xl p-1 w-full max-w-[260px]" style={{ background: "var(--bg-tertiary)" }}>
+              {(["work", "break"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => { if (!isRunning && m !== mode) reset(); }}
+                  className="flex-1 rounded-lg py-2 text-xs font-semibold transition-all"
+                  style={{
+                    background: mode === m ? "var(--bg-card)" : "transparent",
+                    color: mode === m ? (m === "work" ? "var(--accent-primary)" : "var(--accent-cyan)") : "var(--text-tertiary)",
+                    boxShadow: mode === m ? "var(--shadow-sm)" : "none",
+                    opacity: isRunning && mode !== m ? 0.4 : 1,
+                    cursor: isRunning && mode !== m ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {m === "work" ? `Calis (${settings.workMinutes}dk)` : `Mola (${settings.shortBreakMinutes}dk)`}
+                </button>
+              ))}
+            </div>
+
+            {/* Timer Circle */}
+            <div className="relative">
+              <svg width="200" height="200" className="-rotate-90">
+                <circle cx="100" cy="100" r="70" fill="none" stroke="var(--bg-tertiary)" strokeWidth="8" />
+                <circle
+                  cx="100" cy="100" r="70"
+                  fill="none"
+                  stroke={modeColor}
+                  strokeWidth="8"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  strokeLinecap="round"
+                  style={{
+                    transition: "stroke-dashoffset 1s linear",
+                    filter: `drop-shadow(0 0 10px ${modeColor === "var(--accent-primary)" ? "rgba(16,185,129,0.5)" : "rgba(6,182,212,0.5)"})`,
+                  }}
+                />
               </svg>
-            </button>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-4xl font-bold tabular-nums tracking-tight" style={{ color: "var(--text-primary)" }}>
+                  {String(displayMinutes).padStart(2, "0")}:{String(displaySeconds).padStart(2, "0")}
+                </span>
+                <span className="text-xs font-semibold mt-1" style={{ color: modeColor }}>
+                  {mode === "work" ? "Odak Zamani" : "Mola Zamani"}
+                </span>
+                {isRunning && isPaused && (
+                  <span className="text-[9px] font-medium mt-0.5" style={{ color: "var(--accent-warning)" }}>
+                    Duraklatildi
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handlePlayPause}
+                className="flex h-14 w-14 items-center justify-center rounded-2xl text-white transition-all active:scale-95 hover:scale-105"
+                style={{ background: modeColor, boxShadow: `0 0 24px ${modeColor}50` }}
+              >
+                {isRunning && !isPaused ? <IconPause size={22} /> : <IconPlay size={22} />}
+              </button>
+              <button
+                onClick={() => reset()}
+                className="flex h-12 w-12 items-center justify-center rounded-2xl transition-all active:scale-95"
+                style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+              >
+                <IconRefresh size={20} />
+              </button>
+              {mode === "break" && (
+                <button
+                  onClick={() => skip()}
+                  className="flex h-12 w-12 items-center justify-center rounded-2xl transition-all active:scale-95"
+                  style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
+                  title="Molayi atla"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 4 15 12 5 20 5 4" /><rect x="15" y="4" width="4" height="16" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Today's Stats */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-xl p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
+              <div className="text-lg font-bold" style={{ color: "var(--accent-primary)" }}>
+                {todayStats.count} <span className="text-base">&#x1F345;</span>
+              </div>
+              <div className="text-[9px] font-medium" style={{ color: "var(--text-tertiary)" }}>Bugun</div>
+            </div>
+            <div className="rounded-xl p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
+              <div className="text-lg font-bold" style={{ color: "var(--accent-cyan)" }}>
+                {todayStats.totalMinutes}
+              </div>
+              <div className="text-[9px] font-medium" style={{ color: "var(--text-tertiary)" }}>Dakika</div>
+            </div>
+            <div className="rounded-xl p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
+              <div className="text-lg font-bold" style={{ color: completionPct >= 80 ? "var(--accent-success)" : "var(--accent-warning)" }}>
+                %{completionPct}
+              </div>
+              <div className="text-[9px] font-medium" style={{ color: "var(--text-tertiary)" }}>Tamamlama</div>
+            </div>
+          </div>
+
+          {/* Settings Panel */}
+          {showSettings && (
+            <div
+              className="rounded-2xl p-5"
+              style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
+            >
+              <h3 className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: "var(--text-tertiary)" }}>
+                Sure Ayarlari
+              </h3>
+              <div className="space-y-3">
+                {[
+                  { label: "Calisma Suresi", key: "workMinutes" as const, max: 120, color: "var(--accent-primary)", suffix: "dk" },
+                  { label: "Kisa Mola", key: "shortBreakMinutes" as const, max: 30, color: "var(--accent-cyan)", suffix: "dk" },
+                  { label: "Uzun Mola", key: "longBreakMinutes" as const, max: 60, color: "var(--accent-warning)", suffix: "dk" },
+                ].map(({ label, key, max, color, suffix }) => (
+                  <div key={key} className="flex items-center justify-between p-3 rounded-xl" style={{ background: "var(--bg-tertiary)" }}>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full" style={{ background: color }} />
+                      <span className="text-[12px] font-medium" style={{ color: "var(--text-secondary)" }}>{label}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min={1}
+                        max={max}
+                        value={settings[key]}
+                        onChange={(e) => updateSettings({ [key]: Math.max(1, Math.min(max, Number(e.target.value))) })}
+                        className="w-14 px-2 py-1.5 rounded-lg text-[12px] text-center font-bold outline-none"
+                        style={{
+                          background: "var(--bg-card)",
+                          color: "var(--text-primary)",
+                          border: "1px solid var(--border-primary)",
+                        }}
+                        disabled={isRunning}
+                      />
+                      <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>{suffix}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[9px] mt-3 text-center" style={{ color: "var(--text-tertiary)" }}>
+                Her 4 pomodoro sonrasi uzun mola otomatik baslar
+              </p>
+            </div>
           )}
-        </div>
-      </div>
+        </>
+      )}
 
-      {/* Today's Stats */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-xl p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
-          <div className="text-lg font-bold" style={{ color: "var(--accent-primary)" }}>
-            {todayStats.count} <span className="text-base">&#x1F345;</span>
-          </div>
-          <div className="text-[9px] font-medium" style={{ color: "var(--text-tertiary)" }}>Bugun</div>
-        </div>
-        <div className="rounded-xl p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
-          <div className="text-lg font-bold" style={{ color: "var(--accent-cyan)" }}>
-            {todayStats.totalMinutes}
-          </div>
-          <div className="text-[9px] font-medium" style={{ color: "var(--text-tertiary)" }}>Dakika</div>
-        </div>
-        <div className="rounded-xl p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
-          <div className="text-lg font-bold" style={{ color: completionPct >= 80 ? "var(--accent-success)" : "var(--accent-warning)" }}>
-            %{completionPct}
-          </div>
-          <div className="text-[9px] font-medium" style={{ color: "var(--text-tertiary)" }}>Tamamlama</div>
-        </div>
-      </div>
+      {/* ===== STATS TAB ===== */}
+      {activeTab === "stats" && (() => {
+        const totalCount = statsData.reduce((s, d) => s + d.count, 0);
+        const totalMinutes = statsData.reduce((s, d) => s + d.totalMinutes, 0);
+        const activeDays = statsData.length;
+        const avgPerDay = activeDays > 0 ? Math.round(totalCount / activeDays) : 0;
+        const maxCount = Math.max(...statsData.map((d) => d.count), 1);
+        const COLORS = ["#10b981", "#3b82f6", "#8b5cf6", "#f59e0b", "#ef4444", "#06b6d4"];
 
-      {/* Settings Panel */}
-      {showSettings && (
-        <div
-          className="rounded-2xl p-5"
-          style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
-        >
-          <h3 className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: "var(--text-tertiary)" }}>
-            Sure Ayarlari
-          </h3>
-          <div className="space-y-3">
-            {[
-              { label: "Calisma Suresi", key: "workMinutes" as const, max: 120, color: "var(--accent-primary)", suffix: "dk" },
-              { label: "Kisa Mola", key: "shortBreakMinutes" as const, max: 30, color: "var(--accent-cyan)", suffix: "dk" },
-              { label: "Uzun Mola", key: "longBreakMinutes" as const, max: 60, color: "var(--accent-warning)", suffix: "dk" },
-            ].map(({ label, key, max, color, suffix }) => (
-              <div key={key} className="flex items-center justify-between p-3 rounded-xl" style={{ background: "var(--bg-tertiary)" }}>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full" style={{ background: color }} />
-                  <span className="text-[12px] font-medium" style={{ color: "var(--text-secondary)" }}>{label}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    min={1}
-                    max={max}
-                    value={settings[key]}
-                    onChange={(e) => updateSettings({ [key]: Math.max(1, Math.min(max, Number(e.target.value))) })}
-                    className="w-14 px-2 py-1.5 rounded-lg text-[12px] text-center font-bold outline-none"
+        return (
+          <div className="space-y-4">
+            {/* Period Selector */}
+            <div className="flex rounded-lg p-0.5" style={{ background: "var(--bg-tertiary)" }}>
+              {([7, 30, 0] as const).map((p) => {
+                const label = p === 7 ? "7 Gun" : p === 30 ? "30 Gun" : "Tumu";
+                return (
+                  <button
+                    key={p}
+                    onClick={() => setStatsPeriod(p)}
+                    className="flex-1 px-3 py-1.5 rounded-md text-[10px] font-semibold transition-all"
                     style={{
-                      background: "var(--bg-card)",
-                      color: "var(--text-primary)",
-                      border: "1px solid var(--border-primary)",
+                      background: statsPeriod === p ? "var(--bg-card)" : "transparent",
+                      color: statsPeriod === p ? "var(--accent-primary)" : "var(--text-tertiary)",
+                      boxShadow: statsPeriod === p ? "var(--shadow-sm)" : "none",
                     }}
-                    disabled={isRunning}
-                  />
-                  <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>{suffix}</span>
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: "Toplam Pomodoro", value: String(totalCount), color: "var(--accent-primary)" },
+                { label: "Toplam Sure", value: totalMinutes >= 60 ? `${(totalMinutes / 60).toFixed(1)}s` : `${totalMinutes}dk`, color: "var(--accent-cyan)" },
+                { label: "Aktif Gun", value: String(activeDays), color: "var(--accent-secondary)" },
+                { label: "Ort. / Gun", value: String(avgPerDay), color: "var(--accent-warning)" },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="rounded-xl p-3" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
+                  <div className="text-xl font-bold" style={{ color }}>{value}</div>
+                  <div className="text-[10px] font-medium mt-0.5" style={{ color: "var(--text-tertiary)" }}>{label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Daily Bar Chart */}
+            {loadingStats ? (
+              <div className="text-center py-6 text-[11px]" style={{ color: "var(--text-tertiary)" }}>Yukleniyor...</div>
+            ) : statsData.length === 0 ? (
+              <div className="text-center py-6 text-[11px]" style={{ color: "var(--text-tertiary)" }}>Bu donemde veri yok</div>
+            ) : (
+              <div className="rounded-xl p-4" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
+                <div className="text-xs font-bold mb-3" style={{ color: "var(--text-primary)" }}>Gunluk Pomodoro</div>
+                <div className="flex items-end gap-1" style={{ height: 80 }}>
+                  {statsData.slice(-14).map((day) => {
+                    const h = (day.count / maxCount) * 100;
+                    const dateLabel = new Date(day.date).toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+                    return (
+                      <div
+                        key={day.date}
+                        className="flex-1 flex flex-col items-center gap-1"
+                        title={`${dateLabel}: ${day.count} pomodoro, ${day.totalMinutes}dk`}
+                      >
+                        <div
+                          className="w-full rounded-t-md transition-all"
+                          style={{
+                            height: `${Math.max(h, 4)}%`,
+                            background: "var(--accent-primary)",
+                            opacity: 0.85,
+                            boxShadow: "0 0 4px rgba(16,185,129,0.3)",
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-[9px]" style={{ color: "var(--text-tertiary)" }}>
+                    {statsData.length > 0 ? new Date(statsData[Math.max(0, statsData.length - 14)].date).toLocaleDateString("tr-TR", { day: "numeric", month: "short" }) : ""}
+                  </span>
+                  <span className="text-[9px]" style={{ color: "var(--text-tertiary)" }}>
+                    {statsData.length > 0 ? new Date(statsData[statsData.length - 1].date).toLocaleDateString("tr-TR", { day: "numeric", month: "short" }) : ""}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Subject Breakdown */}
+            {Object.keys(subjectStats).length > 0 && (() => {
+              const entries = Object.entries(subjectStats).sort(([, a], [, b]) => b - a);
+              const maxMin = Math.max(...entries.map(([, v]) => v));
+              return (
+                <div className="rounded-xl p-4" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}>
+                  <div className="text-xs font-bold mb-3" style={{ color: "var(--text-primary)" }}>Konulara Gore</div>
+                  <div className="space-y-2.5">
+                    {entries.slice(0, 6).map(([subject, minutes], i) => {
+                      const pct = maxMin > 0 ? Math.round((minutes / maxMin) * 100) : 0;
+                      const color = COLORS[i % COLORS.length];
+                      return (
+                        <div key={subject}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[11px] font-semibold truncate max-w-[150px]" style={{ color: "var(--text-primary)" }}>{subject}</span>
+                            <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                              {minutes >= 60 ? `${(minutes / 60).toFixed(1)}s` : `${minutes}dk`}
+                            </span>
+                          </div>
+                          <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: "var(--bg-tertiary)" }}>
+                            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: color }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        );
+      })()}
+
+      {/* ===== HISTORY TAB ===== */}
+      {activeTab === "history" && (() => {
+        if (loadingHistory) return (
+          <div className="text-center py-8 text-[11px]" style={{ color: "var(--text-tertiary)" }}>Yukleniyor...</div>
+        );
+        if (historySessions.length === 0) return (
+          <div className="text-center py-10">
+            <div className="text-3xl mb-2">&#x1F345;</div>
+            <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>Henuz tamamlanan oturum yok</p>
+          </div>
+        );
+
+        // Group by date
+        const grouped: Record<string, PomodoroSession[]> = {};
+        for (const s of historySessions) {
+          const date = new Date(s.started_at).toISOString().split("T")[0];
+          if (!grouped[date]) grouped[date] = [];
+          grouped[date].push(s);
+        }
+
+        const formatGroupDate = (dateStr: string) => {
+          const d = new Date(dateStr);
+          const today = new Date();
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+          if (d.toDateString() === today.toDateString()) return "Bugun";
+          if (d.toDateString() === yesterday.toDateString()) return "Dun";
+          return d.toLocaleDateString("tr-TR", { day: "numeric", month: "long" });
+        };
+
+        return (
+          <div className="space-y-4">
+            {Object.entries(grouped).map(([date, sessions]) => (
+              <div key={date}>
+                {/* Date Header */}
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>
+                    {formatGroupDate(date)}
+                  </span>
+                  <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                    · {sessions.filter((s) => s.status === "completed").length} pomodoro
+                  </span>
+                </div>
+
+                {/* Sessions */}
+                <div className="space-y-1.5">
+                  {sessions.map((session) => {
+                    const isCompleted = session.status === "completed";
+                    const durationMin = Math.round(session.actual_seconds / 60);
+                    const time = new Date(session.started_at).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+
+                    return (
+                      <div
+                        key={session.id}
+                        className="flex items-center gap-3 rounded-xl p-3 transition-all"
+                        style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)" }}
+                      >
+                        <div
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{
+                            background: isCompleted ? "var(--accent-primary)" : "var(--text-tertiary)",
+                            boxShadow: isCompleted ? "0 0 6px rgba(16,185,129,0.5)" : "none",
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-[12px] font-semibold block truncate" style={{ color: "var(--text-primary)" }}>
+                            {session.subject || "Odak Oturumu"}
+                          </span>
+                          <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>{time}</span>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <span className="text-[12px] font-bold tabular-nums block" style={{ color: "var(--text-secondary)" }}>
+                            {durationMin} dk
+                          </span>
+                          <span
+                            className="text-[9px] font-semibold"
+                            style={{ color: isCompleted ? "var(--accent-primary)" : "var(--text-tertiary)" }}
+                          >
+                            {isCompleted ? "Tamamlandi" : "Iptal"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ))}
           </div>
-          <p className="text-[9px] mt-3 text-center" style={{ color: "var(--text-tertiary)" }}>
-            Her 4 pomodoro sonrasi uzun mola otomatik baslar
-          </p>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
