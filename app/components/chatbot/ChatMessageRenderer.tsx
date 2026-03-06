@@ -106,7 +106,7 @@ function Callout({ type, title, children }: { type: CalloutType; title?: string;
           {title || config.label}
         </span>
       </div>
-      <div className="text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+      <div className="text-[15px] sm:text-base leading-relaxed" style={{ color: "var(--text-secondary)" }}>
         {children}
       </div>
     </div>
