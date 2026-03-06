@@ -744,7 +744,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
             </div>
           ) : (
             /* Chat Messages */
-            <div className="max-w-[720px] mx-auto w-full space-y-5 sm:space-y-6">
+            <div className="max-w-[720px] mx-auto space-y-5 sm:space-y-6">
               {messages.filter(m => m.id !== "welcome").map((msg, idx) => (
                 <div
                   id={`msg-${msg.id}`}
@@ -760,7 +760,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                     className={`group relative ${
                       msg.role === "user"
                         ? "max-w-[85%] sm:max-w-[70%]"
-                        : isMobile ? "w-full" : "max-w-[680px]"
+                        : isMobile ? "w-full" : "max-w-[92%] sm:max-w-[88%]"
                     }`}
                   >
                     <div
