@@ -51,7 +51,7 @@ Kuralların:
 
 [FLASHCARD]Soru metni|Cevap metni[/FLASHCARD]
 
-- Bir mesajda 5-10 arası flashcard üret.
+- Konunun kapsamına göre gerektiği kadar flashcard üret, sayıyı sen belirle.
 - Sorular kısa ve net olsun.
 - Cevaplar açıklayıcı ama özlü olsun (1-3 cümle).
 - Flashcard'lardan önce kısa bir giriş yaz (1 cümle).
