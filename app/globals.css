@@ -86,35 +86,35 @@
   --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* Callout colors */
-  --callout-danger-bg: rgba(239, 68, 68, 0.06);
-  --callout-danger-border: rgba(239, 68, 68, 0.2);
+  --callout-danger-bg: rgba(239, 68, 68, 0.04);
+  --callout-danger-border: rgba(239, 68, 68, 0.25);
   --callout-danger-text: #dc2626;
   --callout-danger-icon: #ef4444;
 
-  --callout-warning-bg: rgba(245, 158, 11, 0.06);
-  --callout-warning-border: rgba(245, 158, 11, 0.2);
+  --callout-warning-bg: rgba(245, 158, 11, 0.04);
+  --callout-warning-border: rgba(245, 158, 11, 0.25);
   --callout-warning-text: #d97706;
   --callout-warning-icon: #f59e0b;
 
-  --callout-info-bg: rgba(59, 130, 246, 0.06);
-  --callout-info-border: rgba(59, 130, 246, 0.2);
+  --callout-info-bg: rgba(59, 130, 246, 0.04);
+  --callout-info-border: rgba(59, 130, 246, 0.25);
   --callout-info-text: #2563eb;
   --callout-info-icon: #3b82f6;
 
-  --callout-tip-bg: rgba(210, 65, 0, 0.06);
-  --callout-tip-border: rgba(210, 65, 0, 0.2);
+  --callout-tip-bg: rgba(210, 65, 0, 0.04);
+  --callout-tip-border: rgba(210, 65, 0, 0.25);
   --callout-tip-text: #c44000;
   --callout-tip-icon: #e04d08;
 
-  --callout-note-bg: rgba(139, 92, 246, 0.06);
-  --callout-note-border: rgba(139, 92, 246, 0.2);
+  --callout-note-bg: rgba(139, 92, 246, 0.04);
+  --callout-note-border: rgba(139, 92, 246, 0.25);
   --callout-note-text: #7c3aed;
   --callout-note-icon: #8b5cf6;
 
-  --callout-success-bg: rgba(210, 65, 0, 0.06);
-  --callout-success-border: rgba(210, 65, 0, 0.2);
-  --callout-success-text: #c44000;
-  --callout-success-icon: #e04d08;
+  --callout-success-bg: rgba(34, 197, 94, 0.04);
+  --callout-success-border: rgba(34, 197, 94, 0.25);
+  --callout-success-text: #16a34a;
+  --callout-success-icon: #22c55e;
 }
 
 /* ===== DARK MODE ===== */
@@ -153,35 +153,35 @@
 
   --gradient-surface: linear-gradient(180deg, rgba(210, 65, 0, 0.03) 0%, transparent 100%);
 
-  --callout-danger-bg: rgba(239, 68, 68, 0.08);
-  --callout-danger-border: rgba(239, 68, 68, 0.15);
+  --callout-danger-bg: rgba(239, 68, 68, 0.04);
+  --callout-danger-border: rgba(239, 68, 68, 0.2);
   --callout-danger-text: #f87171;
   --callout-danger-icon: #ef4444;
 
-  --callout-warning-bg: rgba(245, 158, 11, 0.08);
-  --callout-warning-border: rgba(245, 158, 11, 0.15);
+  --callout-warning-bg: rgba(245, 158, 11, 0.04);
+  --callout-warning-border: rgba(245, 158, 11, 0.2);
   --callout-warning-text: #fbbf24;
   --callout-warning-icon: #f59e0b;
 
-  --callout-info-bg: rgba(59, 130, 246, 0.08);
-  --callout-info-border: rgba(59, 130, 246, 0.15);
+  --callout-info-bg: rgba(59, 130, 246, 0.04);
+  --callout-info-border: rgba(59, 130, 246, 0.2);
   --callout-info-text: #60a5fa;
   --callout-info-icon: #3b82f6;
 
-  --callout-tip-bg: rgba(210, 65, 0, 0.08);
-  --callout-tip-border: rgba(210, 65, 0, 0.15);
-  --callout-tip-text: #34d399;
+  --callout-tip-bg: rgba(210, 65, 0, 0.04);
+  --callout-tip-border: rgba(210, 65, 0, 0.2);
+  --callout-tip-text: #fb923c;
   --callout-tip-icon: #e04d08;
 
-  --callout-note-bg: rgba(139, 92, 246, 0.08);
-  --callout-note-border: rgba(139, 92, 246, 0.15);
+  --callout-note-bg: rgba(139, 92, 246, 0.04);
+  --callout-note-border: rgba(139, 92, 246, 0.2);
   --callout-note-text: #a78bfa;
   --callout-note-icon: #8b5cf6;
 
-  --callout-success-bg: rgba(210, 65, 0, 0.08);
-  --callout-success-border: rgba(210, 65, 0, 0.15);
-  --callout-success-text: #34d399;
-  --callout-success-icon: #e04d08;
+  --callout-success-bg: rgba(34, 197, 94, 0.04);
+  --callout-success-border: rgba(34, 197, 94, 0.2);
+  --callout-success-text: #4ade80;
+  --callout-success-icon: #22c55e;
 }
 
 @theme inline {
@@ -448,23 +448,22 @@ body {
 
 /* ===== CALLOUT/ALERT COMPONENTS ===== */
 .callout {
-  border-radius: var(--radius-md);
-  padding: 14px 16px;
-  margin: 10px 0;
-  border-left: 3px solid;
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  margin: 8px 0;
+  border-left: 2px solid;
   position: relative;
-  animation: calloutIn 0.3s ease-out forwards;
+  animation: calloutIn 0.25s ease-out forwards;
 }
 
 .callout-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+  width: 15px;
+  height: 15px;
   flex-shrink: 0;
-  font-size: 11px;
+  opacity: 0.9;
 }
 
 .callout-danger {
@@ -473,7 +472,6 @@ body {
 }
 
 .callout-danger .callout-icon {
-  background: rgba(239, 68, 68, 0.15);
   color: var(--callout-danger-icon);
 }
 
@@ -487,7 +485,6 @@ body {
 }
 
 .callout-warning .callout-icon {
-  background: rgba(245, 158, 11, 0.15);
   color: var(--callout-warning-icon);
 }
 
@@ -501,7 +498,6 @@ body {
 }
 
 .callout-info .callout-icon {
-  background: rgba(59, 130, 246, 0.15);
   color: var(--callout-info-icon);
 }
 
@@ -515,7 +511,6 @@ body {
 }
 
 .callout-tip .callout-icon {
-  background: rgba(210, 65, 0, 0.15);
   color: var(--callout-tip-icon);
 }
 
@@ -529,7 +524,6 @@ body {
 }
 
 .callout-note .callout-icon {
-  background: rgba(139, 92, 246, 0.15);
   color: var(--callout-note-icon);
 }
 
@@ -543,7 +537,6 @@ body {
 }
 
 .callout-success .callout-icon {
-  background: rgba(210, 65, 0, 0.15);
   color: var(--callout-success-icon);
 }
 
@@ -1192,8 +1185,8 @@ body {
 
   /* Better callout spacing on mobile */
   .callout {
-    padding: 12px 14px;
-    margin: 8px 0;
+    padding: 10px 12px;
+    margin: 6px 0;
   }
 
   .code-block-content {

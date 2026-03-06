@@ -98,11 +98,11 @@ function Callout({ type, title, children }: { type: CalloutType; title?: string;
 
   return (
     <div className={`callout ${config.className}`}>
-      <div className="flex items-center gap-2 mb-1.5">
+      <div className="flex items-center gap-1.5 mb-1.5">
         <span className="callout-icon">
           <Icon />
         </span>
-        <span className="callout-title text-xs font-bold uppercase tracking-wide">
+        <span className="callout-title text-[11px] font-semibold uppercase tracking-wider">
           {title || config.label}
         </span>
       </div>
