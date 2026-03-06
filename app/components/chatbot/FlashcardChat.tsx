@@ -112,6 +112,94 @@ function TypingIndicator() {
   );
 }
 
+/* ===== GENERATING LOADER ===== */
+function FlashcardGeneratingLoader({ topic }: { topic: string }) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-8 px-4 animate-fade-in">
+      <style>{`
+        @keyframes fc-float-back  { 0%,100%{transform:rotate(-9deg) translateY(0px);} 50%{transform:rotate(-9deg) translateY(-8px);} }
+        @keyframes fc-float-mid   { 0%,100%{transform:rotate(0deg)  translateY(0px);} 50%{transform:rotate(0deg)  translateY(-12px);} }
+        @keyframes fc-float-front { 0%,100%{transform:rotate(9deg)  translateY(0px);} 50%{transform:rotate(9deg)  translateY(-8px);} }
+        @keyframes fc-shine { 0%{left:-60%;} 100%{left:130%;} }
+      `}</style>
+
+      {/* Stacked animated cards */}
+      <div style={{ position: "relative", width: 120, height: 150 }}>
+        {/* Back card */}
+        <div style={{
+          position: "absolute", left: "50%", top: "50%",
+          width: 78, height: 108, marginLeft: -39, marginTop: -54,
+          borderRadius: 14, border: "2px solid rgba(255,255,255,0.2)",
+          background: "var(--bg-tertiary)",
+          animation: "fc-float-back 2.6s ease-in-out infinite",
+        }} />
+        {/* Mid card */}
+        <div style={{
+          position: "absolute", left: "50%", top: "50%",
+          width: 78, height: 108, marginLeft: -39, marginTop: -54,
+          borderRadius: 14, border: "2px solid rgba(255,255,255,0.5)",
+          background: "var(--bg-card)",
+          animation: "fc-float-mid 2.2s ease-in-out infinite",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+          overflow: "hidden",
+        }}>
+          {/* Shine sweep */}
+          <div style={{
+            position: "absolute", top: 0, bottom: 0, width: "40%",
+            background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)",
+            animation: "fc-shine 2s ease-in-out infinite",
+          }} />
+        </div>
+        {/* Front card */}
+        <div style={{
+          position: "absolute", left: "50%", top: "50%",
+          width: 78, height: 108, marginLeft: -39, marginTop: -54,
+          borderRadius: 14, border: "2px solid rgba(255,255,255,0.2)",
+          background: "var(--bg-tertiary)",
+          animation: "fc-float-front 2.4s ease-in-out infinite",
+        }} />
+        {/* Emoji overlay */}
+        <div style={{
+          position: "absolute", inset: 0, display: "flex",
+          alignItems: "center", justifyContent: "center", zIndex: 10,
+          pointerEvents: "none",
+        }}>
+          <span style={{ fontSize: 26 }}>🃏</span>
+        </div>
+      </div>
+
+      {/* Text */}
+      <div className="flex flex-col items-center gap-3 text-center">
+        <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>
+          Kartlar hazırlanıyor
+        </p>
+        <span
+          className="text-xs font-medium px-4 py-1.5 rounded-full"
+          style={{
+            color: "var(--accent-warning)",
+            background: "rgba(245,158,11,0.1)",
+            border: "1px solid rgba(245,158,11,0.25)",
+            maxWidth: 280,
+            display: "block",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {topic}
+        </span>
+      </div>
+
+      {/* Dots */}
+      <div className="flex gap-2">
+        <div className="typing-dot w-2.5 h-2.5 rounded-full" style={{ background: "var(--accent-warning)" }} />
+        <div className="typing-dot w-2.5 h-2.5 rounded-full" style={{ background: "var(--accent-warning)" }} />
+        <div className="typing-dot w-2.5 h-2.5 rounded-full" style={{ background: "var(--accent-warning)" }} />
+      </div>
+    </div>
+  );
+}
+
 /* ===== FLASHCARD CARD COMPONENT ===== */
 function FlashcardCard({
   card,
@@ -330,6 +418,7 @@ export default function FlashcardChat({
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [generatingTopic, setGeneratingTopic] = useState("");
 
   // Flashcard state
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
@@ -396,6 +485,7 @@ export default function FlashcardChat({
   const sendToAI = useCallback(
     async (userContent: string, allMessages: ChatMessage[]) => {
       setIsLoading(true);
+      setGeneratingTopic(userContent);
 
       // Save user message to DB
       let conversationId: string;
@@ -408,7 +498,6 @@ export default function FlashcardChat({
         }
       } catch (err) {
         console.error("Failed to save user message:", err);
-        // Still try to get AI response even if DB save fails
         conversationId = "";
       }
 
@@ -432,21 +521,16 @@ export default function FlashcardChat({
         await streamChat(
           apiMessages,
           (text) => {
+            // Accumulate silently — loader is shown, no raw text displayed
             fullContent += text;
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === aiMsgId ? { ...m, content: m.content + text } : m
-              )
-            );
           },
           (error) => {
             setMessages((prev) =>
               prev.map((m) =>
-                m.id === aiMsgId
-                  ? { ...m, content: `Hata: ${error}` }
-                  : m
+                m.id === aiMsgId ? { ...m, content: `Hata: ${error}` } : m
               )
             );
+            setGeneratingTopic("");
           },
           () => {
             setIsLoading(false);
@@ -454,7 +538,16 @@ export default function FlashcardChat({
           "flashcard"
         );
 
-        // Parse flashcards from the completed response
+        // Set full content on AI message all at once
+        if (fullContent) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === aiMsgId ? { ...m, content: fullContent } : m
+            )
+          );
+        }
+
+        // Parse flashcards and reveal
         if (fullContent) {
           const parsed = parseFlashcards(fullContent);
           if (parsed.length > 0) {
@@ -466,6 +559,8 @@ export default function FlashcardChat({
             setIsReviewComplete(false);
           }
         }
+
+        setGeneratingTopic("");
 
         // Save completed assistant message to DB
         if (fullContent) {
@@ -489,13 +584,11 @@ export default function FlashcardChat({
         setMessages((prev) =>
           prev.map((m) =>
             m.id === aiMsgId
-              ? {
-                  ...m,
-                  content: `Baglanti Hatasi: ${errorMsg}. Lutfen tekrar dene.`,
-                }
+              ? { ...m, content: `Baglanti Hatasi: ${errorMsg}. Lutfen tekrar dene.` }
               : m
           )
         );
+        setGeneratingTopic("");
         setIsLoading(false);
       }
     },
@@ -606,6 +699,11 @@ export default function FlashcardChat({
 
   return (
     <div className="flex flex-col h-full">
+      {/* ===== GENERATING LOADER ===== */}
+      {generatingTopic && <FlashcardGeneratingLoader topic={generatingTopic} />}
+
+      {/* ===== CONTENT (hidden while generating) ===== */}
+      {!generatingTopic && <>
       {/* ===== FLASHCARD DISPLAY AREA ===== */}
       {flashcards.length > 0 && !isReviewComplete && (
         <div
@@ -917,6 +1015,7 @@ export default function FlashcardChat({
           </div>
         </>
       )}
+      </>}
     </div>
   );
 }
