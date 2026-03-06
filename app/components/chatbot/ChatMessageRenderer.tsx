@@ -98,15 +98,15 @@ function Callout({ type, title, children }: { type: CalloutType; title?: string;
 
   return (
     <div className={`callout ${config.className}`}>
-      <div className="flex items-center gap-2 mb-1.5">
+      <div className="callout-header">
         <span className="callout-icon">
           <Icon />
         </span>
-        <span className="callout-title text-xs font-bold uppercase tracking-wide">
+        <span className="callout-title text-sm font-bold">
           {title || config.label}
         </span>
       </div>
-      <div className="text-[15px] sm:text-base leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+      <div className="callout-body text-[15px] sm:text-base leading-relaxed" style={{ color: "var(--text-secondary)" }}>
         {children}
       </div>
     </div>
@@ -400,7 +400,7 @@ function renderBlock(block: ParsedBlock, index: number): React.ReactNode {
 
     case "table":
       return (
-        <div key={index} className="overflow-x-auto" style={{ margin: "10px 0" }}>
+        <div key={index} className="table-card overflow-x-auto">
           <table>
             <thead>
               <tr>
