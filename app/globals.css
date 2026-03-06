@@ -85,36 +85,24 @@
   --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Callout colors */
-  --callout-danger-bg: rgba(239, 68, 68, 0.06);
-  --callout-danger-border: rgba(239, 68, 68, 0.2);
-  --callout-danger-text: #dc2626;
-  --callout-danger-icon: #ef4444;
+  /* Callout colors — monochromatic orange family */
+  --callout-danger-bg: rgba(224, 77, 8, 0.12);
+  --callout-danger-icon: #c44000;
 
-  --callout-warning-bg: rgba(245, 158, 11, 0.06);
-  --callout-warning-border: rgba(245, 158, 11, 0.2);
-  --callout-warning-text: #d97706;
-  --callout-warning-icon: #f59e0b;
+  --callout-warning-bg: rgba(224, 77, 8, 0.09);
+  --callout-warning-icon: #e04d08;
 
-  --callout-info-bg: rgba(59, 130, 246, 0.06);
-  --callout-info-border: rgba(59, 130, 246, 0.2);
-  --callout-info-text: #2563eb;
-  --callout-info-icon: #3b82f6;
+  --callout-info-bg: rgba(224, 77, 8, 0.06);
+  --callout-info-icon: #f06828;
 
-  --callout-tip-bg: rgba(210, 65, 0, 0.06);
-  --callout-tip-border: rgba(210, 65, 0, 0.2);
-  --callout-tip-text: #c44000;
+  --callout-tip-bg: rgba(224, 77, 8, 0.10);
   --callout-tip-icon: #e04d08;
 
-  --callout-note-bg: rgba(139, 92, 246, 0.06);
-  --callout-note-border: rgba(139, 92, 246, 0.2);
-  --callout-note-text: #7c3aed;
-  --callout-note-icon: #8b5cf6;
+  --callout-note-bg: rgba(224, 77, 8, 0.07);
+  --callout-note-icon: #a83200;
 
-  --callout-success-bg: rgba(210, 65, 0, 0.06);
-  --callout-success-border: rgba(210, 65, 0, 0.2);
-  --callout-success-text: #c44000;
-  --callout-success-icon: #e04d08;
+  --callout-success-bg: rgba(224, 77, 8, 0.11);
+  --callout-success-icon: #ff6525;
 }
 
 /* ===== DARK MODE ===== */
@@ -153,35 +141,24 @@
 
   --gradient-surface: linear-gradient(180deg, rgba(210, 65, 0, 0.03) 0%, transparent 100%);
 
-  --callout-danger-bg: rgba(239, 68, 68, 0.08);
-  --callout-danger-border: rgba(239, 68, 68, 0.15);
-  --callout-danger-text: #f87171;
-  --callout-danger-icon: #ef4444;
+  /* Callout colors — monochromatic orange family (dark) */
+  --callout-danger-bg: rgba(224, 77, 8, 0.20);
+  --callout-danger-icon: #ff6b35;
 
-  --callout-warning-bg: rgba(245, 158, 11, 0.08);
-  --callout-warning-border: rgba(245, 158, 11, 0.15);
-  --callout-warning-text: #fbbf24;
-  --callout-warning-icon: #f59e0b;
+  --callout-warning-bg: rgba(224, 77, 8, 0.15);
+  --callout-warning-icon: #ff8c5a;
 
-  --callout-info-bg: rgba(59, 130, 246, 0.08);
-  --callout-info-border: rgba(59, 130, 246, 0.15);
-  --callout-info-text: #60a5fa;
-  --callout-info-icon: #3b82f6;
+  --callout-info-bg: rgba(224, 77, 8, 0.10);
+  --callout-info-icon: #e04d08;
 
-  --callout-tip-bg: rgba(210, 65, 0, 0.08);
-  --callout-tip-border: rgba(210, 65, 0, 0.15);
-  --callout-tip-text: #34d399;
-  --callout-tip-icon: #e04d08;
+  --callout-tip-bg: rgba(224, 77, 8, 0.16);
+  --callout-tip-icon: #ff7340;
 
-  --callout-note-bg: rgba(139, 92, 246, 0.08);
-  --callout-note-border: rgba(139, 92, 246, 0.15);
-  --callout-note-text: #a78bfa;
-  --callout-note-icon: #8b5cf6;
+  --callout-note-bg: rgba(224, 77, 8, 0.12);
+  --callout-note-icon: #cc4400;
 
-  --callout-success-bg: rgba(210, 65, 0, 0.08);
-  --callout-success-border: rgba(210, 65, 0, 0.15);
-  --callout-success-text: #34d399;
-  --callout-success-icon: #e04d08;
+  --callout-success-bg: rgba(224, 77, 8, 0.18);
+  --callout-success-icon: #ff9060;
 }
 
 @theme inline {
