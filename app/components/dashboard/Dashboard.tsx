@@ -77,6 +77,8 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   useEffect(() => {
     if (activeConversationType === "roadmap") {
       setActiveSpecialMode("roadmap");
+    } else if (activeConversationType === "flashcard") {
+      setActiveSpecialMode("flashcard");
     }
   }, [activeConversationType]);
 
@@ -223,9 +225,11 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
     if (id) {
       setPendingInitialMessage(null);
       loadConversation(id).then(({ type }) => {
-        // Route roadmap conversations to RoadmapChat
+        // Route special conversation types to their dedicated components
         if (type === "roadmap") {
           setActiveSpecialMode("roadmap");
+        } else if (type === "flashcard") {
+          setActiveSpecialMode("flashcard");
         } else {
           setActiveSpecialMode(null);
         }
