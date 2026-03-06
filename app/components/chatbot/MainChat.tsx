@@ -243,7 +243,6 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
   const loadedConvIdRef = useRef<string | null>(null);
   const messagesRef = useRef<ChatMessage[]>([welcomeMessage]);
   messagesRef.current = messages;
-  const userScrolledRef = useRef(false);
 
   const MODE_OPTIONS = [
     {
@@ -398,52 +397,21 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
     });
   }, [activeConversationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Track the last user message id so we can scroll to it
+  // When user sends a message, instantly scroll to bottom so only their message is visible
   const scrollTargetRef = useRef<string | null>(null);
 
-  // Detect user manual scroll during streaming
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    const handleWheel = () => { if (isLoading) userScrolledRef.current = true; };
-    const handleTouch = () => { if (isLoading) userScrolledRef.current = true; };
-    container.addEventListener("wheel", handleWheel, { passive: true });
-    container.addEventListener("touchmove", handleTouch, { passive: true });
-    return () => {
-      container.removeEventListener("wheel", handleWheel);
-      container.removeEventListener("touchmove", handleTouch);
-    };
-  }, [isLoading]);
-
-  // When a new user message appears, scroll it to the top of the viewport (Gemini-style)
   useEffect(() => {
     if (!scrollTargetRef.current) return;
     const targetId = scrollTargetRef.current;
+    scrollTargetRef.current = null;
 
-    const timer = setTimeout(() => {
-      const el = document.getElementById(`msg-${targetId}`);
+    requestAnimationFrame(() => {
       const container = scrollContainerRef.current;
-      if (el && container) {
-        const elTop = el.offsetTop - container.offsetTop;
-        container.scrollTo({ top: elTop - 12, behavior: "smooth" });
+      if (container) {
+        container.scrollTo({ top: container.scrollHeight });
       }
-    }, 30);
-    return () => clearTimeout(timer);
+    });
   }, [messages]);
-
-  // During streaming, keep user message pinned at top (unless user scrolled)
-  useEffect(() => {
-    if (!isLoading || userScrolledRef.current || !scrollTargetRef.current) return;
-    const el = document.getElementById(`msg-${scrollTargetRef.current}`);
-    const container = scrollContainerRef.current;
-    if (!el || !container) return;
-
-    const elTop = el.offsetTop - container.offsetTop;
-    const desiredScroll = elTop - 12;
-    if (Math.abs(container.scrollTop - desiredScroll) > 40) {
-      container.scrollTo({ top: desiredScroll });
-    }
-  }, [messages, isLoading]);
 
   const isMouseDownRef = useRef(false);
 
@@ -648,7 +616,6 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
     };
 
     scrollTargetRef.current = userMsg.id;
-    userScrolledRef.current = false;
     setMessages((prev) => [...prev, userMsg]);
     sendToAI(userContent, messages, selectedStyle, capturedImage ?? undefined);
 
