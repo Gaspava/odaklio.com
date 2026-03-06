@@ -749,7 +749,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                 <div
                   id={`msg-${msg.id}`}
                   key={msg.id}
-                  className={`flex ${msg.role === "user" ? "justify-end" : isMobile ? "flex-col" : "justify-start"} animate-msg-in`}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "flex-col"} animate-msg-in`}
                   style={{ animationDelay: `${Math.min(idx * 0.05, 0.3)}s` }}
                 >
                   {msg.role === "assistant" && (
@@ -760,7 +760,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                     className={`group relative ${
                       msg.role === "user"
                         ? "max-w-[85%] sm:max-w-[70%]"
-                        : isMobile ? "w-full" : "max-w-[92%] sm:max-w-[88%]"
+                        : "w-full"
                     }`}
                   >
                     <div
