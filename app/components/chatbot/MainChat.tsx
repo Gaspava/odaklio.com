@@ -244,6 +244,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
   const loadedConvIdRef = useRef<string | null>(null);
   const messagesRef = useRef<ChatMessage[]>([welcomeMessage]);
   messagesRef.current = messages;
+  const userScrolledRef = useRef(false);
 
   const MODE_OPTIONS = [
     {
@@ -398,22 +399,71 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
     });
   }, [activeConversationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Scroll to the START of the last AI message
+  // Track user manual scroll during streaming
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    let scrollTimeout: ReturnType<typeof setTimeout>;
+    const handleScroll = () => {
+      if (!isLoading) return;
+      // Detect if user scrolled up (away from AI message top)
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        userScrolledRef.current = true;
+      }, 100);
+    };
+    // Use wheel/touch to detect intentional user scroll
+    const handleWheel = () => { if (isLoading) userScrolledRef.current = true; };
+    const handleTouch = () => { if (isLoading) userScrolledRef.current = true; };
+    container.addEventListener("wheel", handleWheel, { passive: true });
+    container.addEventListener("touchmove", handleTouch, { passive: true });
+    return () => {
+      clearTimeout(scrollTimeout);
+      container.removeEventListener("wheel", handleWheel);
+      container.removeEventListener("touchmove", handleTouch);
+    };
+  }, [isLoading]);
+
+  // Reset userScrolled when loading starts
+  useEffect(() => {
+    if (isLoading) userScrolledRef.current = false;
+  }, [isLoading]);
+
+  // Scroll to the START of the last AI message when it first appears
   useEffect(() => {
     const lastMsg = messages[messages.length - 1];
     if (!lastMsg || lastMsg.role !== "assistant") return;
     if (lastAiMsgIdRef.current === lastMsg.id) return;
     lastAiMsgIdRef.current = lastMsg.id;
 
-    requestAnimationFrame(() => {
+    const timer = setTimeout(() => {
       const el = document.getElementById(`msg-${lastMsg.id}`);
       if (el && scrollContainerRef.current) {
         const container = scrollContainerRef.current;
         const elTop = el.offsetTop - container.offsetTop;
-        container.scrollTo({ top: elTop - 16, behavior: "smooth" });
+        container.scrollTo({ top: elTop - 12, behavior: "smooth" });
       }
-    });
+    }, 50);
+    return () => clearTimeout(timer);
   }, [messages]);
+
+  // During streaming, keep AI message top visible (unless user scrolled)
+  useEffect(() => {
+    if (!isLoading || userScrolledRef.current) return;
+    const lastMsg = messages[messages.length - 1];
+    if (!lastMsg || lastMsg.role !== "assistant" || !lastMsg.content) return;
+
+    const el = document.getElementById(`msg-${lastMsg.id}`);
+    const container = scrollContainerRef.current;
+    if (!el || !container) return;
+
+    const elTop = el.offsetTop - container.offsetTop;
+    const currentScroll = container.scrollTop;
+    // Only re-pin if the message top drifted above viewport
+    if (Math.abs(currentScroll - (elTop - 12)) > 60) {
+      container.scrollTo({ top: elTop - 12 });
+    }
+  }, [messages, isLoading]);
 
   const isMouseDownRef = useRef(false);
 
