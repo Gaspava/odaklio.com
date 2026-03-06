@@ -744,7 +744,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
             </div>
           ) : (
             /* Chat Messages */
-            <div className="max-w-[720px] mx-auto space-y-5 sm:space-y-6">
+            <div className="max-w-[720px] mx-auto w-full space-y-5 sm:space-y-6">
               {messages.filter(m => m.id !== "welcome").map((msg, idx) => (
                 <div
                   id={`msg-${msg.id}`}
@@ -760,7 +760,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                     className={`group relative ${
                       msg.role === "user"
                         ? "max-w-[85%] sm:max-w-[70%]"
-                        : isMobile ? "w-full" : "max-w-[92%] sm:max-w-[88%]"
+                        : isMobile ? "w-full" : "max-w-[680px]"
                     }`}
                   >
                     <div
@@ -947,7 +947,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
           ) : (
             /* Chat input bar */
             <div
-              className="chat-input-bar max-w-[720px] mx-auto rounded-2xl px-3 py-2.5 sm:px-4 cursor-text"
+              className="chat-input-bar max-w-[680px] mx-auto rounded-2xl px-3 py-2.5 sm:px-4 cursor-text"
               style={{ background: "var(--bg-card)" }}
               onClick={() => inputRef.current?.focus()}
             >
