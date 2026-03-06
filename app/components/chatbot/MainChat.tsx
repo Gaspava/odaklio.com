@@ -536,6 +536,11 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
 
         // Fetch suggested follow-up questions (non-blocking)
         if (fullContent && apiMode === "standard") {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === aiMsgId ? { ...m, suggestionsLoading: true } : m
+            )
+          );
           fetch("/api/chat/suggestions", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -543,15 +548,21 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
           })
             .then((r) => r.json())
             .then(({ suggestions }) => {
-              if (suggestions?.length > 0) {
-                setMessages((prev) =>
-                  prev.map((m) =>
-                    m.id === aiMsgId ? { ...m, suggestions } : m
-                  )
-                );
-              }
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMsgId
+                    ? { ...m, suggestionsLoading: false, suggestions: suggestions?.length > 0 ? suggestions : m.suggestions }
+                    : m
+                )
+              );
             })
-            .catch(() => {});
+            .catch(() => {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMsgId ? { ...m, suggestionsLoading: false } : m
+                )
+              );
+            });
         }
 
         // Generate title on first message
@@ -858,23 +869,32 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                   </div>
 
                   {/* Suggested follow-up questions */}
-                  {msg.role === "assistant" && msg.suggestions && msg.suggestions.length > 0 && !isLoading && (
+                  {msg.role === "assistant" && !isLoading && (msg.suggestionsLoading || (msg.suggestions && msg.suggestions.length > 0)) && (
                     <div className="flex flex-col gap-2 mt-5">
-                      {msg.suggestions.map((suggestion, i) => (
-                        <button
-                          key={i}
-                          onClick={() => {
-                            const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: suggestion, timestamp: new Date() };
-                            setMessages((prev) => [...prev, userMsg]);
-                            sendToAI(suggestion, messages, selectedStyle);
-                          }}
-                          disabled={isLoading}
-                          className="suggestion-btn"
-                        >
-                          <IconChevronRight size={12} />
-                          <span>{suggestion}</span>
-                        </button>
-                      ))}
+                      {msg.suggestionsLoading ? (
+                        <div className="suggestions-loading">
+                          <span className="suggestions-loading-dot" />
+                          <span className="suggestions-loading-dot" />
+                          <span className="suggestions-loading-dot" />
+                          <span className="suggestions-loading-text">Konu hakkında sorular yükleniyor</span>
+                        </div>
+                      ) : (
+                        msg.suggestions?.map((suggestion, i) => (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: suggestion, timestamp: new Date() };
+                              setMessages((prev) => [...prev, userMsg]);
+                              sendToAI(suggestion, messages, selectedStyle);
+                            }}
+                            disabled={isLoading}
+                            className="suggestion-btn"
+                          >
+                            <IconChevronRight size={12} />
+                            <span>{suggestion}</span>
+                          </button>
+                        ))
+                      )}
                     </div>
                   )}
                 </div>

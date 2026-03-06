@@ -32,6 +32,7 @@ export interface ChatMessage {
   dbId?: string;
   imageUrl?: string;
   suggestions?: string[];
+  suggestionsLoading?: boolean;
 }
 
 export interface MindmapSaveData {
