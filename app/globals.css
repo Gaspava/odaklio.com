@@ -85,24 +85,24 @@
   --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Callout colors — monochromatic orange family */
-  --callout-danger-bg: rgba(224, 77, 8, 0.12);
-  --callout-danger-icon: #c44000;
+  /* Callout colors — muted/pastel */
+  --callout-danger-bg: rgba(192, 57, 43, 0.07);
+  --callout-danger-icon: #c0392b;
 
-  --callout-warning-bg: rgba(224, 77, 8, 0.09);
-  --callout-warning-icon: #e04d08;
+  --callout-warning-bg: rgba(230, 126, 34, 0.07);
+  --callout-warning-icon: #e67e22;
 
-  --callout-info-bg: rgba(224, 77, 8, 0.06);
-  --callout-info-icon: #f06828;
+  --callout-info-bg: rgba(93, 173, 226, 0.07);
+  --callout-info-icon: #5dade2;
 
-  --callout-tip-bg: rgba(224, 77, 8, 0.10);
-  --callout-tip-icon: #e04d08;
+  --callout-tip-bg: rgba(224, 123, 57, 0.07);
+  --callout-tip-icon: #e07b39;
 
-  --callout-note-bg: rgba(224, 77, 8, 0.07);
-  --callout-note-icon: #a83200;
+  --callout-note-bg: rgba(155, 89, 182, 0.07);
+  --callout-note-icon: #9b59b6;
 
-  --callout-success-bg: rgba(224, 77, 8, 0.11);
-  --callout-success-icon: #ff6525;
+  --callout-success-bg: rgba(39, 174, 96, 0.07);
+  --callout-success-icon: #27ae60;
 }
 
 /* ===== DARK MODE ===== */
@@ -141,24 +141,24 @@
 
   --gradient-surface: linear-gradient(180deg, rgba(210, 65, 0, 0.03) 0%, transparent 100%);
 
-  /* Callout colors — monochromatic orange family (dark) */
-  --callout-danger-bg: rgba(224, 77, 8, 0.20);
-  --callout-danger-icon: #ff6b35;
+  /* Callout colors — muted/pastel (dark) */
+  --callout-danger-bg: rgba(192, 57, 43, 0.12);
+  --callout-danger-icon: #e74c3c;
 
-  --callout-warning-bg: rgba(224, 77, 8, 0.15);
-  --callout-warning-icon: #ff8c5a;
+  --callout-warning-bg: rgba(230, 126, 34, 0.12);
+  --callout-warning-icon: #f39c12;
 
-  --callout-info-bg: rgba(224, 77, 8, 0.10);
-  --callout-info-icon: #e04d08;
+  --callout-info-bg: rgba(93, 173, 226, 0.12);
+  --callout-info-icon: #74b9ff;
 
-  --callout-tip-bg: rgba(224, 77, 8, 0.16);
-  --callout-tip-icon: #ff7340;
+  --callout-tip-bg: rgba(224, 123, 57, 0.12);
+  --callout-tip-icon: #e09560;
 
-  --callout-note-bg: rgba(224, 77, 8, 0.12);
-  --callout-note-icon: #cc4400;
+  --callout-note-bg: rgba(155, 89, 182, 0.12);
+  --callout-note-icon: #b983d4;
 
-  --callout-success-bg: rgba(224, 77, 8, 0.18);
-  --callout-success-icon: #ff9060;
+  --callout-success-bg: rgba(39, 174, 96, 0.12);
+  --callout-success-icon: #2ecc71;
 }
 
 @theme inline {
