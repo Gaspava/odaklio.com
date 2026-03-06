@@ -350,14 +350,14 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
     loadedConvIdRef.current = activeConversationId;
     isFirstMessageRef.current = false;
     setIsInitialLoading(true);
-    loadConversation(activeConversationId).then((loaded) => {
+    loadConversation(activeConversationId).then(({ messages: loaded, type: convType }) => {
       if (loaded.length > 0) {
         setMessages([welcomeMessage, ...loaded]);
       }
       setIsInitialLoading(false);
 
       // Auto-send for roadmap_study: if only user message(s) and no assistant reply, trigger AI
-      if (activeConversationType === "roadmap_study" && loaded.length > 0) {
+      if (convType === "roadmap_study" && loaded.length > 0) {
         const hasAssistant = loaded.some((m) => m.role === "assistant");
         const userMsgs = loaded.filter((m) => m.role === "user");
         if (!hasAssistant && userMsgs.length === 1) {

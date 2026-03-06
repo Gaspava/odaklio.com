@@ -73,6 +73,13 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
     setCurrentPage(activePage);
   }, [activePage]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Sync activeSpecialMode with conversation type (handles direct URL navigation)
+  useEffect(() => {
+    if (activeConversationType === "roadmap") {
+      setActiveSpecialMode("roadmap");
+    }
+  }, [activeConversationType]);
+
   // Auto-detect subject from active conversation
   useEffect(() => {
     if (activeConversationId && conversations) {
@@ -214,9 +221,14 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
 
   const handleOpenConversation = useCallback((id: string) => {
     if (id) {
-      setActiveSpecialMode(null);
       setPendingInitialMessage(null);
-      loadConversation(id).then(() => {
+      loadConversation(id).then(({ type }) => {
+        // Route roadmap conversations to RoadmapChat
+        if (type === "roadmap") {
+          setActiveSpecialMode("roadmap");
+        } else {
+          setActiveSpecialMode(null);
+        }
         setChatKey((k) => k + 1);
         setActivePage("focus");
         router.push(`/chat/${id}`);
@@ -227,6 +239,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       });
     } else {
       startNewConversation();
+      setActiveSpecialMode(null);
       setChatKey((k) => k + 1);
       setActivePage("focus");
       router.push("/");

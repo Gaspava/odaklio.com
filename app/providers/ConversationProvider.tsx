@@ -53,7 +53,7 @@ interface ConversationContextType {
   isLoadingConversation: boolean;
 
   startNewConversation: () => void;
-  loadConversation: (id: string) => Promise<ChatMessage[]>;
+  loadConversation: (id: string) => Promise<{ messages: ChatMessage[]; type: ConversationType | null }>;
   refreshConversations: () => Promise<void>;
   deleteConversation: (id: string) => Promise<void>;
 
@@ -83,7 +83,7 @@ const ConversationContext = createContext<ConversationContextType>({
   conversations: [],
   isLoadingConversation: false,
   startNewConversation: () => {},
-  loadConversation: async () => [],
+  loadConversation: async () => ({ messages: [], type: null }),
   refreshConversations: async () => {},
   deleteConversation: async () => {},
   saveUserMessage: async () => ({ conversationId: "", messageId: "" }),
@@ -148,22 +148,23 @@ export default function ConversationProvider({ children }: { children: ReactNode
     setActiveConversationType(null);
   }, []);
 
-  const loadConversation = useCallback(async (id: string): Promise<ChatMessage[]> => {
+  const loadConversation = useCallback(async (id: string): Promise<{ messages: ChatMessage[]; type: ConversationType | null }> => {
     setIsLoadingConversation(true);
     try {
       const conv = await getConversation(id);
       if (!conv) {
         console.error("Conversation not found");
-        return [];
+        return { messages: [], type: null };
       }
+      const convType = conv.type as ConversationType;
       setActiveConversationId(id);
-      setActiveConversationType(conv.type as ConversationType);
+      setActiveConversationType(convType);
 
       // For mindmap conversations, return empty — MindmapChat handles its own loading
-      if (conv.type === "mindmap") return [];
+      if (conv.type === "mindmap") return { messages: [], type: convType };
 
       const dbMessages = await getMessages(id);
-      return dbMessages.map((m: DbMessage) => ({
+      const messages = dbMessages.map((m: DbMessage) => ({
         id: m.id,
         role: m.role,
         content: m.content,
@@ -171,9 +172,10 @@ export default function ConversationProvider({ children }: { children: ReactNode
         dbId: m.id,
         imageUrl: m.metadata?.image_url as string | undefined,
       }));
+      return { messages, type: convType };
     } catch (err) {
       console.error("Failed to load conversation:", err);
-      return [];
+      return { messages: [], type: null };
     } finally {
       setIsLoadingConversation(false);
     }

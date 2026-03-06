@@ -431,7 +431,7 @@ export default function FlashcardChat({
     if (activeConversationId) {
       isFirstMessageRef.current = false;
       setIsInitialLoading(true);
-      loadConversation(activeConversationId).then((loaded) => {
+      loadConversation(activeConversationId).then(({ messages: loaded }) => {
         if (loaded.length > 0) {
           setMessages([welcomeMessage, ...loaded]);
           // Parse flashcards from the last assistant message
