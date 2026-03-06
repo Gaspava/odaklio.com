@@ -839,7 +839,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                   className="w-full bg-transparent outline-none disabled:opacity-50 resize-none leading-relaxed text-sm sm:text-[15px]"
                   style={{ color: "var(--text-primary)", minHeight: "52px", maxHeight: "200px", overflowY: "auto", padding: 0 }}
                 />
-                <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: "1px solid var(--border-secondary)" }}>
+                <div className="flex items-center justify-between mt-1.5 pt-1.5" style={{ borderTop: "1px solid var(--border-secondary)" }}>
                   <div className="flex items-center gap-1.5">
                     <div className="relative" ref={modeDropdownRef}>
                       <button
