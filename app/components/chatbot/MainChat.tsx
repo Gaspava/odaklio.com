@@ -795,7 +795,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                             />
                           )}
                           {msg.content && (
-                            <p className="text-[13px] sm:text-sm leading-relaxed">{msg.content}</p>
+                            <p className="text-[15px] sm:text-base leading-relaxed">{msg.content}</p>
                           )}
                         </div>
                       )}
