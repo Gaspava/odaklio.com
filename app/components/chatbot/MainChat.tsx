@@ -807,11 +807,112 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
 
         {/* Input Bar - always shown */}
         <div className={`flex-shrink-0 px-3 sm:px-4 ${isMobile ? "pb-2" : "pb-4"}`}>
-          <div
-            className="chat-input-bar max-w-[720px] mx-auto rounded-2xl px-3 py-2.5 sm:px-4 cursor-text"
-            style={{ background: "var(--bg-card)" }}
-            onClick={() => inputRef.current?.focus()}
-          >
+          {messages.length <= 1 ? (
+            /* Welcome card-style input */
+            <div className="w-full max-w-[680px] mx-auto">
+              <div className="welcome-card-input" onClick={() => inputRef.current?.focus()}>
+                {imagePreview && (
+                  <div className="relative w-fit mb-3">
+                    <img src={imagePreview} alt="preview" className="h-20 rounded-xl object-cover" style={{ maxWidth: 140 }} />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setImagePreview(null); }}
+                      className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full flex items-center justify-center text-white text-[10px]"
+                      style={{ background: "var(--accent-danger)" }}
+                    >✕</button>
+                  </div>
+                )}
+                <textarea
+                  ref={inputRef}
+                  rows={2}
+                  value={input}
+                  onChange={(e) => { setInput(e.target.value); autoResize(e.target); }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+                  }}
+                  onPaste={(e) => {
+                    const items = Array.from(e.clipboardData.items);
+                    const img = items.find(i => i.type.startsWith("image/"));
+                    if (img) { e.preventDefault(); const f = img.getAsFile(); if (f) handleImageFile(f); }
+                  }}
+                  placeholder={isMobile ? "Odaklio'ya mesaj yaz..." : "Odaklio'ya mesaj yaz..."}
+                  disabled={isLoading}
+                  className="w-full bg-transparent outline-none disabled:opacity-50 resize-none leading-relaxed text-sm sm:text-[15px]"
+                  style={{ color: "var(--text-primary)", minHeight: "52px", maxHeight: "200px", overflowY: "auto", padding: 0 }}
+                />
+                <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: "1px solid var(--border-secondary)" }}>
+                  <div className="flex items-center gap-1.5">
+                    <div className="relative" ref={modeDropdownRef}>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setModeDropdownOpen(v => !v); setStyleDropdownOpen(false); }}
+                        className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[11px] font-medium transition-all"
+                        style={{ background: "var(--bg-tertiary)", color: activeMode !== "sohbet" ? "var(--accent-primary)" : "var(--text-secondary)" }}
+                      >
+                        {MODE_OPTIONS.find(m => m.id === activeMode)?.icon}
+                        <span>{MODE_OPTIONS.find(m => m.id === activeMode)?.label}</span>
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: modeDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
+                          <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                      </button>
+                      {modeDropdownOpen && (
+                        <div className="absolute bottom-10 left-0 rounded-xl overflow-hidden z-50" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", boxShadow: "var(--shadow-lg)", minWidth: 130 }} onClick={(e) => e.stopPropagation()}>
+                          {MODE_OPTIONS.map((m) => (
+                            <button key={m.id} type="button" onClick={() => { handleModeSelect(m.id); setStyleDropdownOpen(false); }} className={`mode-dd-item ${activeMode === m.id ? "mode-dd-active" : ""}`}>
+                              {m.icon}<span>{m.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {activeMode === "sohbet" && (
+                      <div className="relative" ref={styleDropdownRef}>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setStyleDropdownOpen(v => !v); setModeDropdownOpen(false); }}
+                          className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[11px] font-medium transition-all"
+                          style={{ background: "var(--bg-tertiary)", color: selectedStyle !== "sohbet" ? "var(--accent-primary)" : "var(--text-secondary)" }}
+                        >
+                          <span>{SOHBET_STYLES.find(s => s.id === selectedStyle)?.label ?? "Normal"}</span>
+                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: styleDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
+                            <polyline points="6 9 12 15 18 9"/>
+                          </svg>
+                        </button>
+                        {styleDropdownOpen && (
+                          <div className="absolute bottom-10 left-0 rounded-xl overflow-hidden z-50" style={{ background: "var(--bg-card)", border: "1px solid var(--border-primary)", boxShadow: "var(--shadow-lg)", minWidth: 120 }} onClick={(e) => e.stopPropagation()}>
+                            {SOHBET_STYLES.map((s) => (
+                              <button key={s.id} type="button" onClick={() => { setSelectedStyle(s.id); setStyleDropdownOpen(false); }} className={`mode-dd-item ${selectedStyle === s.id ? "mode-dd-active" : ""}`}>
+                                <span>{s.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} className="flex h-8 w-8 items-center justify-center rounded-full transition-all" style={{ color: "var(--text-tertiary)" }} title="Görsel ekle">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                      </svg>
+                    </button>
+                    <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={(e) => { e.stopPropagation(); handleSend(); }} disabled={(!input.trim() && !imagePreview) || isLoading}
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-white transition-all active:scale-95"
+                      style={{ background: (input.trim() || imagePreview) && !isLoading ? "var(--gradient-primary)" : "var(--bg-tertiary)", color: (input.trim() || imagePreview) && !isLoading ? "white" : "var(--text-tertiary)", boxShadow: "none", opacity: (!input.trim() && !imagePreview) || isLoading ? 0.4 : 1 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Chat input bar */
+            <div
+              className="chat-input-bar max-w-[720px] mx-auto rounded-2xl px-3 py-2.5 sm:px-4 cursor-text"
+              style={{ background: "var(--bg-card)" }}
+              onClick={() => inputRef.current?.focus()}
+            >
             {imagePreview && (
               <div className="relative w-fit mb-2">
                 <img src={imagePreview} alt="preview" className="h-14 rounded-lg object-cover" style={{ maxWidth: 100 }} />
@@ -954,6 +1055,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
               </div>
             </div>
           </div>
+          )}
 
           {!isMobile && (
             <p
