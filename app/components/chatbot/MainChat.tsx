@@ -142,11 +142,11 @@ function FlashcardInlineRenderer({ content }: { content: string }) {
 function RoadmapInlineRenderer({ content }: { content: string }) {
   const titleMatch = content.match(/\[ROADMAP_TITLE\]([\s\S]*?)\[\/ROADMAP_TITLE\]/);
   const title = titleMatch?.[1]?.trim() ?? "";
-  const stepRegex = /\[STEP\](\d+)\|(.*?)\|(.*?)\|(.*?)\|(true|false)\[\/STEP\]/g;
-  const steps: { n: number; title: string; desc: string; time: string }[] = [];
+  const stepRegex = /\[STEP\](\d+)\|(.*?)\|(.*?)\|(true|false)\[\/STEP\]/g;
+  const steps: { n: number; title: string; desc: string }[] = [];
   let match;
   while ((match = stepRegex.exec(content)) !== null) {
-    steps.push({ n: parseInt(match[1]), title: match[2].trim(), desc: match[3].trim(), time: match[4].trim() });
+    steps.push({ n: parseInt(match[1]), title: match[2].trim(), desc: match[3].trim() });
   }
   const firstTagIdx = Math.min(
     content.indexOf("[ROADMAP_TITLE]") >= 0 ? content.indexOf("[ROADMAP_TITLE]") : Infinity,
@@ -178,9 +178,6 @@ function RoadmapInlineRenderer({ content }: { content: string }) {
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-[13px]" style={{ color: "var(--text-primary)" }}>{step.title}</div>
               <div className="text-[12px] mt-0.5 leading-relaxed" style={{ color: "var(--text-secondary)" }}>{step.desc}</div>
-              {step.time && (
-                <div className="text-[11px] mt-1" style={{ color: "var(--text-tertiary)" }}>⏱ {step.time}</div>
-              )}
             </div>
           </div>
         ))}

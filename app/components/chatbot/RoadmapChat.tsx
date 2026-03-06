@@ -25,7 +25,6 @@ interface RoadmapStep {
   number: number;
   title: string;
   description: string;
-  duration: string;
   completed: boolean;
   expandable: boolean;
 }
@@ -108,7 +107,7 @@ function parseRoadmapTitle(content: string): string | null {
 }
 
 function parseRoadmapSteps(content: string): RoadmapStep[] {
-  const regex = /\[STEP\](\d+)\|([\s\S]*?)\|([\s\S]*?)\|([\s\S]*?)(?:\|(true|false))?\[\/STEP\]/g;
+  const regex = /\[STEP\](\d+)\|([\s\S]*?)\|([\s\S]*?)\|(true|false)\[\/STEP\]/g;
   const steps: RoadmapStep[] = [];
   let match;
   while ((match = regex.exec(content)) !== null) {
@@ -116,9 +115,8 @@ function parseRoadmapSteps(content: string): RoadmapStep[] {
       number: parseInt(match[1]),
       title: match[2].trim(),
       description: match[3].trim(),
-      duration: match[4].trim(),
       completed: false,
-      expandable: match[5] ? match[5] === "true" : true,
+      expandable: match[4] === "true",
     });
   }
   return steps;
@@ -266,7 +264,7 @@ function MillerStepItem({
           {isCompleted && <CheckIcon />}
         </button>
 
-        {/* Step number badge + title + duration — clickable area */}
+        {/* Step number badge + title — clickable area */}
         <div className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer" onClick={onClick}>
           <span
             className="flex items-center justify-center rounded-lg text-[10px] font-bold flex-shrink-0"
@@ -283,12 +281,6 @@ function MillerStepItem({
             }}
           >
             {step.title}
-          </span>
-          <span
-            className="text-[10px] flex-shrink-0 px-1.5 py-0.5 rounded-full"
-            style={{ background: "var(--bg-tertiary)", color: "var(--text-tertiary)" }}
-          >
-            {step.duration}
           </span>
         </div>
 
@@ -490,7 +482,7 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation, init
         stepNumber: s.number,
         title: s.title,
         description: s.description,
-        duration: s.duration,
+        duration: "",
         isExpandable: s.expandable,
       })));
 
@@ -557,7 +549,6 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation, init
           number: s.step_number,
           title: s.title,
           description: s.description,
-          duration: s.duration,
           completed: s.is_completed,
           expandable: s.is_expandable,
         }));
@@ -626,7 +617,7 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation, init
           stepNumber: s.number,
           title: s.title,
           description: s.description,
-          duration: s.duration,
+          duration: "",
           isExpandable: s.expandable,
         })));
       }
@@ -691,7 +682,7 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation, init
       const parentTitle = columns[0]?.title || "Yol Haritasi";
       const convId = await createTypedConversation("roadmap_study");
 
-      const context = `[STUDY_CONTEXT]\nKonu: ${step.title}\nAciklama: ${step.description}\nSure: ${step.duration}\nYol Haritasi: ${parentTitle}\n[/STUDY_CONTEXT]\nBu konuyu bana ogret.`;
+      const context = `[STUDY_CONTEXT]\nKonu: ${step.title}\nAciklama: ${step.description}\nYol Haritasi: ${parentTitle}\n[/STUDY_CONTEXT]\nBu konuyu bana ogret.`;
       await insertMessage(convId, "user", context);
 
       onOpenConversation(convId, "roadmap_study");
@@ -811,7 +802,6 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation, init
       number: row.step_number,
       title: row.title,
       description: row.description,
-      duration: row.duration,
       completed: row.is_completed,
       expandable: row.is_expandable,
     };
