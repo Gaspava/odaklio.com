@@ -143,9 +143,8 @@ function FlashcardCard({
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
             background: "var(--bg-card)",
-            border: "2px solid var(--accent-warning)",
-            boxShadow:
-              "0 0 24px rgba(245, 158, 11, 0.12), var(--shadow-lg)",
+            border: "2px solid #ffffff",
+            boxShadow: "var(--shadow-lg)",
           }}
         >
           <span className="text-3xl mb-1" aria-hidden="true">
@@ -174,9 +173,8 @@ function FlashcardCard({
             transform: "rotateY(180deg)",
             background:
               "linear-gradient(135deg, var(--bg-card) 0%, rgba(16, 185, 129, 0.06) 100%)",
-            border: "2px solid var(--accent-primary)",
-            boxShadow:
-              "0 0 24px rgba(16, 185, 129, 0.12), var(--shadow-lg)",
+            border: "2px solid #ffffff",
+            boxShadow: "var(--shadow-lg)",
           }}
         >
           <span className="text-3xl mb-1" aria-hidden="true">
