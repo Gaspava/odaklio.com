@@ -158,18 +158,10 @@ function FlashcardGeneratingLoader({ topic }: { topic: string }) {
           background: "var(--bg-tertiary)",
           animation: "fc-float-front 2.4s ease-in-out infinite",
         }} />
-        {/* Emoji overlay */}
-        <div style={{
-          position: "absolute", inset: 0, display: "flex",
-          alignItems: "center", justifyContent: "center", zIndex: 10,
-          pointerEvents: "none",
-        }}>
-          <span style={{ fontSize: 26 }}>🃏</span>
-        </div>
       </div>
 
       {/* Text */}
-      <div className="flex flex-col items-center gap-3 text-center">
+      <div className="flex flex-col items-center gap-3 text-center select-none" style={{ userSelect: "none", pointerEvents: "none" }}>
         <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>
           Kartlar hazırlanıyor
         </p>
