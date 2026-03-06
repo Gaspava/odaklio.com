@@ -356,7 +356,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           </div>
           {/* New chat button - top right */}
           <button
-            onClick={() => setMobileBottomSheet("new-chat")}
+            onClick={() => handleNewChat()}
             className="flex items-center justify-center rounded-xl active:scale-90 transition-all"
             style={{ width: 32, height: 32, background: "#ffffff", color: "#1e293b", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}
           >
