@@ -397,7 +397,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
     });
   }, [activeConversationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // When user sends a message, instantly scroll to bottom so only their message is visible
+  // When user sends a message, scroll their message to the very top of the viewport
   const scrollTargetRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -406,9 +406,11 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
     scrollTargetRef.current = null;
 
     requestAnimationFrame(() => {
+      const el = document.getElementById(`msg-${targetId}`);
       const container = scrollContainerRef.current;
-      if (container) {
-        container.scrollTo({ top: container.scrollHeight });
+      if (el && container) {
+        const elTop = el.offsetTop - container.offsetTop;
+        container.scrollTo({ top: elTop - 8 });
       }
     });
   }, [messages]);
@@ -1066,7 +1068,8 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                   )}
                 </div>
               ))}
-              <div />
+              {/* Spacer so the last message can scroll to the top */}
+              <div style={{ minHeight: "70vh" }} />
             </div>
           )}
         </div>
