@@ -947,7 +947,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
           ) : (
             /* Chat input bar */
             <div
-              className="chat-input-bar max-w-[680px] mx-auto rounded-2xl px-3 py-2.5 sm:px-4 cursor-text"
+              className="chat-input-bar max-w-[720px] mx-auto rounded-2xl px-3 py-2.5 sm:px-4 cursor-text"
               style={{ background: "var(--bg-card)" }}
               onClick={() => inputRef.current?.focus()}
             >
