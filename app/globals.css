@@ -449,9 +449,8 @@ body {
 /* ===== CALLOUT/ALERT COMPONENTS ===== */
 .callout {
   border-radius: var(--radius-md);
-  padding: 14px 16px;
+  padding: 18px 16px;
   margin: 10px 0;
-  border-left: 3px solid;
   position: relative;
   animation: calloutIn 0.3s ease-out forwards;
 }
@@ -469,7 +468,6 @@ body {
 
 .callout-danger {
   background: var(--callout-danger-bg);
-  border-left-color: var(--callout-danger-icon);
 }
 
 .callout-danger .callout-icon {
@@ -478,12 +476,11 @@ body {
 }
 
 .callout-danger .callout-title {
-  color: var(--callout-danger-text);
+  color: var(--callout-danger-icon);
 }
 
 .callout-warning {
   background: var(--callout-warning-bg);
-  border-left-color: var(--callout-warning-icon);
 }
 
 .callout-warning .callout-icon {
@@ -492,12 +489,11 @@ body {
 }
 
 .callout-warning .callout-title {
-  color: var(--callout-warning-text);
+  color: var(--callout-warning-icon);
 }
 
 .callout-info {
   background: var(--callout-info-bg);
-  border-left-color: var(--callout-info-icon);
 }
 
 .callout-info .callout-icon {
@@ -506,12 +502,11 @@ body {
 }
 
 .callout-info .callout-title {
-  color: var(--callout-info-text);
+  color: var(--callout-info-icon);
 }
 
 .callout-tip {
   background: var(--callout-tip-bg);
-  border-left-color: var(--callout-tip-icon);
 }
 
 .callout-tip .callout-icon {
@@ -520,12 +515,11 @@ body {
 }
 
 .callout-tip .callout-title {
-  color: var(--callout-tip-text);
+  color: var(--callout-tip-icon);
 }
 
 .callout-note {
   background: var(--callout-note-bg);
-  border-left-color: var(--callout-note-icon);
 }
 
 .callout-note .callout-icon {
@@ -534,12 +528,11 @@ body {
 }
 
 .callout-note .callout-title {
-  color: var(--callout-note-text);
+  color: var(--callout-note-icon);
 }
 
 .callout-success {
   background: var(--callout-success-bg);
-  border-left-color: var(--callout-success-icon);
 }
 
 .callout-success .callout-icon {
@@ -548,7 +541,7 @@ body {
 }
 
 .callout-success .callout-title {
-  color: var(--callout-success-text);
+  color: var(--callout-success-icon);
 }
 
 /* ===== CODE BLOCK STYLES ===== */
