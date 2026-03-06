@@ -1068,8 +1068,8 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                   )}
                 </div>
               ))}
-              {/* Spacer so the last message can scroll to the top */}
-              <div style={{ minHeight: "70vh" }} />
+              {/* Spacer so the last message can scroll to the top while loading */}
+              {isLoading && <div style={{ minHeight: "70vh" }} />}
             </div>
           )}
         </div>
