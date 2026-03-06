@@ -2924,9 +2924,10 @@ body {
   justify-content: center;
   padding: 12px 0;
   gap: 10px;
-  height: 100%;
-  flex-shrink: 0;
-  position: relative;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
   z-index: 5;
 }
 
