@@ -12,6 +12,7 @@ import { useAuth } from "@/app/providers/AuthProvider";
 /* ===== TYPES ===== */
 interface FlashcardChatProps {
   isMobile?: boolean;
+  initialMessage?: string;
 }
 
 interface Flashcard {
@@ -315,6 +316,7 @@ const welcomeMessage: ChatMessage = {
 
 export default function FlashcardChat({
   isMobile = false,
+  initialMessage,
 }: FlashcardChatProps) {
   const {
     activeConversationId,
@@ -344,8 +346,9 @@ export default function FlashcardChat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isFirstMessageRef = useRef(true);
 
-  // Load conversation on mount if there's an active one
+  // Load conversation on mount if there's an active one (skip if we have an initialMessage)
   useEffect(() => {
+    if (initialMessage) return; // will be handled by auto-send effect below
     if (activeConversationId) {
       isFirstMessageRef.current = false;
       setIsInitialLoading(true);
@@ -369,6 +372,19 @@ export default function FlashcardChat({
         setIsInitialLoading(false);
       });
     }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-send initialMessage on mount (passed from main page mode switch)
+  useEffect(() => {
+    if (!initialMessage) return;
+    const userMsg: ChatMessage = {
+      id: Date.now().toString(),
+      role: "user",
+      content: initialMessage,
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, userMsg]);
+    sendToAI(initialMessage, [welcomeMessage]);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll messages area to bottom

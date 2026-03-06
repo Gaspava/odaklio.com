@@ -13,7 +13,7 @@ import { supabase } from "@/lib/supabase";
 
 interface MainChatProps {
   isMobile?: boolean;
-  onModeSwitch?: (mode: string) => void;
+  onModeSwitch?: (mode: string, initialMessage?: string) => void;
 }
 
 const welcomeMessage: ChatMessage = {
@@ -477,13 +477,6 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
       const apiMode = modeMap[style] || "standard";
       const enriched = (stylePrefix[style] || "") + userContent;
 
-      // If special mode and parent provides mode switch, delegate
-      if (["flashcard", "roadmap", "mindmap"].includes(style) && onModeSwitch) {
-        setIsLoading(false);
-        onModeSwitch(style);
-        return;
-      }
-
       // Extract base64 and mime type from data URL for API
       let imageData: string | undefined;
       let imageMimeType: string | undefined;
@@ -597,6 +590,15 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
     const userContent = input.trim() || "";
     const capturedImage = imagePreview;
 
+    // Special modes: delegate immediately without touching DB or messages state
+    if (["flashcard", "roadmap", "mindmap"].includes(selectedStyle) && onModeSwitch) {
+      onModeSwitch(selectedStyle, userContent);
+      setInput("");
+      setImagePreview(null);
+      if (inputRef.current) inputRef.current.style.height = "auto";
+      return;
+    }
+
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
@@ -616,7 +618,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
     if (isMobile) {
       inputRef.current?.blur();
     }
-  }, [input, imagePreview, isLoading, sendToAI, isMobile, messages, selectedStyle]);
+  }, [input, imagePreview, isLoading, sendToAI, isMobile, messages, selectedStyle, onModeSwitch]);
 
   const handleSelectionAction = (
     action: "quick-learn" | "what-is-this" | "speed-read"
