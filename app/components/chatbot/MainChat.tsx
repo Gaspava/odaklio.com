@@ -568,37 +568,6 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
           }
         }
 
-        // Fetch suggested follow-up questions (non-blocking)
-        if (fullContent && apiMode === "standard") {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === aiMsgId ? { ...m, suggestionsLoading: true } : m
-            )
-          );
-          fetch("/api/chat/suggestions", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content: fullContent }),
-          })
-            .then((r) => r.json())
-            .then(({ suggestions }) => {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === aiMsgId
-                    ? { ...m, suggestionsLoading: false, suggestions: suggestions?.length > 0 ? suggestions : m.suggestions }
-                    : m
-                )
-              );
-            })
-            .catch(() => {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === aiMsgId ? { ...m, suggestionsLoading: false } : m
-                )
-              );
-            });
-        }
-
         // Generate title on first message
         if (isFirst && fullContent) {
           generateTitle(conversationId, userContent);
@@ -660,6 +629,61 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
       inputRef.current?.blur();
     }
   }, [input, imagePreview, isLoading, sendToAI, isMobile, messages, selectedStyle, onModeSwitch]);
+
+  const fetchSuggestionsForMsg = useCallback((msgId: string, content: string) => {
+    setMessages((prev) =>
+      prev.map((m) => m.id === msgId ? { ...m, suggestionsLoading: true } : m)
+    );
+    fetch("/api/chat/suggestions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    })
+      .then((r) => r.json())
+      .then(({ suggestions }) => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === msgId
+              ? { ...m, suggestionsLoading: false, suggestions: suggestions?.length > 0 ? suggestions : m.suggestions }
+              : m
+          )
+        );
+      })
+      .catch(() => {
+        setMessages((prev) =>
+          prev.map((m) => m.id === msgId ? { ...m, suggestionsLoading: false } : m)
+        );
+      });
+  }, []);
+
+  const fetchNotesForMsg = useCallback((msgId: string, content: string) => {
+    setMessages((prev) =>
+      prev.map((m) => m.id === msgId ? { ...m, notesLoading: true } : m)
+    );
+    fetch("/api/chat/suggestions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content,
+        customPrompt: `Aşağıdaki yapay zeka yanıtından öğrencinin mutlaka not alması gereken en önemli 3-5 maddeyi çıkar. Her madde kısa, net ve öz olsun. Sadece maddeleri yaz, numaralama veya tire ekleme, başka hiçbir şey yazma.\n\nYanıt:\n${content.slice(0, 2000)}`,
+      }),
+    })
+      .then((r) => r.json())
+      .then(({ suggestions }) => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === msgId
+              ? { ...m, notesLoading: false, notes: suggestions?.length > 0 ? suggestions : undefined }
+              : m
+          )
+        );
+      })
+      .catch(() => {
+        setMessages((prev) =>
+          prev.map((m) => m.id === msgId ? { ...m, notesLoading: false } : m)
+        );
+      });
+  }, []);
 
   const handleSelectionAction = (
     action: "quick-learn" | "what-is-this" | "speed-read"
@@ -861,9 +885,15 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                   style={{ animationDelay: `${Math.min(idx * 0.05, 0.3)}s` }}
                 >
                   {msg.role === "assistant" && (
-                    <AiAvatar spinning={isLoading && msg.id === messages[messages.length - 1]?.id} />
+                    <div className="flex items-center">
+                      <AiAvatar spinning={isLoading && msg.id === messages[messages.length - 1]?.id} />
+                      {!msg.content && isLoading && msg.id === messages[messages.length - 1]?.id && (
+                        <TypingIndicator />
+                      )}
+                    </div>
                   )}
 
+                  {(msg.role === "user" || msg.content) && (
                   <div
                     className={`group relative ${
                       msg.role === "user"
@@ -878,17 +908,13 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                     >
                       {msg.role === "assistant" ? (
                         <>
-                          {msg.content ? (
+                          {msg.content && (
                             msg.content.includes("[FLASHCARD]") ? (
                               <FlashcardInlineRenderer content={msg.content} />
                             ) : msg.content.includes("[STEP]") ? (
                               <RoadmapInlineRenderer content={msg.content} />
                             ) : (
                               <ChatMessageRenderer content={msg.content} />
-                            )
-                          ) : (
-                            isLoading && msg.id === messages[messages.length - 1]?.id && (
-                              <TypingIndicator />
                             )
                           )}
                         </>
@@ -944,33 +970,98 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                       </>
                     )}
                   </div>
+                  )}
 
-                  {/* Suggested follow-up questions */}
-                  {msg.role === "assistant" && !isLoading && (msg.suggestionsLoading || (msg.suggestions && msg.suggestions.length > 0)) && (
-                    <div className="flex flex-col gap-2 mt-5">
-                      {msg.suggestionsLoading ? (
-                        <div className="suggestions-loading">
-                          <span className="suggestions-loading-dot" />
-                          <span className="suggestions-loading-dot" />
-                          <span className="suggestions-loading-dot" />
-                          <span className="suggestions-loading-text">Konu hakkında sorular yükleniyor</span>
-                        </div>
-                      ) : (
-                        msg.suggestions?.map((suggestion, i) => (
+                  {/* Action buttons - only on the last assistant message */}
+                  {msg.role === "assistant" && msg.content && !isLoading && msg.id === [...messages].reverse().find(m => m.role === "assistant" && m.content)?.id && (
+                    <div className="mt-4 space-y-3">
+                      {/* 3 Action Buttons */}
+                      {!msg.suggestions?.length && !msg.suggestionsLoading && !msg.notes?.length && !msg.notesLoading && (
+                        <div className="flex flex-wrap gap-2">
                           <button
-                            key={i}
-                            onClick={() => {
-                              const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: suggestion, timestamp: new Date() };
-                              setMessages((prev) => [...prev, userMsg]);
-                              sendToAI(suggestion, messages, selectedStyle);
-                            }}
-                            disabled={isLoading}
-                            className="suggestion-btn"
+                            onClick={() => fetchSuggestionsForMsg(msg.id, msg.content)}
+                            className="action-pill"
                           >
-                            <IconChevronRight size={12} />
-                            <span>{suggestion}</span>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            Soru Öner
                           </button>
-                        ))
+                          <button
+                            onClick={() => fetchNotesForMsg(msg.id, msg.content)}
+                            className="action-pill"
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                            Önemli Notlar
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (onModeSwitch) {
+                                const topic = messages.filter(m => m.role === "user").pop()?.content || "";
+                                onModeSwitch("flashcard", topic);
+                              }
+                            }}
+                            className="action-pill"
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                            Flashcard Oluştur
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Suggestions results */}
+                      {(msg.suggestionsLoading || (msg.suggestions && msg.suggestions.length > 0)) && (
+                        <div className="flex flex-col gap-2">
+                          {msg.suggestionsLoading ? (
+                            <div className="suggestions-loading">
+                              <span className="suggestions-loading-dot" />
+                              <span className="suggestions-loading-dot" />
+                              <span className="suggestions-loading-dot" />
+                              <span className="suggestions-loading-text">Sorular yükleniyor</span>
+                            </div>
+                          ) : (
+                            msg.suggestions?.map((suggestion, i) => (
+                              <button
+                                key={i}
+                                onClick={() => {
+                                  const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: suggestion, timestamp: new Date() };
+                                  setMessages((prev) => [...prev, userMsg]);
+                                  sendToAI(suggestion, messages, selectedStyle);
+                                }}
+                                disabled={isLoading}
+                                className="suggestion-btn"
+                              >
+                                <IconChevronRight size={12} />
+                                <span>{suggestion}</span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      )}
+
+                      {/* Notes results */}
+                      {(msg.notesLoading || (msg.notes && msg.notes.length > 0)) && (
+                        <div className="flex flex-col gap-1.5">
+                          {msg.notesLoading ? (
+                            <div className="suggestions-loading">
+                              <span className="suggestions-loading-dot" />
+                              <span className="suggestions-loading-dot" />
+                              <span className="suggestions-loading-dot" />
+                              <span className="suggestions-loading-text">Notlar çıkarılıyor</span>
+                            </div>
+                          ) : (
+                            <div className="notes-panel">
+                              <div className="notes-panel-header">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                Önemli Notlar
+                              </div>
+                              {msg.notes?.map((note, i) => (
+                                <div key={i} className="notes-panel-item">
+                                  <span className="notes-panel-bullet" />
+                                  <span>{note}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}

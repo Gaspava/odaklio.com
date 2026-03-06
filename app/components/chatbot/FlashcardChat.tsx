@@ -947,21 +947,21 @@ export default function FlashcardChat({
                   );
                 }
                 return (
-                  <div key={msg.id} className="flex justify-start animate-msg-in" style={{ animationDelay: `${Math.min(idx * 0.03, 0.2)}s` }}>
+                  <div key={msg.id} className="flex items-center justify-start animate-msg-in" style={{ animationDelay: `${Math.min(idx * 0.03, 0.2)}s` }}>
                     <div className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full mr-2.5 mt-1">
                       <img src="/odaklio-logo.svg" alt="" style={{ width: 28, height: 28 }} />
                     </div>
-                    <div className="max-w-[88%]">
-                      <div className="msg-ai px-3.5 py-2.5 sm:px-4 sm:py-3">
-                        {msg.content ? (
+                    {msg.content ? (
+                      <div className="max-w-[88%]">
+                        <div className="msg-ai px-3.5 py-2.5 sm:px-4 sm:py-3">
                           <p className="text-[12px] sm:text-[13px] leading-relaxed line-clamp-3" style={{ color: "var(--text-secondary)" }}>
                             {msg.content.replace(/\[FLASHCARD\][\s\S]*?\[\/FLASHCARD\]/g, "").trim() || "Kartlar hazir!"}
                           </p>
-                        ) : (
-                          isLoading && msg.id === messages[messages.length - 1]?.id && <TypingIndicator />
-                        )}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      isLoading && msg.id === messages[messages.length - 1]?.id && <TypingIndicator />
+                    )}
                   </div>
                 );
               })}

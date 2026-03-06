@@ -33,6 +33,8 @@ export interface ChatMessage {
   imageUrl?: string;
   suggestions?: string[];
   suggestionsLoading?: boolean;
+  notes?: string[];
+  notesLoading?: boolean;
 }
 
 export interface MindmapSaveData {

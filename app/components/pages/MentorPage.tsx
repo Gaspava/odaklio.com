@@ -501,15 +501,19 @@ export default function MentorPage() {
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-msg-in`}
                 >
                   {msg.role === "assistant" && (
-                    <div className="flex-shrink-0 flex items-end mr-2">
+                    <div className="flex-shrink-0 flex items-center mr-2">
                       <div
                         className="flex h-7 w-7 items-center justify-center rounded-full text-xs"
                         style={{ background: `${selectedPersona.color}15` }}
                       >
                         {selectedPersona.emoji}
                       </div>
+                      {!msg.content && isLoading && (
+                        <div className="ml-2"><TypingIndicator /></div>
+                      )}
                     </div>
                   )}
+                  {(msg.role === "user" || msg.content) && (
                   <div
                     className={`${msg.role === "user" ? "max-w-[80%]" : "max-w-[85%]"} rounded-2xl px-4 py-3 text-[13px] leading-relaxed`}
                     style={
@@ -529,15 +533,12 @@ export default function MentorPage() {
                     }
                   >
                     {msg.role === "assistant" ? (
-                      msg.content ? (
-                        <ChatMessageRenderer content={msg.content} />
-                      ) : (
-                        isLoading && <TypingIndicator />
-                      )
+                      <ChatMessageRenderer content={msg.content} />
                     ) : (
                       <p>{msg.content}</p>
                     )}
                   </div>
+                  )}
                 </div>
               ))}
               <div ref={messagesEndRef} />
