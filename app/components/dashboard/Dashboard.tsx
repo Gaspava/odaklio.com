@@ -248,6 +248,9 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
     startNewConversation();
     setActiveSpecialMode(null);
     setChatKey((k) => k + 1);
+    setActivePage("focus");
+    router.push("/");
+    if (isMobile) setLeftOpen(false);
   };
 
   const handleClearChat = () => {
@@ -372,8 +375,8 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           <div className="mobile-overlay" onClick={closeAllPanels} />
         )}
 
-        {/* Mini Sidebar - always visible on desktop when on focus page */}
-        {!isMobile && showSidePanels && (
+        {/* Mini Sidebar - always visible on desktop */}
+        {!isMobile && (
           <MiniSidebar
             onNewChat={() => handleNewChat()}
             onClearChat={handleClearChat}
