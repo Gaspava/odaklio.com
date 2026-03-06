@@ -239,7 +239,6 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const lastAiMsgIdRef = useRef<string | null>(null);
   const isFirstMessageRef = useRef(true);
   const loadedConvIdRef = useRef<string | null>(null);
   const messagesRef = useRef<ChatMessage[]>([welcomeMessage]);
@@ -399,69 +398,50 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
     });
   }, [activeConversationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Track user manual scroll during streaming
+  // Track the last user message id so we can scroll to it
+  const scrollTargetRef = useRef<string | null>(null);
+
+  // Detect user manual scroll during streaming
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
-    let scrollTimeout: ReturnType<typeof setTimeout>;
-    const handleScroll = () => {
-      if (!isLoading) return;
-      // Detect if user scrolled up (away from AI message top)
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        userScrolledRef.current = true;
-      }, 100);
-    };
-    // Use wheel/touch to detect intentional user scroll
     const handleWheel = () => { if (isLoading) userScrolledRef.current = true; };
     const handleTouch = () => { if (isLoading) userScrolledRef.current = true; };
     container.addEventListener("wheel", handleWheel, { passive: true });
     container.addEventListener("touchmove", handleTouch, { passive: true });
     return () => {
-      clearTimeout(scrollTimeout);
       container.removeEventListener("wheel", handleWheel);
       container.removeEventListener("touchmove", handleTouch);
     };
   }, [isLoading]);
 
-  // Reset userScrolled when loading starts
+  // When a new user message appears, scroll it to the top of the viewport (Gemini-style)
   useEffect(() => {
-    if (isLoading) userScrolledRef.current = false;
-  }, [isLoading]);
-
-  // Scroll to the START of the last AI message when it first appears
-  useEffect(() => {
-    const lastMsg = messages[messages.length - 1];
-    if (!lastMsg || lastMsg.role !== "assistant") return;
-    if (lastAiMsgIdRef.current === lastMsg.id) return;
-    lastAiMsgIdRef.current = lastMsg.id;
+    if (!scrollTargetRef.current) return;
+    const targetId = scrollTargetRef.current;
 
     const timer = setTimeout(() => {
-      const el = document.getElementById(`msg-${lastMsg.id}`);
-      if (el && scrollContainerRef.current) {
-        const container = scrollContainerRef.current;
+      const el = document.getElementById(`msg-${targetId}`);
+      const container = scrollContainerRef.current;
+      if (el && container) {
         const elTop = el.offsetTop - container.offsetTop;
         container.scrollTo({ top: elTop - 12, behavior: "smooth" });
       }
-    }, 50);
+    }, 30);
     return () => clearTimeout(timer);
   }, [messages]);
 
-  // During streaming, keep AI message top visible (unless user scrolled)
+  // During streaming, keep user message pinned at top (unless user scrolled)
   useEffect(() => {
-    if (!isLoading || userScrolledRef.current) return;
-    const lastMsg = messages[messages.length - 1];
-    if (!lastMsg || lastMsg.role !== "assistant" || !lastMsg.content) return;
-
-    const el = document.getElementById(`msg-${lastMsg.id}`);
+    if (!isLoading || userScrolledRef.current || !scrollTargetRef.current) return;
+    const el = document.getElementById(`msg-${scrollTargetRef.current}`);
     const container = scrollContainerRef.current;
     if (!el || !container) return;
 
     const elTop = el.offsetTop - container.offsetTop;
-    const currentScroll = container.scrollTop;
-    // Only re-pin if the message top drifted above viewport
-    if (Math.abs(currentScroll - (elTop - 12)) > 60) {
-      container.scrollTo({ top: elTop - 12 });
+    const desiredScroll = elTop - 12;
+    if (Math.abs(container.scrollTop - desiredScroll) > 40) {
+      container.scrollTo({ top: desiredScroll });
     }
   }, [messages, isLoading]);
 
@@ -667,6 +647,8 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
       imageUrl: capturedImage ?? undefined,
     };
 
+    scrollTargetRef.current = userMsg.id;
+    userScrolledRef.current = false;
     setMessages((prev) => [...prev, userMsg]);
     sendToAI(userContent, messages, selectedStyle, capturedImage ?? undefined);
 
@@ -1009,6 +991,8 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                           onClick={() => {
                             const userContent = "Bu aciklamayi anlamadim, daha basit anlatir misin?";
                             const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: userContent, timestamp: new Date() };
+                            scrollTargetRef.current = userMsg.id;
+                            userScrolledRef.current = false;
                             setMessages((prev) => [...prev, userMsg]);
                             sendToAI(userContent, messages);
                           }}
@@ -1073,6 +1057,8 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                                 key={i}
                                 onClick={() => {
                                   const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: suggestion, timestamp: new Date() };
+                                  scrollTargetRef.current = userMsg.id;
+                                  userScrolledRef.current = false;
                                   setMessages((prev) => [...prev, userMsg]);
                                   sendToAI(suggestion, messages, selectedStyle);
                                 }}
