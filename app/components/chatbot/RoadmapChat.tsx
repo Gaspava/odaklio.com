@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { IconSend, IconRoadmap, IconChevronLeft, IconChevronRight } from "../icons/Icons";
+import { IconChevronLeft, IconChevronRight } from "../icons/Icons";
 import { useConversation } from "@/app/providers/ConversationProvider";
-import { useAuth } from "@/app/providers/AuthProvider";
 import {
   saveRoadmapSteps,
   getRoadmapSteps,
@@ -11,7 +10,6 @@ import {
   getChildConversations,
   getConversationBreadcrumb,
   getConversation,
-  type Conversation,
   type RoadmapStepRow,
 } from "@/lib/db/conversations";
 
@@ -40,7 +38,7 @@ interface RoadmapColumn {
   isLoading: boolean;
 }
 
-type Phase = "input" | "loading" | "roadmap";
+type Phase = "loading" | "roadmap";
 const MAX_DEPTH = 4;
 
 /* ===== STREAMING HELPER ===== */
@@ -124,13 +122,6 @@ function parseRoadmapSteps(content: string): RoadmapStep[] {
   }
   return steps;
 }
-
-/* ===== CONSTANTS ===== */
-const QUICK_PROMPTS = [
-  { text: "Python ogrenmek istiyorum", icon: "\uD83D\uDC0D" },
-  { text: "Web gelistirme yol haritasi", icon: "\uD83C\uDF10" },
-  { text: "Makine ogrenmesi", icon: "\uD83E\uDD16" },
-];
 
 /* ===== INLINE SVG ICONS ===== */
 function CheckIcon() {
@@ -420,7 +411,6 @@ function MillerColumn({
 
 /* ===== MAIN COMPONENT ===== */
 export default function RoadmapChat({ isMobile = false, onOpenConversation, initialMessage }: RoadmapChatProps) {
-  const { user } = useAuth();
   const {
     activeConversationId,
     saveUserMessage,
@@ -433,25 +423,23 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation, init
     setActiveConversationType,
   } = useConversation();
 
-  const [phase, setPhase] = useState<Phase>("input");
+  const [phase, setPhase] = useState<Phase>("loading");
   const [columns, setColumns] = useState<RoadmapColumn[]>([]);
-  const [inputText, setInputText] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mobileActiveColumn, setMobileActiveColumn] = useState(0);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const isGeneratingRef = useRef(false);
 
   /* ===== AUTO-GENERATE FROM INITIAL MESSAGE ===== */
   const initialMessageUsedRef = useRef(false);
   useEffect(() => {
-    if (initialMessage && !initialMessageUsedRef.current && phase === "input" && !isGenerating && !activeConversationId) {
+    if (initialMessage && !initialMessageUsedRef.current && !isGenerating && !activeConversationId) {
       initialMessageUsedRef.current = true;
       handleGenerate(initialMessage);
     }
-  }, [initialMessage, phase, isGenerating, activeConversationId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [initialMessage, isGenerating, activeConversationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ===== AUTO-SCROLL RIGHT ===== */
   const scrollToRight = useCallback(() => {
@@ -520,7 +508,7 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation, init
     } catch (err) {
       console.error("Roadmap generation error:", err);
       setError(err instanceof Error ? err.message : "Bir hata olustu");
-      setPhase("input");
+      setPhase("loading");
     } finally {
       setIsGenerating(false);
       isGeneratingRef.current = false;
@@ -710,7 +698,7 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation, init
   /* ===== LOAD EXISTING ROADMAP ===== */
   useEffect(() => {
     if (!activeConversationId) {
-      setPhase("input");
+      // No active conversation — wait for auto-generate from initialMessage
       setColumns([]);
       return;
     }
@@ -802,7 +790,8 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation, init
       } catch (err) {
         console.error("Load existing roadmap error:", err);
         if (!cancelled) {
-          setPhase("input");
+          setError("Yol haritasi yuklenemedi");
+          setPhase("loading");
         }
       }
     }
@@ -823,129 +812,39 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation, init
     };
   }
 
-  /* ===== INPUT SUBMISSION ===== */
-  const handleSubmit = () => {
-    if (inputText.trim()) {
-      handleGenerate(inputText.trim());
-      setInputText("");
-    }
-  };
-
-  /* ===== RENDER: INPUT PHASE ===== */
-  if (phase === "input") {
-    const firstName = user?.user_metadata?.full_name?.split(" ")[0] || "";
-    return (
-      <div className="h-full overflow-y-auto" style={{ background: "var(--bg-primary)" }}>
-        <div className="min-h-full flex flex-col items-center justify-center px-4 py-8 animate-fade-in">
-          {/* Mode badge */}
-          <div className="welcome-mode-badge welcome-mode-badge-red mb-4">
-            <span>🗺️</span> Yol Haritası Modu
-          </div>
-          <div className="welcome-logo-glow mb-5">
-            <img src="/odaklio-logo.svg" alt="Odaklio" className="w-24 h-24 sm:w-28 sm:h-28" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2 text-center tracking-wide">
-            {firstName ? (
-              <>
-                <span style={{ color: "var(--text-primary)" }}>MERHABA, </span>
-                <span className="welcome-name-glow-red">{firstName.toUpperCase()}!</span>
-              </>
-            ) : (
-              <span style={{ color: "var(--text-primary)" }}>MERHABA!</span>
-            )}
-          </h1>
-          <p className="text-sm sm:text-base mb-8 text-center" style={{ color: "var(--text-tertiary)" }}>
-            Bir konu yaz, sana adım adım öğrenme yol haritası hazırlayayım.
-          </p>
-
-          <div className="w-full max-w-[600px] mb-6">
-            <div className="welcome-input-wrapper">
-              <div className="welcome-input-glow-red" />
-              <div className="welcome-input-inner">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
-                  placeholder={isMobile ? "Konu yaz..." : "Öğrenmek istediğin konuyu yaz... (örn: React ile web geliştirme)"}
-                  disabled={isGenerating}
-                  className="flex-1 bg-transparent text-sm sm:text-base outline-none disabled:opacity-50"
-                  style={{ color: "var(--text-primary)" }}
-                />
-                <button
-                  onClick={handleSubmit}
-                  disabled={!inputText.trim() || isGenerating}
-                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition-all active:scale-[0.95] disabled:opacity-40"
-                  style={{
-                    background: inputText.trim() && !isGenerating ? "#ef4444" : "var(--bg-tertiary)",
-                    color: inputText.trim() && !isGenerating ? "white" : "var(--text-tertiary)",
-                    boxShadow: inputText.trim() && !isGenerating ? "0 0 12px rgba(239, 68, 68, 0.3)" : "none",
-                  }}
-                >
-                  <IconSend size={15} />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-2.5 max-w-[600px]">
-            {QUICK_PROMPTS.map((qp) => (
-              <button
-                key={qp.text}
-                onClick={() => handleGenerate(qp.text)}
-                disabled={isGenerating}
-                className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-medium transition-all active:scale-[0.97] hover:shadow-md disabled:opacity-50"
-                style={{
-                  background: "var(--bg-card)",
-                  border: "1px solid rgba(239, 68, 68, 0.2)",
-                  color: "var(--text-secondary)",
-                }}
-              >
-                <span>{qp.icon}</span>
-                {qp.text}
-              </button>
-            ))}
-          </div>
-
-          {error && (
-            <p className="mt-4 text-[12px] text-center" style={{ color: "var(--accent-danger)" }}>
-              {error}
-            </p>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   /* ===== RENDER: LOADING PHASE ===== */
   if (phase === "loading") {
     return (
       <div className="h-full flex flex-col items-center justify-center px-4 py-8 select-none" style={{ background: "var(--bg-primary)" }}>
-        <div className="flex flex-col items-center gap-6" style={{ maxWidth: 400 }}>
-          {/* Animated icon */}
-          <div
-            className="flex items-center justify-center rounded-2xl"
-            style={{
-              width: 64,
-              height: 64,
-              background: "rgba(239, 68, 68, 0.06)",
-              border: "1px solid rgba(239, 68, 68, 0.12)",
-              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-            }}
-          >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v3M12 10l-5 7M12 10l5 7"/>
-            </svg>
+        <div className="flex flex-col items-center gap-0" style={{ maxWidth: 420 }}>
+          {/* Logo with glow animation */}
+          <div className="roadmap-loader-logo">
+            <div className="roadmap-loader-glow" />
+            <img src="/odaklio-logo.svg" alt="Odaklio" className="w-20 h-20 sm:w-24 sm:h-24" style={{ position: "relative", zIndex: 1 }} />
           </div>
 
-          <div className="text-center">
-            <p className="text-[15px] font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
-              Yol haritaniz hazirlaniyor
-            </p>
-            <p className="text-[12px]" style={{ color: "var(--text-tertiary)" }}>
-              Adimlar olusturuluyor, biraz bekleyin...
-            </p>
+          <p className="text-[16px] sm:text-[18px] font-bold mb-1.5 tracking-wide" style={{ color: "var(--text-primary)" }}>
+            Yol Haritaniz Hazirlaniyor
+          </p>
+          <p className="text-[12px] sm:text-[13px] mb-8" style={{ color: "var(--text-tertiary)" }}>
+            Adimlar olusturuluyor, biraz bekleyin...
+          </p>
+
+          {/* Animated progress dots */}
+          <div className="flex items-center gap-2 mb-8">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="rounded-full"
+                style={{
+                  width: 8,
+                  height: 8,
+                  background: "#ef4444",
+                  animation: "roadmapDotBounce 1.4s ease-in-out infinite",
+                  animationDelay: `${i * 0.16}s`,
+                }}
+              />
+            ))}
           </div>
 
           {/* Skeleton steps */}
@@ -953,22 +852,36 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation, init
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
-                className="rounded-xl p-3.5"
+                className="rounded-xl p-3.5 roadmap-skeleton-step"
                 style={{
                   background: "var(--bg-card)",
                   border: "1px solid var(--border-secondary)",
-                  animation: `pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite`,
-                  animationDelay: `${i * 0.15}s`,
+                  animationDelay: `${i * 0.12}s`,
                 }}
               >
                 <div className="flex items-center gap-3">
                   <div className="h-6 w-6 rounded-lg flex-shrink-0" style={{ background: "var(--bg-tertiary)" }} />
-                  <div className="h-3.5 flex-1 rounded-md" style={{ background: "var(--bg-tertiary)" }} />
-                  <div className="h-3 w-12 rounded-full" style={{ background: "var(--bg-tertiary)" }} />
+                  <div className="h-3.5 rounded-md" style={{ background: "var(--bg-tertiary)", width: `${65 + (i % 3) * 12}%` }} />
+                  <div className="h-3 w-12 rounded-full flex-shrink-0" style={{ background: "var(--bg-tertiary)" }} />
                 </div>
               </div>
             ))}
           </div>
+
+          {error && (
+            <div className="mt-6 text-center">
+              <p className="text-[12px] mb-2" style={{ color: "var(--accent-danger)" }}>
+                {error}
+              </p>
+              <button
+                onClick={() => { setError(null); if (initialMessage) { initialMessageUsedRef.current = false; handleGenerate(initialMessage); } }}
+                className="text-[12px] font-medium px-4 py-1.5 rounded-lg transition-all active:scale-95"
+                style={{ background: "rgba(239, 68, 68, 0.08)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.2)" }}
+              >
+                Tekrar Dene
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
