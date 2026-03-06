@@ -697,9 +697,17 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                   style={{ animation: "logo-spin 12s linear infinite" }}
                 />
                 <h1 className="text-xl sm:text-2xl font-bold text-center" style={{ color: "var(--text-primary)" }}>
-                  {firstName
-                    ? <>Merhaba, <span className="welcome-name-glow">{firstName.toUpperCase()}</span>! Nasıl yardımcı olabilirim?</>
-                    : "Bugün sana nasıl yardımcı olabilirim?"}
+                  {firstName ? (
+                    <>
+                      Merhaba, <span className="welcome-name-glow">{firstName.toUpperCase()}</span>!<br />
+                      Nasıl yardımcı olabilirim?
+                    </>
+                  ) : (
+                    <>
+                      Merhaba!<br />
+                      Nasıl yardımcı olabilirim?
+                    </>
+                  )}
                 </h1>
               </div>
 
