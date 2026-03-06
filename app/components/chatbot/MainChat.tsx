@@ -757,7 +757,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
     );
   }
 
-  const userMessages = messages.filter((m) => m.role === "user" && m.id !== "welcome");
+  const userMessages = messages.filter((m) => m.role === "user" && m.id !== "welcome" && !m.content.startsWith("[STUDY_CONTEXT]"));
   const hasUserMessages = userMessages.length > 0;
 
   return (
@@ -856,7 +856,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
           ) : (
             /* Chat Messages */
             <div className="max-w-[720px] mx-auto space-y-5 sm:space-y-6">
-              {messages.filter(m => m.id !== "welcome").map((msg, idx) => (
+              {messages.filter(m => m.id !== "welcome" && !m.content.startsWith("[STUDY_CONTEXT]")).map((msg, idx) => (
                 <div
                   id={`msg-${msg.id}`}
                   key={msg.id}
