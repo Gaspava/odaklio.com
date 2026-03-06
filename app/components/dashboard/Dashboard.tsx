@@ -245,7 +245,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
         return <ToolsPage onOpenConversation={handleOpenConversation} />;
       case "focus":
         if (activeSpecialMode === "flashcard") return <FlashcardChat key={chatKey} isMobile={isMobile} initialMessage={pendingInitialMessage || undefined} />;
-        if (activeSpecialMode === "roadmap") return <RoadmapChat key={chatKey} isMobile={isMobile} onOpenConversation={handleOpenConversation} />;
+        if (activeSpecialMode === "roadmap") return <RoadmapChat key={chatKey} isMobile={isMobile} onOpenConversation={handleOpenConversation} initialMessage={pendingInitialMessage || undefined} />;
         if (activeSpecialMode === "mindmap") return <MindmapChat key={chatKey} isMobile={isMobile} />;
         return <MainChat key={chatKey} isMobile={isMobile} onModeSwitch={handleModeSwitch} />;
       case "mentor":
@@ -411,10 +411,10 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           </div>
         )}
 
-        {/* Main content - always centered, not pushed by right panel */}
+        {/* Main content - always centered, offset for mini sidebar on desktop */}
         <div
           className="flex-1 min-w-0 overflow-hidden"
-          style={{ background: "var(--bg-primary)" }}
+          style={{ background: "var(--bg-primary)", paddingLeft: !isMobile ? 56 : 0 }}
         >
           {renderPageContent()}
         </div>

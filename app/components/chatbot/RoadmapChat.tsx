@@ -19,6 +19,7 @@ import {
 interface RoadmapChatProps {
   isMobile?: boolean;
   onOpenConversation?: (id: string, type?: string) => void;
+  initialMessage?: string;
 }
 
 interface RoadmapStep {
@@ -150,7 +151,7 @@ function BookIcon() {
 }
 
 /* ===== OVERALL PROGRESS BAR ===== */
-function OverallProgress({ columns }: { columns: RoadmapColumn[] }) {
+function OverallProgress({ columns, title }: { columns: RoadmapColumn[]; title?: string }) {
   let total = 0;
   let completed = 0;
   for (const col of columns) {
@@ -161,19 +162,44 @@ function OverallProgress({ columns }: { columns: RoadmapColumn[] }) {
   const pct = Math.round((completed / total) * 100);
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2" style={{ borderBottom: "1px solid var(--border-primary)" }}>
-      <span className="text-[11px] font-medium" style={{ color: "var(--text-tertiary)" }}>
-        Ilerleme
-      </span>
-      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-tertiary)" }}>
+    <div className="roadmap-header-bar">
+      <div className="flex items-center gap-3 min-w-0">
         <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${pct}%`, background: "var(--accent-primary)" }}
-        />
+          className="flex items-center justify-center rounded-xl flex-shrink-0"
+          style={{ width: 36, height: 36, background: "rgba(239, 68, 68, 0.08)" }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v3M12 10l-5 7M12 10l5 7"/>
+          </svg>
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-[14px] font-bold truncate" style={{ color: "var(--text-primary)" }}>
+            {title || "Yol Haritasi"}
+          </h2>
+          <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+            {completed}/{total} adim tamamlandi
+          </span>
+        </div>
       </div>
-      <span className="text-[11px] font-semibold" style={{ color: pct === 100 ? "var(--accent-primary)" : "var(--text-secondary)" }}>
-        {completed}/{total} ({pct}%)
-      </span>
+      <div className="flex items-center gap-3" style={{ minWidth: 140 }}>
+        <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "var(--bg-tertiary)" }}>
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${pct}%`,
+              background: pct === 100
+                ? "linear-gradient(90deg, #10b981, #059669)"
+                : "linear-gradient(90deg, #ef4444, #f97316)",
+            }}
+          />
+        </div>
+        <span
+          className="text-[12px] font-bold flex-shrink-0"
+          style={{ color: pct === 100 ? "#10b981" : "#ef4444" }}
+        >
+          %{pct}
+        </span>
+      </div>
     </div>
   );
 }
@@ -278,15 +304,15 @@ function MillerStepItem({
         {canExpand ? (
           <button
             onClick={onClick}
-            className="flex-shrink-0 flex items-center justify-center transition-colors"
-            style={{ color: "var(--text-tertiary)", width: 20, height: 20 }}
+            className="flex-shrink-0 flex items-center justify-center rounded-lg transition-all hover:scale-110"
+            style={{ color: "var(--text-tertiary)", width: 24, height: 24, background: "var(--bg-tertiary)" }}
           >
-            <IconChevronRight size={14} />
+            <IconChevronRight size={12} />
           </button>
         ) : (
           <button
             onClick={(e) => { e.stopPropagation(); onStudy(); }}
-            className="flex-shrink-0 flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-all active:scale-[0.97]"
+            className="flex-shrink-0 flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[10px] font-semibold transition-all active:scale-[0.97] hover:shadow-sm"
             style={{
               background: "rgba(16, 185, 129, 0.08)",
               color: "#10b981",
@@ -341,24 +367,37 @@ function MillerColumn({
     <div className="miller-column" style={{ background: bgColor }}>
       {/* Column header */}
       <div className="px-4 py-3 flex-shrink-0" style={{ borderBottom: "1px solid var(--border-primary)" }}>
-        <h3 className="text-[13px] font-semibold truncate mb-1.5" style={{ color: "var(--text-primary)" }}>
-          {column.title || "Yol Haritasi"}
-        </h3>
+        <div className="flex items-center gap-2.5 mb-2">
+          {colIndex > 0 && (
+            <span
+              className="flex items-center justify-center rounded-lg flex-shrink-0"
+              style={{ width: 20, height: 20, background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", fontSize: 10, fontWeight: 700 }}
+            >
+              {colIndex + 1}
+            </span>
+          )}
+          <h3 className="text-[13px] font-semibold truncate" style={{ color: "var(--text-primary)" }}>
+            {column.title || "Yol Haritasi"}
+          </h3>
+        </div>
         <div className="flex items-center gap-2">
-          <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: "var(--bg-tertiary)" }}>
+          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-tertiary)" }}>
             <div
               className="h-full rounded-full transition-all duration-300"
-              style={{ width: `${pct}%`, background: "var(--accent-primary)" }}
+              style={{
+                width: `${pct}%`,
+                background: pct === 100 ? "#10b981" : "var(--accent-primary)",
+              }}
             />
           </div>
-          <span className="text-[10px] font-medium" style={{ color: "var(--text-tertiary)" }}>
+          <span className="text-[10px] font-semibold" style={{ color: pct === 100 ? "#10b981" : "var(--text-tertiary)" }}>
             {completed}/{total}
           </span>
         </div>
       </div>
 
       {/* Step list */}
-      <div className="flex-1 overflow-y-auto p-2.5 flex flex-col gap-1.5">
+      <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
         {column.steps.map((step) => {
           const canExpand = step.expandable && colIndex + 1 < MAX_DEPTH;
           return (
@@ -380,7 +419,7 @@ function MillerColumn({
 }
 
 /* ===== MAIN COMPONENT ===== */
-export default function RoadmapChat({ isMobile = false, onOpenConversation }: RoadmapChatProps) {
+export default function RoadmapChat({ isMobile = false, onOpenConversation, initialMessage }: RoadmapChatProps) {
   const { user } = useAuth();
   const {
     activeConversationId,
@@ -404,6 +443,15 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const isGeneratingRef = useRef(false);
+
+  /* ===== AUTO-GENERATE FROM INITIAL MESSAGE ===== */
+  const initialMessageUsedRef = useRef(false);
+  useEffect(() => {
+    if (initialMessage && !initialMessageUsedRef.current && phase === "input" && !isGenerating && !activeConversationId) {
+      initialMessageUsedRef.current = true;
+      handleGenerate(initialMessage);
+    }
+  }, [initialMessage, phase, isGenerating, activeConversationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ===== AUTO-SCROLL RIGHT ===== */
   const scrollToRight = useCallback(() => {
@@ -873,34 +921,50 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
   /* ===== RENDER: LOADING PHASE ===== */
   if (phase === "loading") {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8" style={{ background: "var(--bg-primary)" }}>
-        <div className="flex flex-col items-center gap-5" style={{ maxWidth: 400 }}>
+      <div className="h-full flex flex-col items-center justify-center px-4 py-8 select-none" style={{ background: "var(--bg-primary)" }}>
+        <div className="flex flex-col items-center gap-6" style={{ maxWidth: 400 }}>
+          {/* Animated icon */}
           <div
-            className="flex items-center justify-center rounded-2xl animate-pulse"
-            style={{ width: 56, height: 56, background: "rgba(239, 68, 68, 0.08)" }}
+            className="flex items-center justify-center rounded-2xl"
+            style={{
+              width: 64,
+              height: 64,
+              background: "rgba(239, 68, 68, 0.06)",
+              border: "1px solid rgba(239, 68, 68, 0.12)",
+              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            }}
           >
-            <IconRoadmap size={28} />
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v3M12 10l-5 7M12 10l5 7"/>
+            </svg>
           </div>
-          <p className="text-[14px] font-medium" style={{ color: "var(--text-secondary)" }}>
-            Yol haritaniz hazirlaniyor...
-          </p>
+
+          <div className="text-center">
+            <p className="text-[15px] font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+              Yol haritaniz hazirlaniyor
+            </p>
+            <p className="text-[12px]" style={{ color: "var(--text-tertiary)" }}>
+              Adimlar olusturuluyor, biraz bekleyin...
+            </p>
+          </div>
 
           {/* Skeleton steps */}
-          <div className="w-full flex flex-col gap-2.5" style={{ maxWidth: 360 }}>
+          <div className="w-full flex flex-col gap-2.5" style={{ maxWidth: 380 }}>
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
-                className="rounded-xl p-3 animate-pulse"
+                className="rounded-xl p-3.5"
                 style={{
                   background: "var(--bg-card)",
                   border: "1px solid var(--border-secondary)",
-                  animationDelay: `${i * 0.12}s`,
+                  animation: `pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite`,
+                  animationDelay: `${i * 0.15}s`,
                 }}
               >
-                <div className="flex items-center gap-2">
-                  <div className="h-5 w-5 rounded-lg" style={{ background: "var(--bg-tertiary)" }} />
-                  <div className="h-3 flex-1 rounded-md" style={{ background: "var(--bg-tertiary)" }} />
-                  <div className="h-3 w-10 rounded-md" style={{ background: "var(--bg-tertiary)" }} />
+                <div className="flex items-center gap-3">
+                  <div className="h-6 w-6 rounded-lg flex-shrink-0" style={{ background: "var(--bg-tertiary)" }} />
+                  <div className="h-3.5 flex-1 rounded-md" style={{ background: "var(--bg-tertiary)" }} />
+                  <div className="h-3 w-12 rounded-full" style={{ background: "var(--bg-tertiary)" }} />
                 </div>
               </div>
             ))}
@@ -911,30 +975,51 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
   }
 
   /* ===== RENDER: ROADMAP PHASE (MILLER COLUMNS) ===== */
+  const rootTitle = columns[0]?.title || "Yol Haritasi";
+
   if (isMobile) {
     const activeCol = columns[mobileActiveColumn];
     if (!activeCol) return null;
 
     return (
-      <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "var(--bg-primary)" }}>
+      <div className="roadmap-wrapper" style={{ background: "var(--bg-primary)" }}>
         {/* Overall progress */}
-        <OverallProgress columns={columns} />
+        <OverallProgress columns={columns} title={rootTitle} />
 
-        {/* Mobile navigation header */}
-        {mobileActiveColumn > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2" style={{ borderBottom: "1px solid var(--border-secondary)" }}>
-            <button
-              onClick={() => setMobileActiveColumn((prev) => Math.max(0, prev - 1))}
-              className="flex items-center gap-1 text-[12px] font-medium rounded-lg px-2 py-1"
-              style={{ color: "#ef4444" }}
-            >
-              <IconChevronLeft size={14} />
-              Geri
-            </button>
-            <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
-              {columns[mobileActiveColumn - 1]?.title}
-            </span>
+        {/* Mobile breadcrumb navigation */}
+        {columns.length > 1 && (
+          <div className="flex items-center gap-1 px-3 py-2.5 overflow-x-auto" style={{ borderBottom: "1px solid var(--border-secondary)", background: "var(--bg-secondary)" }}>
+            {columns.map((col, idx) => (
+              <div key={col.conversationId || idx} className="flex items-center gap-1 flex-shrink-0">
+                {idx > 0 && (
+                  <IconChevronRight size={10} />
+                )}
+                <button
+                  onClick={() => setMobileActiveColumn(idx)}
+                  className="text-[11px] font-medium rounded-lg px-2.5 py-1 transition-all truncate"
+                  style={{
+                    maxWidth: 120,
+                    background: idx === mobileActiveColumn ? "rgba(239, 68, 68, 0.08)" : "transparent",
+                    color: idx === mobileActiveColumn ? "#ef4444" : "var(--text-tertiary)",
+                  }}
+                >
+                  {col.title || `Seviye ${idx + 1}`}
+                </button>
+              </div>
+            ))}
           </div>
+        )}
+
+        {/* Back button for sub-levels */}
+        {mobileActiveColumn > 0 && (
+          <button
+            onClick={() => setMobileActiveColumn((prev) => Math.max(0, prev - 1))}
+            className="flex items-center gap-1.5 px-4 py-2 text-[12px] font-medium transition-all"
+            style={{ color: "#ef4444", borderBottom: "1px solid var(--border-secondary)" }}
+          >
+            <IconChevronLeft size={14} />
+            {columns[mobileActiveColumn - 1]?.title || "Geri"}
+          </button>
         )}
 
         {/* Single column view */}
@@ -954,9 +1039,33 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation }: Ro
 
   /* Desktop: horizontal scroll container */
   return (
-    <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "var(--bg-primary)" }}>
-      {/* Overall progress */}
-      <OverallProgress columns={columns} />
+    <div className="roadmap-wrapper" style={{ background: "var(--bg-primary)" }}>
+      {/* Overall progress header */}
+      <OverallProgress columns={columns} title={rootTitle} />
+
+      {/* Breadcrumb for depth levels */}
+      {columns.length > 1 && (
+        <div className="flex items-center gap-1 px-6 py-2" style={{ borderBottom: "1px solid var(--border-secondary)", background: "var(--bg-secondary)" }}>
+          {columns.map((col, idx) => (
+            <div key={col.conversationId || idx} className="flex items-center gap-1.5">
+              {idx > 0 && (
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}>
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              )}
+              <span
+                className="roadmap-breadcrumb-item"
+                style={{
+                  background: idx === columns.length - 1 ? "rgba(239, 68, 68, 0.08)" : "var(--bg-tertiary)",
+                  color: idx === columns.length - 1 ? "#ef4444" : "var(--text-secondary)",
+                }}
+              >
+                {col.title || `Seviye ${idx + 1}`}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Miller columns container */}
       <div
