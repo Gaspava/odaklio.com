@@ -10,6 +10,7 @@ import {
   getChildConversations,
   getConversationBreadcrumb,
   getConversation,
+  insertMessage,
   type RoadmapStepRow,
 } from "@/lib/db/conversations";
 
@@ -691,13 +692,13 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation, init
       const convId = await createTypedConversation("roadmap_study");
 
       const context = `[STUDY_CONTEXT]\nKonu: ${step.title}\nAciklama: ${step.description}\nSure: ${step.duration}\nYol Haritasi: ${parentTitle}\n[/STUDY_CONTEXT]\nBu konuyu bana ogret.`;
-      await saveUserMessage(context, null, "roadmap_study");
+      await insertMessage(convId, "user", context);
 
       onOpenConversation(convId, "roadmap_study");
     } catch (err) {
       console.error("Study topic error:", err);
     }
-  }, [onOpenConversation, createTypedConversation, saveUserMessage, columns]);
+  }, [onOpenConversation, createTypedConversation, columns]);
 
   /* ===== LOAD EXISTING ROADMAP ===== */
   useEffect(() => {
