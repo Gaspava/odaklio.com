@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { IconSend, IconMic, IconHelp, IconCopy, IconThumbUp, IconThumbDown } from "../icons/Icons";
+import { IconSend, IconMic, IconHelp, IconCopy, IconThumbUp, IconThumbDown, IconChevronRight } from "../icons/Icons";
 import TextSelectionPopup from "./TextSelectionPopup";
 import SpeedReadingOverlay from "../speed-reading/SpeedReadingOverlay";
 import QuickLearnOverlay from "./QuickLearnOverlay";
@@ -534,6 +534,26 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
           }
         }
 
+        // Fetch suggested follow-up questions (non-blocking)
+        if (fullContent && apiMode === "standard") {
+          fetch("/api/chat/suggestions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: fullContent }),
+          })
+            .then((r) => r.json())
+            .then(({ suggestions }) => {
+              if (suggestions?.length > 0) {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === aiMsgId ? { ...m, suggestions } : m
+                  )
+                );
+              }
+            })
+            .catch(() => {});
+        }
+
         // Generate title on first message
         if (isFirst && fullContent) {
           generateTitle(conversationId, userContent);
@@ -836,6 +856,27 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                       </>
                     )}
                   </div>
+
+                  {/* Suggested follow-up questions */}
+                  {msg.role === "assistant" && msg.suggestions && msg.suggestions.length > 0 && !isLoading && (
+                    <div className="flex flex-col gap-2 mt-5">
+                      {msg.suggestions.map((suggestion, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: suggestion, timestamp: new Date() };
+                            setMessages((prev) => [...prev, userMsg]);
+                            sendToAI(suggestion, messages, selectedStyle);
+                          }}
+                          disabled={isLoading}
+                          className="suggestion-btn"
+                        >
+                          <IconChevronRight size={12} />
+                          <span>{suggestion}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
               <div />

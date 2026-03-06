@@ -31,6 +31,7 @@ export interface ChatMessage {
   timestamp: Date;
   dbId?: string;
   imageUrl?: string;
+  suggestions?: string[];
 }
 
 export interface MindmapSaveData {
