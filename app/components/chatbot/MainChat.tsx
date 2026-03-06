@@ -991,8 +991,6 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                           onClick={() => {
                             const userContent = "Bu aciklamayi anlamadim, daha basit anlatir misin?";
                             const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: userContent, timestamp: new Date() };
-                            scrollTargetRef.current = userMsg.id;
-                            userScrolledRef.current = false;
                             setMessages((prev) => [...prev, userMsg]);
                             sendToAI(userContent, messages);
                           }}
@@ -1057,8 +1055,6 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                                 key={i}
                                 onClick={() => {
                                   const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: suggestion, timestamp: new Date() };
-                                  scrollTargetRef.current = userMsg.id;
-                                  userScrolledRef.current = false;
                                   setMessages((prev) => [...prev, userMsg]);
                                   sendToAI(suggestion, messages, selectedStyle);
                                 }}
