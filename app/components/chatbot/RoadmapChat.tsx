@@ -687,13 +687,17 @@ export default function RoadmapChat({ isMobile = false, onOpenConversation, init
   const handleStudyTopic = useCallback(async (step: RoadmapStep) => {
     if (!onOpenConversation) return;
     try {
-      const convId = await createTypedConversation("standard");
-      await saveAssistantMessage(convId, `"${step.title}" konusunu birlikte calisalim!\n\n${step.description}\n\nNe sormak istersin?`);
-      onOpenConversation(convId, "standard");
+      const parentTitle = columns[0]?.title || "Yol Haritasi";
+      const convId = await createTypedConversation("roadmap_study");
+
+      const context = `[STUDY_CONTEXT]\nKonu: ${step.title}\nAciklama: ${step.description}\nSure: ${step.duration}\nYol Haritasi: ${parentTitle}\n[/STUDY_CONTEXT]\nBu konuyu bana ogret.`;
+      await saveUserMessage(context, null, "roadmap_study");
+
+      onOpenConversation(convId, "roadmap_study");
     } catch (err) {
       console.error("Study topic error:", err);
     }
-  }, [onOpenConversation, createTypedConversation, saveAssistantMessage]);
+  }, [onOpenConversation, createTypedConversation, saveUserMessage, columns]);
 
   /* ===== LOAD EXISTING ROADMAP ===== */
   useEffect(() => {

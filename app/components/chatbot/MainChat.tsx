@@ -212,6 +212,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
   const { user } = useAuth();
   const {
     activeConversationId,
+    activeConversationType,
     saveUserMessage,
     saveAssistantMessage,
     generateTitle,
@@ -357,6 +358,46 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
         setMessages([welcomeMessage, ...loaded]);
       }
       setIsInitialLoading(false);
+
+      // Auto-send for roadmap_study: if only user message(s) and no assistant reply, trigger AI
+      if (activeConversationType === "roadmap_study" && loaded.length > 0) {
+        const hasAssistant = loaded.some((m) => m.role === "assistant");
+        const userMsgs = loaded.filter((m) => m.role === "user");
+        if (!hasAssistant && userMsgs.length === 1) {
+          // Trigger AI without re-saving user message
+          const allMsgs = [welcomeMessage, ...loaded];
+          const aiId = (Date.now() + 1).toString();
+          const aiMsg: ChatMessage = { id: aiId, role: "assistant", content: "", timestamp: new Date() };
+          setMessages((prev) => [...prev, aiMsg]);
+          setIsLoading(true);
+
+          const apiMessages = allMsgs
+            .filter((m) => m.id !== "welcome")
+            .map((m) => ({ role: m.role, content: m.content }));
+
+          let fullContent = "";
+          streamChat(
+            apiMessages,
+            "roadmap_study",
+            (text) => {
+              fullContent += text;
+              setMessages((prev) =>
+                prev.map((m) => m.id === aiId ? { ...m, content: m.content + text } : m)
+              );
+            },
+            (error) => {
+              setMessages((prev) =>
+                prev.map((m) => m.id === aiId ? { ...m, content: `[!danger] Hata\n${error}` } : m)
+              );
+            },
+            () => { setIsLoading(false); }
+          ).then(() => {
+            if (fullContent && activeConversationId) {
+              saveAssistantMessage(activeConversationId, fullContent).catch(console.error);
+            }
+          });
+        }
+      }
     });
   }, [activeConversationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -474,7 +515,10 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
         sohbet: "standard", detayli: "standard", akademik: "standard",
         flashcard: "flashcard", roadmap: "roadmap", mindmap: "mindmap",
       };
-      const apiMode = modeMap[style] || "standard";
+      let apiMode = modeMap[style] || "standard";
+      if (activeConversationType === "roadmap_study") {
+        apiMode = "roadmap_study";
+      }
       const enriched = (stylePrefix[style] || "") + userContent;
 
       // Extract base64 and mime type from data URL for API
@@ -581,7 +625,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
         setIsLoading(false);
       }
     },
-    [saveUserMessage, saveAssistantMessage, generateTitle, refreshConversations, uploadImageToStorage, onModeSwitch]
+    [saveUserMessage, saveAssistantMessage, generateTitle, refreshConversations, uploadImageToStorage, onModeSwitch, activeConversationType]
   );
 
   const handleSend = useCallback(() => {
@@ -663,6 +707,40 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
         { text: "Newton yasalarını açıkla", icon: "🍎" },
         { text: "Hücre bölünmesi nedir?", icon: "🧬" },
       ];
+
+  if (isInitialLoading && activeConversationType === "roadmap_study") {
+    return (
+      <div className="h-full flex flex-col items-center justify-center px-4 py-8 select-none" style={{ background: "var(--bg-primary)" }}>
+        <div className="flex flex-col items-center gap-0" style={{ maxWidth: 420 }}>
+          <div className="roadmap-loader-logo">
+            <div className="roadmap-loader-glow" />
+            <img src="/odaklio-logo.svg" alt="Odaklio" className="w-20 h-20 sm:w-24 sm:h-24" style={{ position: "relative", zIndex: 1 }} />
+          </div>
+          <p className="text-[16px] sm:text-[18px] font-bold mb-1.5 tracking-wide" style={{ color: "var(--text-primary)" }}>
+            Calisma Sayfasi Hazirlaniyor
+          </p>
+          <p className="text-[12px] sm:text-[13px] mb-8" style={{ color: "var(--text-tertiary)" }}>
+            Konu hazirlaniyor, biraz bekleyin...
+          </p>
+          <div className="flex items-center gap-2 mb-8">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="rounded-full"
+                style={{
+                  width: 8,
+                  height: 8,
+                  background: "#10b981",
+                  animation: "roadmapDotBounce 1.4s ease-in-out infinite",
+                  animationDelay: `${i * 0.16}s`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isInitialLoading) {
     return (

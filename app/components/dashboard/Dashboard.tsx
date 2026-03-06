@@ -214,6 +214,8 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
 
   const handleOpenConversation = useCallback((id: string) => {
     if (id) {
+      setActiveSpecialMode(null);
+      setPendingInitialMessage(null);
       loadConversation(id).then(() => {
         setChatKey((k) => k + 1);
         setActivePage("focus");
