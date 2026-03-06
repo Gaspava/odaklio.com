@@ -435,7 +435,7 @@ export default function ChatMessageRenderer({ content }: { content: string }) {
   const blocks = parseContent(content);
 
   return (
-    <div className="msg-ai-content text-[13px] sm:text-sm leading-relaxed select-text">
+    <div className="msg-ai-content text-[13px] sm:text-base leading-relaxed select-text">
       {blocks.map((block, index) => renderBlock(block, index))}
     </div>
   );
