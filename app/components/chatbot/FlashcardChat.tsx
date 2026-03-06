@@ -115,7 +115,7 @@ function TypingIndicator() {
 /* ===== GENERATING LOADER ===== */
 function FlashcardGeneratingLoader({ topic }: { topic: string }) {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-8 px-4 animate-fade-in">
+    <div className="flex-1 flex flex-col items-center justify-center gap-8 px-4 animate-fade-in select-none" style={{ cursor: "default", userSelect: "none" }}>
       <style>{`
         @keyframes fc-float-back  { 0%,100%{transform:rotate(-9deg) translateY(0px);} 50%{transform:rotate(-9deg) translateY(-8px);} }
         @keyframes fc-float-mid   { 0%,100%{transform:rotate(0deg)  translateY(0px);} 50%{transform:rotate(0deg)  translateY(-12px);} }
