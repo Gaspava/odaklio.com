@@ -94,6 +94,82 @@ function TypingIndicator() {
   );
 }
 
+/* ===== DEEP ANALYSIS PROGRESS ===== */
+function DeepAnalysisProgress({ progress }: { progress: { step: string; label: string; progress: number; detail?: string; verified?: boolean } }) {
+  const steps = [
+    { key: "orchestrator", icon: "\u{1F9E0}", label: "Analiz" },
+    { key: "researcher", icon: "\u{1F50D}", label: "Arastirma" },
+    { key: "solver", icon: "\u{2699}\u{FE0F}", label: "Cozum" },
+    { key: "verifier", icon: "\u{2705}", label: "Dogrulama" },
+    { key: "synthesizer", icon: "\u{270D}\u{FE0F}", label: "Sentez" },
+  ];
+
+  const getStepStatus = (stepKey: string) => {
+    const stepOrder = ["orchestrator", "researcher", "solver", "verifier", "synthesizer"];
+    const currentBase = progress.step.replace("_done", "").replace("streaming", "synthesizer").replace("correction", "solver");
+    const currentIdx = stepOrder.indexOf(currentBase);
+    const stepIdx = stepOrder.indexOf(stepKey);
+    if (stepIdx < currentIdx) return "done";
+    if (stepIdx === currentIdx) return progress.step.endsWith("_done") ? "done" : "active";
+    return "pending";
+  };
+
+  return (
+    <div className="deep-analysis-card">
+      <div className="deep-analysis-header">
+        <div className="deep-analysis-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <span className="deep-analysis-title">Derinlemesine Analiz</span>
+        {progress.verified !== undefined && (
+          <span className={`deep-analysis-badge ${progress.verified ? "verified" : "correcting"}`}>
+            {progress.verified ? "Dogrulandi" : "Duzeltiliyor"}
+          </span>
+        )}
+      </div>
+
+      <div className="deep-analysis-steps">
+        {steps.map((s) => {
+          const status = getStepStatus(s.key);
+          return (
+            <div key={s.key} className={`deep-analysis-step ${status}`}>
+              <div className="deep-analysis-step-icon">
+                {status === "done" ? (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                ) : status === "active" ? (
+                  <div className="deep-analysis-spinner" />
+                ) : (
+                  <div className="deep-analysis-dot" />
+                )}
+              </div>
+              <span className="deep-analysis-step-label">{s.label}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="deep-analysis-bar-container">
+        <div className="deep-analysis-bar" style={{ width: `${progress.progress}%` }} />
+      </div>
+
+      <div className="deep-analysis-status">
+        <span>{progress.label}</span>
+        <span className="deep-analysis-percent">{progress.progress}%</span>
+      </div>
+
+      {progress.detail && (
+        <div className="deep-analysis-detail">{progress.detail}</div>
+      )}
+    </div>
+  );
+}
+
 /* ===== FLASHCARD INLINE RENDERER ===== */
 function FlashcardInlineRenderer({ content }: { content: string }) {
   const [flipped, setFlipped] = useState<Record<number, boolean>>({});
@@ -224,6 +300,13 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
   const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState("sohbet");
+  const [deepAnalysisProgress, setDeepAnalysisProgress] = useState<{
+    step: string;
+    label: string;
+    progress: number;
+    detail?: string;
+    verified?: boolean;
+  } | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectionPopup, setSelectionPopup] = useState<{
     x: number;
@@ -265,8 +348,9 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
 
   const SOHBET_STYLES = [
     { id: "sohbet", label: "Normal" },
-    { id: "detayli", label: "Detaylı" },
+    { id: "detayli", label: "Detayli" },
     { id: "akademik", label: "Akademik" },
+    { id: "derinlemesine", label: "Derinlemesine" },
   ];
 
   const [activeMode, setActiveMode] = useState("sohbet");
@@ -469,6 +553,88 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
     };
   }, [handleTextSelection]);
 
+  const sendDeepAnalysis = useCallback(
+    async (userContent: string, allMessages: ChatMessage[], conversationId: string, aiMsgId: string, isFirst: boolean) => {
+      setDeepAnalysisProgress({ step: "start", label: "Analiz baslatiliyor...", progress: 5 });
+
+      const apiMessages = allMessages
+        .filter((m) => m.id !== "welcome")
+        .map((m) => ({ role: m.role, content: m.content }));
+      apiMessages.push({ role: "user", content: userContent });
+
+      const res = await fetch("/api/chat/deep-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: apiMessages }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || `API hatasi: ${res.status}`);
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("Stream okunamadi");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let fullContent = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data: ")) continue;
+          const data = trimmed.slice(6);
+          if (data === "[DONE]") {
+            setDeepAnalysisProgress(null);
+            setIsLoading(false);
+            // Save completed assistant message
+            if (fullContent) {
+              try { await saveAssistantMessage(conversationId, fullContent); } catch {}
+              if (isFirst) generateTitle(conversationId, userContent);
+              refreshConversations();
+            }
+            return;
+          }
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.event === "progress") {
+              setDeepAnalysisProgress({
+                step: parsed.step,
+                label: parsed.label,
+                progress: parsed.progress,
+                detail: parsed.detail,
+                verified: parsed.verified,
+              });
+            } else if (parsed.text) {
+              fullContent += parsed.text;
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMsgId ? { ...m, content: m.content + parsed.text } : m
+                )
+              );
+            } else if (parsed.event === "error") {
+              throw new Error(parsed.message);
+            }
+          } catch (e) {
+            if (e instanceof SyntaxError) continue;
+            throw e;
+          }
+        }
+      }
+      setDeepAnalysisProgress(null);
+      setIsLoading(false);
+    },
+    [saveAssistantMessage, generateTitle, refreshConversations]
+  );
+
   const sendToAI = useCallback(
     async (userContent: string, allMessages: ChatMessage[], style: string = "basit", pendingImageData?: string) => {
       setIsLoading(true);
@@ -503,6 +669,25 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiMsg]);
+
+      // Route to deep analysis pipeline
+      if (style === "derinlemesine") {
+        try {
+          await sendDeepAnalysis(userContent, allMessages, conversationId, aiMsgId, isFirst);
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : "Bilinmeyen hata";
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === aiMsgId
+                ? { ...m, content: `[!danger] Derin Analiz Hatasi\n${errorMsg}. Lutfen tekrar dene.` }
+                : m
+            )
+          );
+          setDeepAnalysisProgress(null);
+          setIsLoading(false);
+        }
+        return;
+      }
 
       const stylePrefix: Record<string, string> = {
         detayli: "[Detaylı ve kapsamlı açıklama yap] ",
@@ -591,7 +776,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
         setIsLoading(false);
       }
     },
-    [saveUserMessage, saveAssistantMessage, generateTitle, refreshConversations, uploadImageToStorage, onModeSwitch, activeConversationType]
+    [saveUserMessage, saveAssistantMessage, generateTitle, refreshConversations, uploadImageToStorage, onModeSwitch, activeConversationType, sendDeepAnalysis]
   );
 
   const handleSend = useCallback(() => {
@@ -888,9 +1073,16 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                   {msg.role === "assistant" && (
                     <div className="flex items-center">
                       <AiAvatar spinning={isLoading && msg.id === messages[messages.length - 1]?.id} />
-                      {!msg.content && isLoading && msg.id === messages[messages.length - 1]?.id && (
+                      {!msg.content && isLoading && msg.id === messages[messages.length - 1]?.id && !deepAnalysisProgress && (
                         <TypingIndicator />
                       )}
+                    </div>
+                  )}
+
+                  {/* Deep Analysis Progress Card */}
+                  {msg.role === "assistant" && !msg.content && deepAnalysisProgress && msg.id === messages[messages.length - 1]?.id && (
+                    <div className="mt-2 ml-1">
+                      <DeepAnalysisProgress progress={deepAnalysisProgress} />
                     </div>
                   )}
 
