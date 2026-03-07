@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
 
     const prompt = customPrompt ||
       `Aşağıdaki yapay zeka yanıtını okuyan bir öğrencinin sormak isteyebileceği en kritik ve merak uyandıran 3 soruyu Türkçe olarak üret. Her soru ayrı satırda olsun. Sadece soruları yaz, numaralama veya tire ekleme, başka hiçbir şey yazma.\n\nYanıt:\n${content.slice(0, 2000)}`;
