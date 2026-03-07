@@ -143,8 +143,8 @@ export async function POST(request: Request) {
     } catch { /* continue without profile */ }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const fastModel = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
-    const mainModel = genAI.getGenerativeModel({ model: "gemini-3.1-flash" });
+    const fastModel = genAI.getGenerativeModel({ model: "gemini-3-flash-lite-preview" });
+    const mainModel = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
     const encoder = new TextEncoder();
 
@@ -226,7 +226,7 @@ export async function POST(request: Request) {
           const synthSystemPrompt = SYNTHESIZER_BASE + profileContext;
 
           const synthModel = genAI.getGenerativeModel({
-            model: "gemini-3.1-flash",
+            model: "gemini-3-flash-preview",
             systemInstruction: synthSystemPrompt,
           });
 
