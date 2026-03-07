@@ -4258,8 +4258,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 16px 12px;
+  padding: 16px 12px 12px;
   flex-shrink: 0;
+}
+
+.sidebar-header .sidebar-logo {
+  padding-left: 14px;
 }
 
 .sidebar-logo {

@@ -37,6 +37,7 @@ interface SidebarProps {
   onNewChat: () => void;
   onClearChat: () => void;
   onOpenConversation: (id: string) => void;
+  onModeSwitch?: (mode: string) => void;
   onLogout?: () => void;
   isMobile: boolean;
   isOpen: boolean;
@@ -83,6 +84,7 @@ export default function Sidebar({
   onNewChat,
   onClearChat,
   onOpenConversation,
+  onModeSwitch,
   onLogout,
   isMobile,
   isOpen,
@@ -124,22 +126,22 @@ export default function Sidebar({
   }, [onPageChange, isMobile, onToggle]);
 
   const handleToolClick = useCallback((toolId: string) => {
-    if (toolId === "pomodoro") {
-      setActivePopup(prev => prev === "pomodoro" ? null : "pomodoro");
+    // Popup-based tools
+    if (toolId === "pomodoro" || toolId === "sound" || toolId === "notes") {
+      setActivePopup(prev => prev === toolId ? null : toolId as "pomodoro" | "sound" | "notes");
       return;
     }
-    if (toolId === "sound") {
-      setActivePopup(prev => prev === "sound" ? null : "sound");
+    // Mode-switching tools (open as chat mode)
+    if (toolId === "flashcard" || toolId === "roadmap" || toolId === "mindmap") {
+      onModeSwitch?.(toolId);
+      onPageChange("focus");
+      if (isMobile) onToggle();
       return;
     }
-    if (toolId === "notes") {
-      setActivePopup(prev => prev === "notes" ? null : "notes");
-      return;
-    }
-    // For other tools, navigate to tools page
+    // Remaining tools navigate to tools page with that tool open
     onPageChange("tools");
     if (isMobile) onToggle();
-  }, [onPageChange, isMobile, onToggle]);
+  }, [onPageChange, onModeSwitch, isMobile, onToggle]);
 
   const handleNewChat = useCallback(() => {
     onNewChat();
@@ -152,44 +154,47 @@ export default function Sidebar({
     <div className="sidebar-inner">
       {/* Header: Logo + Toggle */}
       <div className="sidebar-header">
-        {expanded && (
-          <span
-            className="sidebar-logo"
-            style={{
-              backgroundImage: theme === "dark"
-                ? "linear-gradient(135deg, #e2e8f0, #f8fafc)"
-                : "linear-gradient(135deg, #1e293b, #334155)",
-            }}
-          >
-            ODAKLIO
-          </span>
-        )}
-        <button
-          onClick={isMobile ? onToggle : () => setCollapsed(c => !c)}
-          className="sidebar-toggle-btn"
-          title={expanded ? "Daralt" : "Genislet"}
-        >
-          {isMobile ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              {expanded ? (
-                <>
+        {expanded ? (
+          <>
+            <span
+              className="sidebar-logo"
+              style={{
+                backgroundImage: theme === "dark"
+                  ? "linear-gradient(135deg, #e2e8f0, #f8fafc)"
+                  : "linear-gradient(135deg, #1e293b, #334155)",
+              }}
+            >
+              ODAKLIO
+            </span>
+            <button
+              onClick={isMobile ? onToggle : () => setCollapsed(c => !c)}
+              className="sidebar-toggle-btn"
+              title={isMobile ? "Kapat" : "Daralt"}
+            >
+              {isMobile ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="2" />
                   <line x1="9" y1="3" x2="9" y2="21" />
-                </>
-              ) : (
-                <>
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="3" y1="18" x2="21" y2="18" />
-                </>
+                </svg>
               )}
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => setCollapsed(false)}
+            className="sidebar-toggle-btn"
+            title="Genislet"
+            style={{ margin: "0 auto" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
             </svg>
-          )}
-        </button>
+          </button>
+        )}
       </div>
 
       {/* New Chat Button */}

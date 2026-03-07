@@ -234,6 +234,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
         onNewChat={handleNewChat}
         onClearChat={handleClearChat}
         onOpenConversation={handleOpenConversation}
+        onModeSwitch={handleModeSwitch}
         onLogout={onLogout}
         isMobile={isMobile}
         isOpen={sidebarOpen}
