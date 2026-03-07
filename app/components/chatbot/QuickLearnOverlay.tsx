@@ -115,24 +115,23 @@ export default function QuickLearnOverlay({
           </button>
         </div>
 
-        {/* Selected Text */}
-        <div className="px-4 pt-3 sm:px-5 sm:pt-4">
+        {/* Content */}
+        <div className="px-4 py-4 sm:px-5 sm:py-5 overflow-y-auto flex-1 space-y-4">
+          {/* Selected Text */}
           <div
-            className="rounded-lg px-3 py-2 text-xs leading-relaxed"
+            className="rounded-xl px-4 py-3 text-[13px] leading-relaxed"
             style={{
               background: "var(--bg-tertiary)",
-              color: "var(--text-secondary)",
-              borderLeft: "3px solid var(--accent-warning)",
+              color: "var(--accent-warning)",
+              fontStyle: "italic",
             }}
           >
             &ldquo;{displayText}&rdquo;
           </div>
-        </div>
 
-        {/* Summary */}
-        <div className="px-4 py-4 sm:px-5 sm:py-5 overflow-y-auto flex-1">
+          {/* Summary */}
           {isLoading && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 py-2">
               <div className="flex items-center gap-1.5">
                 <div
                   className="typing-dot w-2 h-2 rounded-full"
@@ -164,7 +163,7 @@ export default function QuickLearnOverlay({
 
           {summary && !isLoading && (
             <p
-              className="text-[13px] leading-relaxed"
+              className="text-[14px] leading-[1.8]"
               style={{ color: "var(--text-primary)" }}
             >
               {summary}
