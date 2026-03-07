@@ -18,10 +18,19 @@ interface HeaderProps {
 
 const pages: { id: PageType; label: string; icon: React.ReactNode }[] = [
   {
+    id: "focus",
+    label: "Odak",
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+  },
+  {
     id: "history",
     label: "Gecmis",
     icon: (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
         <polyline points="12 6 12 12 16 14" />
       </svg>
@@ -31,7 +40,7 @@ const pages: { id: PageType; label: string; icon: React.ReactNode }[] = [
     id: "tools",
     label: "Araclar",
     icon: (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="7" height="7" rx="1.5" />
         <rect x="14" y="3" width="7" height="7" rx="1.5" />
         <rect x="3" y="14" width="7" height="7" rx="1.5" />
@@ -40,19 +49,10 @@ const pages: { id: PageType; label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
-    id: "focus",
-    label: "Odak",
-    icon: (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      </svg>
-    ),
-  },
-  {
     id: "mentor",
     label: "Mentor",
     icon: (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
         <circle cx="9" cy="7" r="4" />
         <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -64,7 +64,7 @@ const pages: { id: PageType; label: string; icon: React.ReactNode }[] = [
     id: "analysis",
     label: "Analiz",
     icon: (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
         <polyline points="17 6 23 6 23 12" />
       </svg>
@@ -81,24 +81,35 @@ export default function Header({
   const { user } = useAuth();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [navOpen, setNavOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
+  const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number }>({ left: 0, width: 0 });
 
-  // Close menus on outside click
+  // Update indicator position
   useEffect(() => {
-    if (!menuOpen && !navOpen) return;
+    if (!navRef.current) return;
+    const activeBtn = navRef.current.querySelector(`[data-page="${activePage}"]`) as HTMLElement;
+    if (activeBtn) {
+      const navRect = navRef.current.getBoundingClientRect();
+      const btnRect = activeBtn.getBoundingClientRect();
+      setIndicatorStyle({
+        left: btnRect.left - navRect.left,
+        width: btnRect.width,
+      });
+    }
+  }, [activePage]);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
     const handleClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
       }
-      if (navRef.current && !navRef.current.contains(e.target as Node)) {
-        setNavOpen(false);
-      }
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [menuOpen, navOpen]);
+  }, [menuOpen]);
 
   const displayName = user?.user_metadata?.full_name || user?.email || "";
   const initials = displayName
@@ -111,73 +122,61 @@ export default function Header({
     : "?";
 
   return (
-    <header
-      className="flex items-center px-4 h-14 flex-shrink-0 relative z-10"
-      style={{
-        background: "transparent",
-        borderBottom: "none",
-      }}
-    >
-      {/* Left - Hamburger menu */}
-      <div className="relative flex-shrink-0" ref={navRef}>
-        <button
-          onClick={() => setNavOpen((v) => !v)}
-          className="header-icon-btn"
-          title="Menü"
-          style={{ width: 36, height: 36 }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-        </button>
-
-        {navOpen && (
-          <div className="profile-dropdown" style={{ left: 0, right: "auto", minWidth: 200 }}>
-            {pages.map((page) => (
-              <Link
-                key={page.id}
-                href={PAGE_ROUTES[page.id]}
-                onClick={() => { onPageChange(page.id); setNavOpen(false); }}
-                className={`profile-dropdown-item ${activePage === page.id ? "nav-dropdown-active" : ""}`}
-              >
-                <span className="flex-shrink-0">{page.icon}</span>
-                {page.label}
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Center - Logo (absolutely centered) */}
-      <div className="absolute left-1/2 -translate-x-1/2">
+    <header className="header-bar">
+      {/* Left - Logo */}
+      <div className="header-left">
         <span
-          className="text-lg font-black tracking-widest select-none"
+          className="header-logo"
           key={theme}
-          style={{ letterSpacing: "0.2em", fontFamily: "'Inter', sans-serif", backgroundImage: theme === "dark" ? "linear-gradient(90deg, #e2e8f0, #f8fafc)" : "linear-gradient(90deg, #1e293b, #334155)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", color: "transparent" }}
+          style={{
+            backgroundImage: theme === "dark"
+              ? "linear-gradient(135deg, #e2e8f0, #cbd5e1)"
+              : "linear-gradient(135deg, #1e293b, #475569)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}
         >
           ODAKLIO
         </span>
       </div>
 
-      {/* Right - Profile Area */}
-      <div className="header-profile-area ml-auto">
-        <button onClick={toggleTheme} className="header-icon-btn" title="Tema">
-          {theme === "dark" ? <IconSun size={15} /> : <IconMoon size={15} />}
+      {/* Center - Navigation Tabs */}
+      <nav className="header-nav" ref={navRef}>
+        <div
+          className="header-nav-indicator"
+          style={{
+            left: indicatorStyle.left,
+            width: indicatorStyle.width,
+          }}
+        />
+        {pages.map((page) => (
+          <Link
+            key={page.id}
+            href={PAGE_ROUTES[page.id]}
+            data-page={page.id}
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange(page.id);
+            }}
+            className={`header-nav-item ${activePage === page.id ? "header-nav-item-active" : ""}`}
+          >
+            <span className="header-nav-icon">{page.icon}</span>
+            <span className="header-nav-label">{page.label}</span>
+          </Link>
+        ))}
+      </nav>
+
+      {/* Right - Actions & Profile */}
+      <div className="header-right">
+        <button onClick={toggleTheme} className="header-action-btn" title="Tema">
+          {theme === "dark" ? <IconSun size={16} /> : <IconMoon size={16} />}
         </button>
 
-        <button className="header-icon-btn" title="Bildirimler">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <button className="header-action-btn" title="Bildirimler">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-        </button>
-
-        <button className="header-icon-btn" title="Ayarlar">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
         </button>
 
@@ -185,18 +184,14 @@ export default function Header({
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-bold text-white cursor-pointer transition-all hover:scale-105"
-            style={{
-              background: "var(--gradient-primary)",
-              border: "none",
-            }}
+            className="header-avatar"
+            style={{ background: "var(--gradient-primary)" }}
           >
             {initials}
           </button>
 
           {menuOpen && (
             <div className="profile-dropdown">
-              {/* User info */}
               <div className="profile-dropdown-header">
                 <div
                   className="profile-dropdown-avatar"
@@ -216,7 +211,6 @@ export default function Header({
 
               <div className="profile-dropdown-divider" />
 
-              {/* Menu items */}
               <button className="profile-dropdown-item" onClick={() => { setMenuOpen(false); router.push("/profil"); }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
