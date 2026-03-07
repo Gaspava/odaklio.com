@@ -787,16 +787,6 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
       <div
         className="flex flex-col h-full relative"
         ref={chatAreaRef}
-        onDragEnter={(e) => { e.preventDefault(); if (!e.dataTransfer.types.includes('Files')) return; dragCounterRef.current++; setIsDragOver(true); }}
-        onDragLeave={(e) => { e.preventDefault(); if (!e.dataTransfer.types.includes('Files')) return; dragCounterRef.current--; if (dragCounterRef.current === 0) setIsDragOver(false); }}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault();
-          dragCounterRef.current = 0;
-          setIsDragOver(false);
-          const file = e.dataTransfer.files?.[0];
-          if (file && file.type.startsWith("image/")) handleImageFile(file);
-        }}
       >
         {/* Hidden file input - always in DOM */}
         <input
@@ -806,21 +796,6 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
           className="hidden"
           onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); e.target.value = ""; }}
         />
-
-        {/* Drag overlay */}
-        {isDragOver && (
-          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center pointer-events-none" style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
-            <div className="flex flex-col items-center gap-4 rounded-2xl px-10 py-8" style={{ border: "2px dashed var(--accent-primary)", background: "rgba(var(--accent-primary-rgb, 99,102,241),0.08)" }}>
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-              <p className="text-base font-semibold" style={{ color: "var(--accent-primary)" }}>Görseli buraya bırak</p>
-              <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>PNG, JPG, GIF desteklenir</p>
-            </div>
-          </div>
-        )}
         {/* Messages + Inline Map */}
         <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto px-3 sm:px-4 ${messages.length <= 1 ? "" : `py-4 sm:py-6 ${isMobile ? "pb-2" : ""}`}`}>
           {/* Neon inline chat map - fixed to right side, desktop only */}
@@ -1075,7 +1050,33 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
         </div>
 
         {/* Input Bar - always shown */}
-        <div className={`flex-shrink-0 px-3 sm:px-4 ${isMobile ? "pb-2" : "pb-4"}`}>
+        <div
+          className={`flex-shrink-0 px-3 sm:px-4 ${isMobile ? "pb-2" : "pb-4"} relative`}
+          onDragEnter={(e) => { e.preventDefault(); if (!e.dataTransfer.types.includes('Files')) return; dragCounterRef.current++; setIsDragOver(true); }}
+          onDragLeave={(e) => { e.preventDefault(); if (!e.dataTransfer.types.includes('Files')) return; dragCounterRef.current--; if (dragCounterRef.current === 0) setIsDragOver(false); }}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            dragCounterRef.current = 0;
+            setIsDragOver(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file && file.type.startsWith("image/")) handleImageFile(file);
+          }}
+        >
+          {/* Drag overlay - scoped to input bar */}
+          {isDragOver && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none rounded-2xl" style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
+              <div className="flex flex-col items-center gap-3 rounded-2xl px-8 py-5" style={{ border: "2px dashed var(--accent-primary)", background: "rgba(var(--accent-primary-rgb, 99,102,241),0.08)" }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <p className="text-sm font-semibold" style={{ color: "var(--accent-primary)" }}>Görseli buraya bırak</p>
+                <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>PNG, JPG, GIF desteklenir</p>
+              </div>
+            </div>
+          )}
           {messages.length <= 1 ? (
             /* Welcome card-style input */
             <div className="w-full max-w-[680px] mx-auto">
