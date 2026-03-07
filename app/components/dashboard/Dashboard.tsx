@@ -469,8 +469,12 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
             )}
             {mobileBottomSheet === "new-chat" && (
               <NewChatPopup
-                onSelectMode={() => {
-                  handleNewChat();
+                onSelectMode={(mode) => {
+                  if (mode === "standard") {
+                    handleNewChat();
+                  } else {
+                    handleModeSwitch(mode);
+                  }
                   setMobileBottomSheet(null);
                 }}
                 onClose={() => setMobileBottomSheet(null)}

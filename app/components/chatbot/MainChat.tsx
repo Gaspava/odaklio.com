@@ -261,6 +261,10 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
       id: "mindmap", label: "Mindmap",
       icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="2.5"/><circle cx="4" cy="7" r="2"/><circle cx="20" cy="7" r="2"/><circle cx="4" cy="17" r="2"/><circle cx="20" cy="17" r="2"/><path d="M9.8 10.8L6 8.5M14.2 10.8L18 8.5M9.8 13.2L6 15.5M14.2 13.2L18 15.5"/></svg>
     },
+    {
+      id: "solver", label: "Soru Cozucu",
+      icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="3"/><path d="M7 8h4M9 6v4"/><path d="M7 16h4"/><path d="M15 7l2 2-2 2"/></svg>
+    },
   ];
 
   const SOHBET_STYLES = [
@@ -601,7 +605,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
     const capturedImage = imagePreview;
 
     // Special modes: delegate immediately without touching DB or messages state
-    if (["flashcard", "roadmap", "mindmap"].includes(selectedStyle) && onModeSwitch) {
+    if (["flashcard", "roadmap", "mindmap", "solver"].includes(selectedStyle) && onModeSwitch) {
       onModeSwitch(selectedStyle, userContent);
       setInput("");
       setImagePreview(null);

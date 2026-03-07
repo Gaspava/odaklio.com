@@ -271,14 +271,38 @@ function TypingIndicator() {
 
 /* ===== SOLVING LOADER ===== */
 function SolvingLoader({ topic }: { topic: string }) {
+  const [elapsed, setElapsed] = useState(0);
+  const [activeAgent, setActiveAgent] = useState(0);
+
+  const agents = [
+    { name: "Analiz Modeli", desc: "Soruyu analiz ediyor..." },
+    { name: "Cozum Modeli", desc: "Adim adim cozum uretiyor..." },
+    { name: "Dogrulama Modeli", desc: "Cozumu dogruluyor..." },
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const agentTimer = setInterval(() => {
+      setActiveAgent((a) => (a + 1) % agents.length);
+    }, 3000);
+    return () => clearInterval(agentTimer);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-6 px-4 animate-fade-in select-none">
+    <div className="flex-1 flex flex-col items-center justify-center gap-5 px-4 animate-fade-in select-none">
       <style>{`
         @keyframes solver-pulse { 0%,100%{transform:scale(1);opacity:0.8;} 50%{transform:scale(1.08);opacity:1;} }
         @keyframes solver-ring { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
+        @keyframes solver-progress { 0%{width:0%;} 100%{width:100%;} }
+        @keyframes solver-agent-fade { 0%{opacity:0;transform:translateY(6px);} 20%{opacity:1;transform:translateY(0);} 80%{opacity:1;transform:translateY(0);} 100%{opacity:0;transform:translateY(-6px);} }
       `}</style>
 
-      <div style={{ position: "relative", width: 80, height: 80 }}>
+      {/* Spinner */}
+      <div style={{ position: "relative", width: 72, height: 72 }}>
         <div style={{
           position: "absolute", inset: 0,
           borderRadius: "50%",
@@ -287,24 +311,90 @@ function SolvingLoader({ topic }: { topic: string }) {
           animation: "solver-ring 1.2s linear infinite",
         }} />
         <div style={{
-          position: "absolute", inset: 12,
+          position: "absolute", inset: 10,
           borderRadius: "50%",
           background: "var(--accent-primary-light)",
           display: "flex", alignItems: "center", justifyContent: "center",
           animation: "solver-pulse 2s ease-in-out infinite",
         }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="2" width="20" height="20" rx="3" /><path d="M7 8h4M9 6v4" /><path d="M7 16h4" /><path d="M15 7l2 2-2 2" />
           </svg>
         </div>
       </div>
 
+      {/* Title */}
       <div className="text-center">
-        <p className="text-sm font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+        <p className="text-sm font-bold mb-1" style={{ color: "var(--text-primary)" }}>
           Soru Cozuluyor...
         </p>
-        <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+        <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
           {topic.length > 60 ? topic.slice(0, 60) + "..." : topic}
+        </p>
+      </div>
+
+      {/* AI Agent Info Card */}
+      <div
+        className="w-full max-w-sm rounded-xl p-4"
+        style={{
+          background: "var(--bg-card)",
+          border: "1px solid var(--border-primary)",
+        }}
+      >
+        {/* Agent indicator header */}
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex -space-x-1.5">
+            {agents.map((_, i) => (
+              <div
+                key={i}
+                className="w-5 h-5 rounded-full border-2 flex items-center justify-center"
+                style={{
+                  borderColor: "var(--bg-card)",
+                  background: i === activeAgent ? "var(--accent-primary)" : "var(--bg-tertiary)",
+                  transition: "background 0.3s",
+                }}
+              >
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke={i === activeAgent ? "white" : "var(--text-tertiary)"} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="4" />
+                </svg>
+              </div>
+            ))}
+          </div>
+          <span className="text-[10px] font-semibold" style={{ color: "var(--text-tertiary)" }}>
+            {elapsed}s
+          </span>
+        </div>
+
+        {/* Active agent */}
+        <div
+          key={activeAgent}
+          style={{ animation: "solver-agent-fade 3s ease-in-out" }}
+        >
+          <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--accent-primary)" }}>
+            {agents[activeAgent].name}
+          </p>
+          <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+            {agents[activeAgent].desc}
+          </p>
+        </div>
+
+        {/* Progress bar */}
+        <div
+          className="mt-3 h-1 rounded-full overflow-hidden"
+          style={{ background: "var(--bg-tertiary)" }}
+        >
+          <div
+            className="h-full rounded-full"
+            style={{
+              background: "var(--accent-primary)",
+              animation: "solver-progress 3s ease-in-out infinite",
+            }}
+          />
+        </div>
+
+        {/* Info text */}
+        <p className="text-[10px] mt-2.5 leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
+          Soru birden fazla AI modeli tarafindan analiz ediliyor. Bu karmasik islem nedeniyle cozum biraz zaman alabilir.
         </p>
       </div>
     </div>
@@ -366,7 +456,7 @@ function SolverWelcome({ onSuggestionClick }: { onSuggestionClick: (text: string
 }
 
 /* ===== SOLUTION DISPLAY ===== */
-function SolutionDisplay({ content, isStreaming }: { content: string; isStreaming: boolean }) {
+function SolutionDisplay({ content, isStreaming, solveTime }: { content: string; isStreaming: boolean; solveTime?: number }) {
   const [openSteps, setOpenSteps] = useState<Set<string>>(new Set());
   const title = parseSolverTitle(content);
   const steps = parseSolverSteps(content);
@@ -391,6 +481,24 @@ function SolutionDisplay({ content, isStreaming }: { content: string; isStreamin
 
   return (
     <div className="solver-solution">
+      {/* Solve time badge */}
+      {solveTime && !isStreaming && (
+        <div className="solver-solve-badge">
+          <div className="solver-solve-badge-dot" />
+          <span>{solveTime}s&apos;de cozuldu</span>
+        </div>
+      )}
+
+      {/* Streaming progress indicator */}
+      {isStreaming && steps.length > 0 && (
+        <div className="solver-streaming-progress">
+          <div className="solver-streaming-bar">
+            <div className="solver-streaming-fill" />
+          </div>
+          <span className="solver-streaming-text">{steps.length} adim cozuldu...</span>
+        </div>
+      )}
+
       {before && (
         <div
           className="solver-intro"
@@ -404,6 +512,7 @@ function SolutionDisplay({ content, isStreaming }: { content: string; isStreamin
         <div className="solver-steps-container">
           <div className="solver-steps-header">
             <span>COZUM ADIMLARI</span>
+            {!isStreaming && <span className="solver-steps-count">{steps.length} adim</span>}
           </div>
           {steps.map((step) => (
             <SolverStepCard
@@ -448,6 +557,8 @@ export default function SolverChat({ isMobile, initialMessage }: SolverChatProps
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingTopic, setLoadingTopic] = useState("");
+  const [solveTimes, setSolveTimes] = useState<Record<string, number>>({});
+  const solveStartRef = useRef<number>(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const initialSent = useRef(false);
@@ -490,6 +601,7 @@ export default function SolverChat({ isMobile, initialMessage }: SolverChatProps
       setInput("");
       setIsLoading(true);
       setLoadingTopic(text);
+      solveStartRef.current = Date.now();
 
       const isFirst = isFirstMessageRef.current;
       let conversationId = "";
@@ -546,7 +658,9 @@ export default function SolverChat({ isMobile, initialMessage }: SolverChatProps
             );
           },
           () => {
-            // Done - save to DB
+            // Done - record solve time
+            const elapsed = Math.round((Date.now() - solveStartRef.current) / 1000);
+            setSolveTimes((prev) => ({ ...prev, [assistantId]: elapsed }));
           }
         );
 
@@ -685,6 +799,58 @@ export default function SolverChat({ isMobile, initialMessage }: SolverChatProps
           color: white;
           align-self: flex-end;
         }
+        .solver-solve-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 600;
+          margin-bottom: 12px;
+          background: rgba(16, 185, 129, 0.1);
+          color: #10b981;
+          border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .solver-solve-badge-dot {
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: #10b981;
+        }
+        .solver-streaming-progress {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+        .solver-streaming-bar {
+          flex: 1;
+          height: 3px;
+          border-radius: 2px;
+          background: var(--bg-tertiary);
+          overflow: hidden;
+        }
+        .solver-streaming-fill {
+          height: 100%;
+          border-radius: 2px;
+          background: var(--accent-primary);
+          animation: solver-progress 2s ease-in-out infinite;
+        }
+        @keyframes solver-progress { 0%{width:0%;} 100%{width:100%;} }
+        .solver-streaming-text {
+          font-size: 10px;
+          font-weight: 600;
+          color: var(--accent-primary);
+          white-space: nowrap;
+        }
+        .solver-steps-count {
+          font-size: 10px;
+          font-weight: 600;
+          color: var(--text-tertiary);
+          background: var(--bg-primary);
+          padding: 2px 8px;
+          border-radius: 10px;
+        }
       `}</style>
 
       {/* Main content area */}
@@ -712,6 +878,7 @@ export default function SolverChat({ isMobile, initialMessage }: SolverChatProps
                     key={msg.id}
                     content={msg.content}
                     isStreaming={isLoading && msg === messages[messages.length - 1]}
+                    solveTime={solveTimes[msg.id]}
                   />
                 );
               })}
