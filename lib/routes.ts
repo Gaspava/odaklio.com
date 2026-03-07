@@ -1,4 +1,4 @@
-import type { PageType } from "@/app/components/layout/Header";
+import type { PageType } from "@/app/components/layout/Sidebar";
 
 export const PAGE_ROUTES: Record<PageType, string> = {
   focus: "/",
