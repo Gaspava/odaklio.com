@@ -35,6 +35,7 @@ import {
   IconSettings,
   IconRoadmap,
 } from "../icons/Icons";
+import PdfReaderDetail from "./PdfReaderDetail";
 
 /* ===== TOOL CARD ===== */
 interface ToolCardProps {
@@ -1449,6 +1450,14 @@ export default function ToolsPage({ onOpenConversation }: ToolsPageProps = {}) {
       color: "#3b82f6",
       tag: "6 ders",
     },
+    {
+      id: "pdfreader",
+      name: "PDF Okuyucu",
+      description: "PDF dosyalarini yukle, hizli oku ve AI ile ogren",
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+      color: "#e04d08",
+      tag: "Yeni",
+    },
   ];
 
   // Render detail views
@@ -1458,6 +1467,7 @@ export default function ToolsPage({ onOpenConversation }: ToolsPageProps = {}) {
   if (activeTool === "roadmaps") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><RoadmapDetail onBack={() => setActiveTool(null)} onOpenConversation={onOpenConversation} /></div></div>;
   if (activeTool === "pomodoro") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><PomodoroDetail onBack={() => setActiveTool(null)} /></div></div>;
   if (activeTool === "speedread") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><SpeedReadDetail onBack={() => setActiveTool(null)} /></div></div>;
+  if (activeTool === "pdfreader") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><PdfReaderDetail onBack={() => setActiveTool(null)} /></div></div>;
 
   return (
     <div className="h-full overflow-y-auto">
