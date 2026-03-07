@@ -1367,9 +1367,10 @@ function RoadmapDetail({ onBack, onOpenConversation }: { onBack: () => void; onO
 /* ===== TOOLS PAGE ===== */
 interface ToolsPageProps {
   onOpenConversation?: (id: string, type?: string) => void;
+  initialTool?: string | null;
 }
 
-export default function ToolsPage({ onOpenConversation }: ToolsPageProps = {}) {
+export default function ToolsPage({ onOpenConversation, initialTool }: ToolsPageProps = {}) {
   const { user } = useAuth();
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [notesCount, setNotesCount] = useState(0);
@@ -1389,6 +1390,22 @@ export default function ToolsPage({ onOpenConversation }: ToolsPageProps = {}) {
       setRoadmapCount(countAll(data));
     }).catch(() => {});
   }, [user]);
+
+  // Auto-open tool from sidebar navigation
+  useEffect(() => {
+    if (!initialTool) return;
+    // Map sidebar IDs to ToolsPage IDs
+    const toolMap: Record<string, string> = {
+      notes: "notes",
+      flashcard: "flashcards",
+      roadmap: "roadmaps",
+      pomodoro: "pomodoro",
+      speedread: "speedread",
+      sound: "notes", // fallback
+    };
+    const mapped = toolMap[initialTool] || initialTool;
+    setActiveTool(mapped);
+  }, [initialTool]);
 
   const tools = [
     {

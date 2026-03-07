@@ -4131,7 +4131,55 @@ body {
   to { width: 100%; }
 }
 
-/* ===== MODERN SIDEBAR (ChatGPT-style) ===== */
+/* ===== DASHBOARD HEADER BAR ===== */
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 48px;
+  flex-shrink: 0;
+  background: transparent;
+  z-index: 10;
+}
+
+.dashboard-hamburger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+
+.dashboard-hamburger:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.dashboard-hamburger:active {
+  transform: scale(0.93);
+}
+
+.dashboard-logo {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  user-select: none;
+}
+
+/* ===== SIDEBAR PANEL (overlay) ===== */
 
 .sidebar {
   display: flex;
@@ -4141,7 +4189,6 @@ body {
   overflow: hidden;
   background: var(--bg-secondary);
   border-right: 1px solid var(--border-secondary);
-  z-index: 30;
 }
 
 .sidebar-inner {
@@ -4151,77 +4198,7 @@ body {
   overflow: hidden;
 }
 
-/* Desktop sidebar */
-.sidebar-desktop {
-  width: 260px;
-  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: width;
-}
-
-.sidebar-desktop.collapsed {
-  width: 60px;
-}
-
-.sidebar-desktop.collapsed .sidebar-nav-label,
-.sidebar-desktop.collapsed .sidebar-tool-label,
-.sidebar-desktop.collapsed .sidebar-section-label,
-.sidebar-desktop.collapsed .sidebar-profile-name,
-.sidebar-desktop.collapsed .sidebar-active-dot,
-.sidebar-desktop.collapsed .sidebar-pomodoro-badge {
-  display: none;
-}
-
-.sidebar-desktop.collapsed .sidebar-logo {
-  display: none;
-}
-
-.sidebar-desktop.collapsed .sidebar-header {
-  justify-content: center;
-  padding: 16px 8px 12px;
-}
-
-.sidebar-desktop.collapsed .sidebar-new-chat {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  justify-content: center;
-  border-radius: 12px;
-}
-
-.sidebar-desktop.collapsed .sidebar-new-chat span {
-  display: none;
-}
-
-.sidebar-desktop.collapsed .sidebar-nav-item {
-  justify-content: center;
-  padding: 10px;
-}
-
-.sidebar-desktop.collapsed .sidebar-tool-item {
-  justify-content: center;
-  padding: 8px;
-}
-
-.sidebar-desktop.collapsed .sidebar-bottom-btn {
-  justify-content: center;
-  padding: 10px;
-}
-
-.sidebar-desktop.collapsed .sidebar-bottom-btn span {
-  display: none;
-}
-
-.sidebar-desktop.collapsed .sidebar-profile-btn {
-  justify-content: center;
-  padding: 8px;
-}
-
-.sidebar-desktop.collapsed .sidebar-profile-btn svg {
-  display: none;
-}
-
-/* Mobile sidebar */
-.sidebar-mobile {
+.sidebar-panel {
   position: fixed;
   top: 0;
   left: 0;
@@ -4234,7 +4211,7 @@ body {
   will-change: transform;
 }
 
-.sidebar-mobile.open {
+.sidebar-panel.open {
   transform: translateX(0);
 }
 
@@ -4258,12 +4235,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 12px 12px;
+  padding: 16px 16px 12px;
   flex-shrink: 0;
-}
-
-.sidebar-header .sidebar-logo {
-  padding-left: 14px;
 }
 
 .sidebar-logo {
