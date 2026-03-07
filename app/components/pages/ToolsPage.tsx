@@ -35,6 +35,7 @@ import {
   IconSettings,
   IconRoadmap,
 } from "../icons/Icons";
+import AIDebateDetail from "../tools/AIDebateDetail";
 
 /* ===== TOOL CARD ===== */
 interface ToolCardProps {
@@ -1449,6 +1450,14 @@ export default function ToolsPage({ onOpenConversation }: ToolsPageProps = {}) {
       color: "#3b82f6",
       tag: "6 ders",
     },
+    {
+      id: "ai-debate",
+      name: "AI Tartisma",
+      description: "Iki yapay zekayi karsi karsiya getir ve tartismayi yonet",
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a4 4 0 0 1 4 4v1a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V6a4 4 0 0 1 4-4z"/><rect x="8" y="10" width="8" height="8" rx="1"/><path d="M10 18v2"/><path d="M14 18v2"/><circle cx="10" cy="13.5" r="1" fill="currentColor"/><circle cx="14" cy="13.5" r="1" fill="currentColor"/></svg>,
+      color: "#8b5cf6",
+      tag: "AI vs AI",
+    },
   ];
 
   // Render detail views
@@ -1458,6 +1467,7 @@ export default function ToolsPage({ onOpenConversation }: ToolsPageProps = {}) {
   if (activeTool === "roadmaps") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><RoadmapDetail onBack={() => setActiveTool(null)} onOpenConversation={onOpenConversation} /></div></div>;
   if (activeTool === "pomodoro") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><PomodoroDetail onBack={() => setActiveTool(null)} /></div></div>;
   if (activeTool === "speedread") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><SpeedReadDetail onBack={() => setActiveTool(null)} /></div></div>;
+  if (activeTool === "ai-debate") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><AIDebateDetail onBack={() => setActiveTool(null)} /></div></div>;
 
   return (
     <div className="h-full overflow-y-auto">
