@@ -94,6 +94,25 @@ function TypingIndicator() {
   );
 }
 
+/* ===== COUNT-UP TIMER ===== */
+function CountUpTimer({ startTime }: { startTime: number }) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [startTime]);
+  if (elapsed < 1) return null;
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  return (
+    <span className="text-[11px] ml-2 tabular-nums" style={{ color: "var(--text-tertiary)" }}>
+      {mins > 0 ? `${mins}dk ${secs}s` : `${secs}s`}
+    </span>
+  );
+}
+
 /* ===== DEEP ANALYSIS PROGRESS ===== */
 function DeepAnalysisProgress({ progress }: { progress: { step: string; label: string; progress: number; detail?: string; verified?: boolean } }) {
   const steps = [
@@ -325,6 +344,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
   const isFirstMessageRef = useRef(true);
   const loadedConvIdRef = useRef<string | null>(null);
   const messagesRef = useRef<ChatMessage[]>([welcomeMessage]);
+  const responseStartTimeRef = useRef<number>(0);
   messagesRef.current = messages;
 
   const MODE_OPTIONS = [
@@ -593,6 +613,12 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
           if (!trimmed.startsWith("data: ")) continue;
           const data = trimmed.slice(6);
           if (data === "[DONE]") {
+            const duration = Math.round((Date.now() - responseStartTimeRef.current) / 1000);
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === aiMsgId ? { ...m, responseDuration: duration } : m
+              )
+            );
             setDeepAnalysisProgress(null);
             setIsLoading(false);
             // Save completed assistant message
@@ -629,6 +655,12 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
           }
         }
       }
+      const duration = Math.round((Date.now() - responseStartTimeRef.current) / 1000);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === aiMsgId ? { ...m, responseDuration: duration } : m
+        )
+      );
       setDeepAnalysisProgress(null);
       setIsLoading(false);
     },
@@ -638,6 +670,7 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
   const sendToAI = useCallback(
     async (userContent: string, allMessages: ChatMessage[], style: string = "basit", pendingImageData?: string) => {
       setIsLoading(true);
+      responseStartTimeRef.current = Date.now();
 
       // Upload image if present
       let imageUrl: string | undefined;
@@ -740,6 +773,12 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
             );
           },
           () => {
+            const duration = Math.round((Date.now() - responseStartTimeRef.current) / 1000);
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === aiMsgId ? { ...m, responseDuration: duration } : m
+              )
+            );
             setIsLoading(false);
           }
         );
@@ -1076,6 +1115,9 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                       {!msg.content && isLoading && msg.id === messages[messages.length - 1]?.id && !deepAnalysisProgress && (
                         <TypingIndicator />
                       )}
+                      {isLoading && msg.id === messages[messages.length - 1]?.id && responseStartTimeRef.current > 0 && (
+                        <CountUpTimer startTime={responseStartTimeRef.current} />
+                      )}
                     </div>
                   )}
 
@@ -1147,6 +1189,13 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                             style={{ color: "var(--text-tertiary)" }}>
                             <IconThumbDown size={13} />
                           </button>
+                          {msg.responseDuration != null && msg.responseDuration > 0 && (
+                            <span className="text-[11px] ml-1 tabular-nums" style={{ color: "var(--text-tertiary)" }}>
+                              {msg.responseDuration >= 60
+                                ? `${Math.floor(msg.responseDuration / 60)}dk ${msg.responseDuration % 60}s`
+                                : `${msg.responseDuration}s`}
+                            </span>
+                          )}
                         </div>
                         <button
                           onClick={() => {

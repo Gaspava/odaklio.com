@@ -35,6 +35,7 @@ export interface ChatMessage {
   suggestionsLoading?: boolean;
   notes?: string[];
   notesLoading?: boolean;
+  responseDuration?: number;
 }
 
 export interface MindmapSaveData {
