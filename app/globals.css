@@ -217,6 +217,13 @@ body {
   color: var(--text-primary);
 }
 
+/* Prevent long-press "save image" dialog on mobile */
+img {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
 /* ===== GLASS MORPHISM ===== */
 .glass {
   background: var(--bg-glass);

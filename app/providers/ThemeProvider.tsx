@@ -28,6 +28,14 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     if (stored) {
       setTheme(stored);
     }
+
+    const blockImageContextMenu = (e: MouseEvent) => {
+      if (e.target instanceof HTMLImageElement) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("contextmenu", blockImageContextMenu);
+    return () => document.removeEventListener("contextmenu", blockImageContextMenu);
   }, []);
 
   useEffect(() => {
