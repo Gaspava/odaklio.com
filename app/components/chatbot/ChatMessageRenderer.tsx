@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import katex from "katex";
+import "katex/dist/katex.min.css";
 import hljs from "highlight.js/lib/core";
 
 // Register commonly used languages
@@ -224,6 +226,35 @@ function CodeBlock({ language, code }: { language?: string; code: string }) {
   );
 }
 
+/* ===== MATH COMPONENTS ===== */
+function MathBlock({ math }: { math: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ref.current) {
+      try {
+        katex.render(math, ref.current, { displayMode: true, throwOnError: false });
+      } catch {
+        ref.current.textContent = math;
+      }
+    }
+  }, [math]);
+  return <div ref={ref} className="math-block overflow-x-auto py-2" />;
+}
+
+function InlineMath({ math }: { math: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (ref.current) {
+      try {
+        katex.render(math, ref.current, { displayMode: false, throwOnError: false });
+      } catch {
+        ref.current.textContent = math;
+      }
+    }
+  }, [math]);
+  return <span ref={ref} className="inline-math" />;
+}
+
 /* ===== INLINE FORMATTING ===== */
 function renderInlineFormatting(text: string): React.ReactNode[] {
   const parts: React.ReactNode[] = [];
@@ -263,6 +294,14 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
       continue;
     }
 
+    // Inline math: $...$  (but not $$)
+    const inlineMathMatch = remaining.match(/^\$(?!\$)([^$]+?)\$/);
+    if (inlineMathMatch) {
+      parts.push(<InlineMath key={key++} math={inlineMathMatch[1]} />);
+      remaining = remaining.slice(inlineMathMatch[0].length);
+      continue;
+    }
+
     // Inline code: `code`
     const codeMatch = remaining.match(/^`([^`]+?)`/);
     if (codeMatch) {
@@ -284,7 +323,7 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
     }
 
     // Regular character
-    const nextSpecial = remaining.slice(1).search(/[~=\*`\[]/);
+    const nextSpecial = remaining.slice(1).search(/[~=\*`\[$]/);
     if (nextSpecial === -1) {
       parts.push(remaining);
       break;
@@ -299,7 +338,7 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
 
 /* ===== MAIN CONTENT PARSER ===== */
 interface ParsedBlock {
-  type: "paragraph" | "heading" | "code" | "callout" | "list" | "blockquote" | "hr" | "table";
+  type: "paragraph" | "heading" | "code" | "callout" | "list" | "blockquote" | "hr" | "table" | "math";
   content: string;
   meta?: string;
   items?: ListItem[];
@@ -375,6 +414,40 @@ function parseContent(text: string): ParsedBlock[] {
 
   while (i < lines.length) {
     const line = lines[i];
+
+    // Block math: $$...$$ (multi-line or single-line)
+    if (line.trim().startsWith("$$")) {
+      const restOfLine = line.trim().slice(2);
+      // Single-line: $$formula$$
+      if (restOfLine.endsWith("$$") && restOfLine.length > 2) {
+        blocks.push({ type: "math", content: restOfLine.slice(0, -2).trim() });
+        i++;
+        continue;
+      }
+      // Check if the rest of the line has a closing $$ (e.g. $$formula$$)
+      if (restOfLine.includes("$$")) {
+        const mathContent = restOfLine.slice(0, restOfLine.indexOf("$$")).trim();
+        blocks.push({ type: "math", content: mathContent });
+        i++;
+        continue;
+      }
+      // Multi-line: collect until $$
+      const mathLines: string[] = [];
+      if (restOfLine.trim()) mathLines.push(restOfLine.trim());
+      i++;
+      while (i < lines.length && !lines[i].trim().endsWith("$$")) {
+        mathLines.push(lines[i]);
+        i++;
+      }
+      if (i < lines.length) {
+        // Add the last line without the closing $$
+        const lastLine = lines[i].trim().slice(0, -2).trim();
+        if (lastLine) mathLines.push(lastLine);
+        i++;
+      }
+      blocks.push({ type: "math", content: mathLines.join("\n").trim() });
+      continue;
+    }
 
     // Code block: ```lang ... ```
     if (line.trim().startsWith("```")) {
@@ -531,6 +604,9 @@ function renderBlock(block: ParsedBlock, index: number): React.ReactNode {
       const Tag = (`h${block.level}` as "h1" | "h2" | "h3");
       return <Tag key={index}>{renderInlineFormatting(block.content)}</Tag>;
     }
+
+    case "math":
+      return <MathBlock key={index} math={block.content} />;
 
     case "code":
       return <CodeBlock key={index} language={block.meta} code={block.content} />;
