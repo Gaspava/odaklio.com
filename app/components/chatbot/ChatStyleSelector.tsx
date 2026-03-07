@@ -1,8 +1,8 @@
 "use client";
 
-import { IconChat, IconMindMap, IconFlashcard, IconRoadmap, IconX } from "../icons/Icons";
+import { IconChat, IconMindMap, IconFlashcard, IconRoadmap, IconSolver, IconX } from "../icons/Icons";
 
-export type ChatStyle = "standard" | "mindmap" | "flashcard" | "roadmap";
+export type ChatStyle = "standard" | "mindmap" | "flashcard" | "roadmap" | "solver";
 
 interface ChatStyleSelectorProps {
   onSelect: (style: ChatStyle) => void;
@@ -18,6 +18,7 @@ export default function ChatStyleSelector({
     { id: "mindmap" as ChatStyle, name: "Mindmap Chat", desc: "2D paralel sohbet haritasi", color: "var(--accent-purple)", bgColor: "var(--accent-purple-light)", icon: <IconMindMap size={24} /> },
     { id: "flashcard" as ChatStyle, name: "Flashcard", desc: "AI destekli hafiza kartlari", color: "#f59e0b", bgColor: "rgba(245, 158, 11, 0.1)", icon: <IconFlashcard size={24} />, isNew: true },
     { id: "roadmap" as ChatStyle, name: "Roadmap", desc: "Adim adim ogrenme plani", color: "#ef4444", bgColor: "rgba(239, 68, 68, 0.1)", icon: <IconRoadmap size={24} />, isNew: true },
+    { id: "solver" as ChatStyle, name: "Soru Cozucu", desc: "Adim adim matematik cozumu", color: "#8b5cf6", bgColor: "rgba(139, 92, 246, 0.1)", icon: <IconSolver size={24} />, isNew: true },
   ];
 
   return (

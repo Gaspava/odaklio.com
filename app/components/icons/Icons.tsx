@@ -402,3 +402,15 @@ export function IconThumbDown({ size = 22, className }: IconProps) {
     </svg>
   );
 }
+
+export function IconSolver({ size = 22, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="2" y="2" width="20" height="20" rx="3" />
+      <path d="M7 8h4M9 6v4" />
+      <path d="M7 16h4" />
+      <path d="M15 7l2 2-2 2" />
+      <circle cx="16" cy="16" r="1" fill="currentColor" />
+    </svg>
+  );
+}

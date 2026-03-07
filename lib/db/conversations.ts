@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 
-export type ConversationType = "standard" | "mindmap" | "flashcard" | "note" | "roadmap" | "roadmap_study" | "mentor";
+export type ConversationType = "standard" | "mindmap" | "flashcard" | "note" | "roadmap" | "roadmap_study" | "mentor" | "solver";
 
 export interface Conversation {
   id: string;

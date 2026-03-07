@@ -11,6 +11,7 @@ const modes = [
   { id: "mindmap", name: "Mindmap Chat", desc: "2D paralel sohbet haritasi", color: "#8b5cf6" },
   { id: "flashcard", name: "Flashcard", desc: "AI destekli hafiza kartlari", color: "#f59e0b" },
   { id: "roadmap", name: "Roadmap", desc: "Adim adim ogrenme plani", color: "#ef4444" },
+  { id: "solver", name: "Soru Cozucu", desc: "Adim adim matematik cozumu", color: "#8b5cf6" },
 ];
 
 export default function NewChatPopup({ onSelectMode, onClose, inline }: NewChatPopupProps) {
@@ -65,6 +66,11 @@ export default function NewChatPopup({ onSelectMode, onClose, inline }: NewChatP
               {mode.id === "roadmap" && (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                </svg>
+              )}
+              {mode.id === "solver" && (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="3" /><path d="M7 8h4M9 6v4" /><path d="M7 16h4" /><path d="M15 7l2 2-2 2" />
                 </svg>
               )}
             </div>

@@ -9,6 +9,7 @@ import MainChat from "../chatbot/MainChat";
 import MindmapChat from "../chatbot/MindmapChat";
 import FlashcardChat from "../chatbot/FlashcardChat";
 import RoadmapChat from "../chatbot/RoadmapChat";
+import SolverChat from "../chatbot/SolverChat";
 import ChatHistoryPage from "../pages/ChatHistoryPage";
 import ToolsPage from "../pages/ToolsPage";
 import MentorPage from "../pages/MentorPage";
@@ -54,7 +55,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
   const [chatKey, setChatKey] = useState(0);
-  const [activeSpecialMode, setActiveSpecialMode] = useState<"flashcard" | "roadmap" | "mindmap" | null>(null);
+  const [activeSpecialMode, setActiveSpecialMode] = useState<"flashcard" | "roadmap" | "mindmap" | "solver" | null>(null);
   const [pendingInitialMessage, setPendingInitialMessage] = useState<string | null>(null);
   const [activePage, setActivePage] = useState<PageType>(initialPage || "focus");
   const [mobileBottomSheet, setMobileBottomSheet] = useState<"pomodoro" | "sound" | "new-chat" | "notes" | null>(null);
@@ -79,6 +80,8 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       setActiveSpecialMode("roadmap");
     } else if (activeConversationType === "flashcard") {
       setActiveSpecialMode("flashcard");
+    } else if (activeConversationType === "solver") {
+      setActiveSpecialMode("solver");
     }
   }, [activeConversationType]);
 
@@ -209,7 +212,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const handleModeSwitch = useCallback((mode: string, initialMessage?: string) => {
     startNewConversation();
     setPendingInitialMessage(initialMessage || null);
-    setActiveSpecialMode(mode as "flashcard" | "roadmap" | "mindmap");
+    setActiveSpecialMode(mode as "flashcard" | "roadmap" | "mindmap" | "solver");
   }, [startNewConversation]);
 
   const handlePageChange = (page: PageType) => {
@@ -230,6 +233,8 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
           setActiveSpecialMode("roadmap");
         } else if (type === "flashcard") {
           setActiveSpecialMode("flashcard");
+        } else if (type === "solver") {
+          setActiveSpecialMode("solver");
         } else {
           setActiveSpecialMode(null);
         }
@@ -265,6 +270,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       case "focus":
         if (activeSpecialMode === "flashcard") return <FlashcardChat key={chatKey} isMobile={isMobile} initialMessage={pendingInitialMessage || undefined} />;
         if (activeSpecialMode === "roadmap") return <RoadmapChat key={chatKey} isMobile={isMobile} onOpenConversation={handleOpenConversation} initialMessage={pendingInitialMessage || undefined} />;
+        if (activeSpecialMode === "solver") return <SolverChat key={chatKey} isMobile={isMobile} initialMessage={pendingInitialMessage || undefined} />;
         if (activeSpecialMode === "mindmap") return <MindmapChat key={chatKey} isMobile={isMobile} />;
         return <MainChat key={chatKey} isMobile={isMobile} onModeSwitch={handleModeSwitch} />;
       case "mentor":
