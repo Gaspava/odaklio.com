@@ -66,30 +66,26 @@ export async function POST(request: Request) {
       systemInstruction: systemPrompt,
     });
 
-    // Build chat history
-    const chatHistory = (history || []).map((msg: { role: string; speaker: string; content: string }) => ({
-      role: msg.role === "assistant" ? "model" : "user",
-      parts: [{ text: msg.speaker === speaker ? msg.content : `Rakip diyor ki: ${msg.content}` }],
-    }));
-
-    // Ensure history starts with user
-    if (chatHistory.length > 0 && chatHistory[0].role === "model") {
-      chatHistory.shift();
-    }
-
-    const chat = model.startChat({ history: chatHistory });
-
+    // Build prompt with full conversation context
     let prompt: string;
     if (!history || history.length === 0) {
       prompt = `Tartışmaya başla. Fikrini güçlü bir açılış argümanıyla savun. Konu: "${speaker === "A" ? topicA : topicB}" vs "${speaker === "A" ? topicB : topicA}"`;
-    } else if (moderatorNote) {
-      prompt = MODERATOR_REDIRECT(moderatorNote);
     } else {
-      const lastMsg = history[history.length - 1];
-      prompt = `Rakibin şöyle dedi: "${lastMsg.content}"\n\nBuna karşılık ver ve kendi fikrini savunmaya devam et.`;
+      const conversation = (history as { speaker: string; content: string }[])
+        .map((msg) => {
+          const name = msg.speaker === "A" ? "Alpha" : "Beta";
+          return `[${name}]: ${msg.content}`;
+        })
+        .join("\n\n---\n\n");
+
+      const moderatorPart = moderatorNote
+        ? `\n\nModeratör notu: ${moderatorNote}`
+        : "";
+
+      prompt = `İşte şu ana kadarki tartışma:\n\n${conversation}\n\n---${moderatorPart}\n\nŞimdi sıra sende. Yukarıdaki tartışmayı dikkate alarak yanıtını ver.`;
     }
 
-    const result = await chat.sendMessageStream([{ text: prompt }]);
+    const result = await model.generateContentStream([{ text: prompt }]);
 
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
