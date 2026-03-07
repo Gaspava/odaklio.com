@@ -1,11 +1,69 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import hljs from "highlight.js/lib/core";
+
+// Register commonly used languages
+import javascript from "highlight.js/lib/languages/javascript";
+import typescript from "highlight.js/lib/languages/typescript";
+import python from "highlight.js/lib/languages/python";
+import css from "highlight.js/lib/languages/css";
+import xml from "highlight.js/lib/languages/xml";
+import json from "highlight.js/lib/languages/json";
+import bash from "highlight.js/lib/languages/bash";
+import sql from "highlight.js/lib/languages/sql";
+import java from "highlight.js/lib/languages/java";
+import csharp from "highlight.js/lib/languages/csharp";
+import cpp from "highlight.js/lib/languages/cpp";
+import go from "highlight.js/lib/languages/go";
+import rust from "highlight.js/lib/languages/rust";
+import php from "highlight.js/lib/languages/php";
+import ruby from "highlight.js/lib/languages/ruby";
+import swift from "highlight.js/lib/languages/swift";
+import kotlin from "highlight.js/lib/languages/kotlin";
+import yaml from "highlight.js/lib/languages/yaml";
+import markdown from "highlight.js/lib/languages/markdown";
+import dockerfile from "highlight.js/lib/languages/dockerfile";
+
+hljs.registerLanguage("javascript", javascript);
+hljs.registerLanguage("js", javascript);
+hljs.registerLanguage("jsx", javascript);
+hljs.registerLanguage("typescript", typescript);
+hljs.registerLanguage("ts", typescript);
+hljs.registerLanguage("tsx", typescript);
+hljs.registerLanguage("python", python);
+hljs.registerLanguage("py", python);
+hljs.registerLanguage("css", css);
+hljs.registerLanguage("html", xml);
+hljs.registerLanguage("xml", xml);
+hljs.registerLanguage("json", json);
+hljs.registerLanguage("bash", bash);
+hljs.registerLanguage("sh", bash);
+hljs.registerLanguage("shell", bash);
+hljs.registerLanguage("sql", sql);
+hljs.registerLanguage("java", java);
+hljs.registerLanguage("csharp", csharp);
+hljs.registerLanguage("cs", csharp);
+hljs.registerLanguage("cpp", cpp);
+hljs.registerLanguage("c", cpp);
+hljs.registerLanguage("go", go);
+hljs.registerLanguage("rust", rust);
+hljs.registerLanguage("php", php);
+hljs.registerLanguage("ruby", ruby);
+hljs.registerLanguage("rb", ruby);
+hljs.registerLanguage("swift", swift);
+hljs.registerLanguage("kotlin", kotlin);
+hljs.registerLanguage("yaml", yaml);
+hljs.registerLanguage("yml", yaml);
+hljs.registerLanguage("markdown", markdown);
+hljs.registerLanguage("md", markdown);
+hljs.registerLanguage("dockerfile", dockerfile);
+hljs.registerLanguage("docker", dockerfile);
 
 /* ===== CALLOUT ICONS ===== */
 function DangerIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" />
       <line x1="12" y1="8" x2="12" y2="12" />
       <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -15,7 +73,7 @@ function DangerIcon() {
 
 function WarningIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
       <line x1="12" y1="9" x2="12" y2="13" />
       <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -25,7 +83,7 @@ function WarningIcon() {
 
 function InfoIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" />
       <line x1="12" y1="16" x2="12" y2="12" />
       <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -35,7 +93,7 @@ function InfoIcon() {
 
 function TipIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 18h6" />
       <path d="M10 22h4" />
       <path d="M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z" />
@@ -45,7 +103,7 @@ function TipIcon() {
 
 function NoteIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
       <polyline points="14 2 14 8 20 8" />
       <line x1="16" y1="13" x2="8" y2="13" />
@@ -56,7 +114,7 @@ function NoteIcon() {
 
 function SuccessIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
       <polyline points="22 4 12 14.01 9 11.01" />
     </svg>
@@ -97,7 +155,7 @@ function Callout({ type, title, children }: { type: CalloutType; title?: string;
   const Icon = config.icon;
 
   return (
-    <div className={`callout ${config.className}`}>
+    <div className={`callout ${config.className}`} role="note">
       <div className="callout-header">
         <span className="callout-icon">
           <Icon />
@@ -116,6 +174,7 @@ function Callout({ type, title, children }: { type: CalloutType; title?: string;
 /* ===== CODE BLOCK COMPONENT ===== */
 function CodeBlock({ language, code }: { language?: string; code: string }) {
   const [copied, setCopied] = useState(false);
+  const codeRef = useRef<HTMLElement>(null);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(code).then(() => {
@@ -124,8 +183,26 @@ function CodeBlock({ language, code }: { language?: string; code: string }) {
     });
   }, [code]);
 
+  useEffect(() => {
+    if (codeRef.current) {
+      // Reset before re-highlighting
+      codeRef.current.removeAttribute("data-highlighted");
+      try {
+        if (language && hljs.getLanguage(language)) {
+          codeRef.current.innerHTML = hljs.highlight(code, { language }).value;
+        } else {
+          const result = hljs.highlightAuto(code);
+          codeRef.current.innerHTML = result.value;
+        }
+      } catch {
+        // Fallback to plain text
+        codeRef.current.textContent = code;
+      }
+    }
+  }, [code, language]);
+
   return (
-    <div className="code-block group">
+    <div className="code-block group" aria-label={`Kod bloğu: ${language || "code"}`}>
       <div className="code-block-header">
         <span className="code-lang">{language || "code"}</span>
         <button
@@ -141,7 +218,7 @@ function CodeBlock({ language, code }: { language?: string; code: string }) {
         </button>
       </div>
       <div className="code-block-content">
-        <pre className="whitespace-pre-wrap break-words"><code>{code}</code></pre>
+        <pre className="whitespace-pre-wrap break-words"><code ref={codeRef}>{code}</code></pre>
       </div>
     </div>
   );
@@ -154,6 +231,22 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
   let key = 0;
 
   while (remaining.length > 0) {
+    // Strikethrough: ~~text~~
+    const strikeMatch = remaining.match(/^~~(.+?)~~/);
+    if (strikeMatch) {
+      parts.push(<del key={key++}>{renderInlineFormatting(strikeMatch[1])}</del>);
+      remaining = remaining.slice(strikeMatch[0].length);
+      continue;
+    }
+
+    // Highlight: ==text==
+    const highlightMatch = remaining.match(/^==(.+?)==/);
+    if (highlightMatch) {
+      parts.push(<mark key={key++}>{renderInlineFormatting(highlightMatch[1])}</mark>);
+      remaining = remaining.slice(highlightMatch[0].length);
+      continue;
+    }
+
     // Bold: **text**
     const boldMatch = remaining.match(/^\*\*(.+?)\*\*/);
     if (boldMatch) {
@@ -191,7 +284,7 @@ function renderInlineFormatting(text: string): React.ReactNode[] {
     }
 
     // Regular character
-    const nextSpecial = remaining.slice(1).search(/[\*`\[]/);
+    const nextSpecial = remaining.slice(1).search(/[~=\*`\[]/);
     if (nextSpecial === -1) {
       parts.push(remaining);
       break;
@@ -209,11 +302,70 @@ interface ParsedBlock {
   type: "paragraph" | "heading" | "code" | "callout" | "list" | "blockquote" | "hr" | "table";
   content: string;
   meta?: string;
-  items?: string[];
+  items?: ListItem[];
   ordered?: boolean;
   level?: number;
   calloutType?: CalloutType;
   rows?: string[][];
+  calloutBlocks?: ParsedBlock[];
+}
+
+interface ListItem {
+  text: string;
+  children?: ListItem[];
+  childOrdered?: boolean;
+}
+
+function parseListItems(lines: string[], startI: number, allLines: string[], ordered: boolean): { items: ListItem[]; nextI: number } {
+  const items: ListItem[] = [];
+  let i = startI;
+  const bulletPattern = ordered ? /^\d+\.\s+/ : /^[-*]\s+/;
+
+  while (i < allLines.length) {
+    const line = allLines[i];
+    const trimmed = line.trimStart();
+
+    // Check if this is a top-level list item
+    const indent = line.length - line.trimStart().length;
+    if (indent === 0 && trimmed.match(bulletPattern)) {
+      const text = trimmed.replace(bulletPattern, "");
+      const item: ListItem = { text };
+
+      i++;
+
+      // Check for nested items (indented by 2+ spaces)
+      const nestedLines: string[] = [];
+      while (i < allLines.length) {
+        const nextLine = allLines[i];
+        const nextIndent = nextLine.length - nextLine.trimStart().length;
+        if (nextIndent >= 2 && nextLine.trimStart().match(/^[-*]\s+|^\d+\.\s+/)) {
+          nestedLines.push(nextLine.trimStart());
+          i++;
+        } else if (nextIndent >= 2 && nestedLines.length > 0) {
+          // Continuation line of nested content
+          nestedLines.push(nextLine.trimStart());
+          i++;
+        } else {
+          break;
+        }
+      }
+
+      if (nestedLines.length > 0) {
+        const isChildOrdered = !!nestedLines[0].match(/^\d+\.\s+/);
+        const childBullet = isChildOrdered ? /^\d+\.\s+/ : /^[-*]\s+/;
+        item.children = nestedLines
+          .filter(l => l.match(childBullet))
+          .map(l => ({ text: l.replace(childBullet, "") }));
+        item.childOrdered = isChildOrdered;
+      }
+
+      items.push(item);
+    } else {
+      break;
+    }
+  }
+
+  return { items, nextI: i };
 }
 
 function parseContent(text: string): ParsedBlock[] {
@@ -256,7 +408,9 @@ function parseContent(text: string): ParsedBlock[] {
           i++;
         }
         if (lines[i]?.trim() === ":::") i++; // skip closing :::
-        blocks.push({ type: "callout", content: contentLines.join("\n"), calloutType, meta: title });
+        // Parse callout content as blocks for rich formatting
+        const calloutBlocks = parseContent(contentLines.join("\n"));
+        blocks.push({ type: "callout", content: contentLines.join("\n"), calloutType, meta: title, calloutBlocks });
         continue;
       }
     }
@@ -277,23 +431,17 @@ function parseContent(text: string): ParsedBlock[] {
     }
 
     // Unordered list: - item or * item
-    if (line.trim().match(/^[-*]\s+/)) {
-      const items: string[] = [];
-      while (i < lines.length && lines[i].trim().match(/^[-*]\s+/)) {
-        items.push(lines[i].trim().replace(/^[-*]\s+/, ""));
-        i++;
-      }
+    if (line.trim().match(/^[-*]\s+/) && line.length - line.trimStart().length === 0) {
+      const { items, nextI } = parseListItems(lines, i, lines, false);
+      i = nextI;
       blocks.push({ type: "list", content: "", items, ordered: false });
       continue;
     }
 
     // Ordered list: 1. item
-    if (line.trim().match(/^\d+\.\s+/)) {
-      const items: string[] = [];
-      while (i < lines.length && lines[i].trim().match(/^\d+\.\s+/)) {
-        items.push(lines[i].trim().replace(/^\d+\.\s+/, ""));
-        i++;
-      }
+    if (line.trim().match(/^\d+\.\s+/) && line.length - line.trimStart().length === 0) {
+      const { items, nextI } = parseListItems(lines, i, lines, true);
+      i = nextI;
       blocks.push({ type: "list", content: "", items, ordered: true });
       continue;
     }
@@ -359,6 +507,23 @@ function parseContent(text: string): ParsedBlock[] {
   return blocks;
 }
 
+/* ===== RENDER LIST ITEMS ===== */
+function renderListItems(items: ListItem[], ordered: boolean): React.ReactNode {
+  const ListTag = ordered ? "ol" : "ul";
+  return (
+    <ListTag className={ordered ? "list-decimal" : "list-disc"}>
+      {items.map((item, j) => (
+        <li key={j}>
+          <span className="li-content">{renderInlineFormatting(item.text)}</span>
+          {item.children && item.children.length > 0 && (
+            renderListItems(item.children, !!item.childOrdered)
+          )}
+        </li>
+      ))}
+    </ListTag>
+  );
+}
+
 /* ===== RENDER BLOCKS ===== */
 function renderBlock(block: ParsedBlock, index: number): React.ReactNode {
   switch (block.type) {
@@ -373,27 +538,24 @@ function renderBlock(block: ParsedBlock, index: number): React.ReactNode {
     case "callout":
       return (
         <Callout key={index} type={block.calloutType!} title={block.meta}>
-          {renderInlineFormatting(block.content)}
+          {block.calloutBlocks && block.calloutBlocks.length > 0
+            ? block.calloutBlocks.map((b, i) => renderBlock(b, i))
+            : renderInlineFormatting(block.content)
+          }
         </Callout>
       );
 
-    case "list": {
-      const ListTag = block.ordered ? "ol" : "ul";
-      return (
-        <ListTag key={index} className={block.ordered ? "list-decimal" : "list-disc"}>
-          {block.items?.map((item, j) => (
-            <li key={j}><span className="li-content">{renderInlineFormatting(item)}</span></li>
-          ))}
-        </ListTag>
-      );
-    }
+    case "list":
+      return <div key={index}>{renderListItems(block.items || [], !!block.ordered)}</div>;
 
-    case "blockquote":
+    case "blockquote": {
+      const quoteBlocks = parseContent(block.content);
       return (
         <blockquote key={index}>
-          {renderInlineFormatting(block.content)}
+          {quoteBlocks.map((b, i) => renderBlock(b, i))}
         </blockquote>
       );
+    }
 
     case "hr":
       return <hr key={index} />;
