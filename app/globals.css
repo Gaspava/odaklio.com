@@ -795,7 +795,8 @@ body {
 /* --- Headings --- */
 .msg-ai-content h1,
 .msg-ai-content h2,
-.msg-ai-content h3 {
+.msg-ai-content h3,
+.msg-ai-content h4 {
   color: var(--text-primary);
   font-weight: 700;
   line-height: 1.35;
@@ -821,8 +822,14 @@ body {
   border-left: 3px solid var(--accent-primary);
 }
 
+.msg-ai-content h4 {
+  font-size: 0.95em;
+  margin: 18px 0 8px 0;
+}
+
 .msg-ai-content h2:first-child,
-.msg-ai-content h3:first-child {
+.msg-ai-content h3:first-child,
+.msg-ai-content h4:first-child {
   margin-top: 0;
 }
 

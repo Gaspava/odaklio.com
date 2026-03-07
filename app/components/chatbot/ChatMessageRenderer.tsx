@@ -343,6 +343,7 @@ interface ParsedBlock {
   meta?: string;
   items?: ListItem[];
   ordered?: boolean;
+  startNum?: number;
   level?: number;
   calloutType?: CalloutType;
   rows?: string[][];
@@ -355,9 +356,10 @@ interface ListItem {
   childOrdered?: boolean;
 }
 
-function parseListItems(lines: string[], startI: number, allLines: string[], ordered: boolean): { items: ListItem[]; nextI: number } {
+function parseListItems(lines: string[], startI: number, allLines: string[], ordered: boolean): { items: ListItem[]; nextI: number; startNum: number } {
   const items: ListItem[] = [];
   let i = startI;
+  let startNum = 1;
   const bulletPattern = ordered ? /^\d+\.\s+/ : /^[-*]\s+/;
 
   while (i < allLines.length) {
@@ -367,6 +369,11 @@ function parseListItems(lines: string[], startI: number, allLines: string[], ord
     // Check if this is a top-level list item
     const indent = line.length - line.trimStart().length;
     if (indent === 0 && trimmed.match(bulletPattern)) {
+      // Capture starting number from first item
+      if (ordered && items.length === 0) {
+        const numMatch = trimmed.match(/^(\d+)\./);
+        if (numMatch) startNum = parseInt(numMatch[1], 10);
+      }
       const text = trimmed.replace(bulletPattern, "");
       const item: ListItem = { text };
 
@@ -404,7 +411,7 @@ function parseListItems(lines: string[], startI: number, allLines: string[], ord
     }
   }
 
-  return { items, nextI: i };
+  return { items, nextI: i, startNum };
 }
 
 function parseContent(text: string): ParsedBlock[] {
@@ -474,7 +481,7 @@ function parseContent(text: string): ParsedBlock[] {
         while (i < lines.length) {
           const cLine = lines[i].trim();
           // End if: empty line followed by non-callout content, or ::: closing, or another callout/heading
-          if (cLine === ":::" || cLine.match(/^(?:>{1,}\s*)?(?:\[!(\w+)\]|:::(\w+))/i) || cLine.match(/^#{1,3}\s/)) break;
+          if (cLine === ":::" || cLine.match(/^(?:>{1,}\s*)?(?:\[!(\w+)\]|:::(\w+))/i) || cLine.match(/^#{1,4}\s/)) break;
           if (cLine === "" && i + 1 < lines.length && !lines[i + 1].trim().startsWith(">")) break;
           // Strip leading > from content lines
           contentLines.push(cLine.replace(/^>\s*/, ""));
@@ -488,8 +495,8 @@ function parseContent(text: string): ParsedBlock[] {
       }
     }
 
-    // Heading: # ## ###
-    const headingMatch = line.match(/^(#{1,3})\s+(.+)/);
+    // Heading: # ## ### ####
+    const headingMatch = line.match(/^(#{1,4})\s+(.+)/);
     if (headingMatch) {
       blocks.push({ type: "heading", content: headingMatch[2], level: headingMatch[1].length });
       i++;
@@ -513,9 +520,9 @@ function parseContent(text: string): ParsedBlock[] {
 
     // Ordered list: 1. item
     if (line.trim().match(/^\d+\.\s+/) && line.length - line.trimStart().length === 0) {
-      const { items, nextI } = parseListItems(lines, i, lines, true);
+      const { items, nextI, startNum } = parseListItems(lines, i, lines, true);
       i = nextI;
-      blocks.push({ type: "list", content: "", items, ordered: true });
+      blocks.push({ type: "list", content: "", items, ordered: true, startNum });
       continue;
     }
 
@@ -561,7 +568,7 @@ function parseContent(text: string): ParsedBlock[] {
       if (
         nextLine.trim() === "" ||
         nextLine.trim().startsWith("```") ||
-        nextLine.trim().match(/^#{1,3}\s/) ||
+        nextLine.trim().match(/^#{1,4}\s/) ||
         nextLine.trim().match(/^[-*]\s+/) ||
         nextLine.trim().match(/^\d+\.\s+/) ||
         nextLine.trim().startsWith("> ") ||
@@ -581,16 +588,21 @@ function parseContent(text: string): ParsedBlock[] {
 }
 
 /* ===== RENDER LIST ITEMS ===== */
-function renderListItems(items: ListItem[], ordered: boolean): React.ReactNode {
+function renderListItems(items: ListItem[], ordered: boolean, startNum?: number): React.ReactNode {
   const ListTag = ordered ? "ol" : "ul";
+  const counterStyle = ordered && startNum && startNum > 1
+    ? { counterReset: `ol-counter ${startNum - 1}` } as React.CSSProperties
+    : undefined;
   return (
-    <ListTag className={ordered ? "list-decimal" : "list-disc"}>
+    <ListTag className={ordered ? "list-decimal" : "list-disc"} style={counterStyle}>
       {items.map((item, j) => (
         <li key={j}>
-          <span className="li-content">{renderInlineFormatting(item.text)}</span>
-          {item.children && item.children.length > 0 && (
-            renderListItems(item.children, !!item.childOrdered)
-          )}
+          <div className="li-content">
+            {renderInlineFormatting(item.text)}
+            {item.children && item.children.length > 0 && (
+              renderListItems(item.children, !!item.childOrdered)
+            )}
+          </div>
         </li>
       ))}
     </ListTag>
@@ -601,7 +613,7 @@ function renderListItems(items: ListItem[], ordered: boolean): React.ReactNode {
 function renderBlock(block: ParsedBlock, index: number): React.ReactNode {
   switch (block.type) {
     case "heading": {
-      const Tag = (`h${block.level}` as "h1" | "h2" | "h3");
+      const Tag = (`h${block.level}` as "h1" | "h2" | "h3" | "h4");
       return <Tag key={index}>{renderInlineFormatting(block.content)}</Tag>;
     }
 
@@ -622,7 +634,7 @@ function renderBlock(block: ParsedBlock, index: number): React.ReactNode {
       );
 
     case "list":
-      return <div key={index}>{renderListItems(block.items || [], !!block.ordered)}</div>;
+      return <div key={index}>{renderListItems(block.items || [], !!block.ordered, block.startNum)}</div>;
 
     case "blockquote": {
       const quoteBlocks = parseContent(block.content);
