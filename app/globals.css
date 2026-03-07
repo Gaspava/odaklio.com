@@ -777,8 +777,21 @@ body {
   align-items: flex-start;
   gap: 12px;
   position: relative;
-  padding: 8px 0;
+  padding: 10px 0;
   padding-left: 4px;
+}
+
+.msg-ai-content ol > li > .li-content {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  line-height: 1.7;
+  padding-top: 3px;
+}
+
+.msg-ai-content ul > li > .li-content {
+  display: inline;
 }
 
 .msg-ai-content ol > li::before {
@@ -851,6 +864,8 @@ body {
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   margin: 12px 0;
   background: var(--bg-card);
 }
@@ -859,10 +874,11 @@ body {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9em;
+  table-layout: auto;
 }
 
 .msg-ai-content th {
-  padding: 12px 16px;
+  padding: 10px 14px;
   text-align: left;
   font-weight: 600;
   font-size: 0.85em;
@@ -871,6 +887,7 @@ body {
   color: var(--text-tertiary);
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-primary);
+  white-space: nowrap;
 }
 
 .msg-ai-content th:not(:first-child) {
@@ -888,9 +905,10 @@ body {
 }
 
 .msg-ai-content td {
-  padding: 12px 16px;
+  padding: 10px 14px;
   color: var(--text-secondary);
   border-bottom: 1px solid var(--border-primary);
+  vertical-align: top;
 }
 
 .msg-ai-content tr:last-child td {
@@ -900,6 +918,7 @@ body {
 .msg-ai-content td:first-child {
   color: var(--text-tertiary);
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .msg-ai-content td:not(:first-child) {
@@ -908,6 +927,24 @@ body {
 
 .msg-ai-content tbody tr:nth-child(even) {
   background: var(--bg-secondary);
+}
+
+/* Mobile responsive table - stack cells vertically on very small screens */
+@media (max-width: 480px) {
+  .msg-ai-content .table-card {
+    overflow-x: auto;
+  }
+  .msg-ai-content table {
+    min-width: 400px;
+  }
+  .msg-ai-content th,
+  .msg-ai-content td {
+    padding: 8px 10px;
+    font-size: 0.85em;
+  }
+  .msg-ai-content td:first-child {
+    white-space: normal;
+  }
 }
 
 /* ===== ANIMATIONS ===== */

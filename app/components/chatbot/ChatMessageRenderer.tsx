@@ -382,7 +382,7 @@ function renderBlock(block: ParsedBlock, index: number): React.ReactNode {
       return (
         <ListTag key={index} className={block.ordered ? "list-decimal" : "list-disc"}>
           {block.items?.map((item, j) => (
-            <li key={j}>{renderInlineFormatting(item)}</li>
+            <li key={j}><span className="li-content">{renderInlineFormatting(item)}</span></li>
           ))}
         </ListTag>
       );
