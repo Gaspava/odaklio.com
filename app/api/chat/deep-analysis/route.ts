@@ -144,7 +144,7 @@ export async function POST(request: Request) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const fastModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
-    const mainModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-05-20" });
+    const mainModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const encoder = new TextEncoder();
 
@@ -226,7 +226,7 @@ export async function POST(request: Request) {
           const synthSystemPrompt = SYNTHESIZER_BASE + profileContext;
 
           const synthModel = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash-preview-05-20",
+            model: "gemini-2.0-flash",
             systemInstruction: synthSystemPrompt,
           });
 
