@@ -338,7 +338,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
         {/* Mobile left panel */}
         {isMobile && leftOpen && (
           <div className="panel-mobile-overlay panel-left flex-shrink-0 overflow-visible transition-all duration-300 ease-in-out relative"
-            style={{ width: "88vw", maxWidth: 340, background: "var(--bg-secondary)" }}>
+            style={{ width: "88vw", maxWidth: 340, background: "var(--bg-primary)" }}>
             <div className="h-full flex flex-col">
 
               {/* Profile card with gradient accent */}

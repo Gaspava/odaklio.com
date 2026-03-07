@@ -3007,7 +3007,7 @@ body {
   color: white;
   font-size: 13px;
   font-weight: 700;
-  border: 2px solid var(--bg-secondary);
+  border: 2px solid var(--bg-primary);
 }
 
 .msb-profile-info {
