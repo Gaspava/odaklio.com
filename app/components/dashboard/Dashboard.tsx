@@ -338,120 +338,122 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
         {/* Mobile left panel */}
         {isMobile && leftOpen && (
           <div className="panel-mobile-overlay panel-left flex-shrink-0 overflow-visible transition-all duration-300 ease-in-out relative"
-            style={{ width: "85vw", maxWidth: 320, background: "var(--bg-secondary)" }}>
+            style={{ width: "88vw", maxWidth: 340, background: "var(--bg-secondary)" }}>
             <div className="h-full flex flex-col">
-              {/* Sidebar header with user profile */}
-              <div className="msb-header">
-                <div className="msb-profile">
-                  <div className="msb-avatar" style={{ background: "var(--gradient-primary)" }}>
-                    {(user?.user_metadata?.full_name || user?.email || "?")
-                      .split(" ")
-                      .map((w: string) => w[0])
-                      .join("")
-                      .toUpperCase()
-                      .slice(0, 2)}
-                  </div>
-                  <div className="msb-profile-info">
-                    <span className="msb-profile-name">
-                      {user?.user_metadata?.full_name || "Kullanici"}
-                    </span>
-                    <span className="msb-profile-email">
-                      {user?.email || user?.phone || ""}
-                    </span>
+
+              {/* Profile card with gradient accent */}
+              <div className="msb-profile-card">
+                <div className="msb-profile-card-bg" />
+                <div className="msb-profile-card-content">
+                  <div className="msb-profile-row">
+                    <div className="msb-avatar-ring">
+                      <div className="msb-avatar" style={{ background: "var(--gradient-primary)" }}>
+                        {(user?.user_metadata?.full_name || user?.email || "?")
+                          .split(" ")
+                          .map((w: string) => w[0])
+                          .join("")
+                          .toUpperCase()
+                          .slice(0, 2)}
+                      </div>
+                    </div>
+                    <div className="msb-profile-info">
+                      <span className="msb-profile-name">
+                        {user?.user_metadata?.full_name || "Kullanici"}
+                      </span>
+                      <span className="msb-profile-email">
+                        {user?.email || user?.phone || ""}
+                      </span>
+                    </div>
+                    <button onClick={() => setLeftOpen(false)} className="msb-close-btn">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
-                <button onClick={() => setLeftOpen(false)} className="msb-close-btn">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
               </div>
 
-              {/* Section label */}
-              <div className="msb-section-label">Sayfalar</div>
-
-              {/* Page navigation */}
-              <div className="msb-nav-list">
+              {/* Navigation grid */}
+              <div className="msb-nav-grid">
                 {(["focus", "history", "tools", "mentor", "analysis"] as const).map((page) => {
                   const labels: Record<string, string> = { focus: "Odak", history: "Gecmis", tools: "Araclar", mentor: "Mentor", analysis: "Analiz" };
-                  const descriptions: Record<string, string> = { focus: "AI ile sohbet", history: "Sohbet gecmisi", tools: "Uretkenlik araclari", mentor: "Kisisel rehberlik", analysis: "Ilerleme takibi" };
+                  const icons: Record<string, { color: string; bg: string }> = {
+                    focus: { color: "#f97316", bg: "rgba(249,115,22,0.1)" },
+                    history: { color: "#8b5cf6", bg: "rgba(139,92,246,0.1)" },
+                    tools: { color: "#06b6d4", bg: "rgba(6,182,212,0.1)" },
+                    mentor: { color: "#10b981", bg: "rgba(16,185,129,0.1)" },
+                    analysis: { color: "#f43f5e", bg: "rgba(244,63,94,0.1)" },
+                  };
                   const active = activePage === page;
+                  const ic = icons[page];
                   return (
                     <button
                       key={page}
-                      className={`msb-nav-item${active ? " msb-nav-item--active" : ""}`}
+                      className={`msb-nav-tile${active ? " msb-nav-tile--active" : ""}`}
                       onClick={() => { handlePageChange(page); setLeftOpen(false); }}
+                      style={{ "--tile-color": ic.color, "--tile-bg": ic.bg } as React.CSSProperties}
                     >
-                      <div className="msb-nav-item-icon">
-                        {page === "focus" && <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>}
-                        {page === "history" && <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
-                        {page === "tools" && <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>}
-                        {page === "mentor" && <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
-                        {page === "analysis" && <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>}
+                      <div className="msb-nav-tile-icon">
+                        {page === "focus" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>}
+                        {page === "history" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
+                        {page === "tools" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>}
+                        {page === "mentor" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
+                        {page === "analysis" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>}
                       </div>
-                      <div className="msb-nav-item-text">
-                        <span className="msb-nav-item-label">{labels[page]}</span>
-                        <span className="msb-nav-item-desc">{descriptions[page]}</span>
-                      </div>
-                      {active && (
-                        <div className="msb-nav-item-check">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        </div>
-                      )}
+                      <span className="msb-nav-tile-label">{labels[page]}</span>
+                      {active && <div className="msb-nav-tile-dot" />}
                     </button>
                   );
                 })}
               </div>
 
-              {/* Section label */}
-              <div className="msb-section-label">Hizli Erisim</div>
-
-              {/* Quick actions */}
-              <div className="msb-quick-actions">
-                <button className="msb-quick-btn" onClick={() => { toggleTheme(); }}>
-                  <div className="msb-quick-btn-icon" style={{ background: "rgba(139,92,246,0.1)", color: "#8b5cf6" }}>
-                    {theme === "dark" ? <IconSun size={15} /> : <IconMoon size={15} />}
-                  </div>
-                  <span>{theme === "dark" ? "Acik Tema" : "Koyu Tema"}</span>
+              {/* Quick actions row */}
+              <div className="msb-actions-row">
+                <button className="msb-action-pill" onClick={() => { toggleTheme(); }}>
+                  <span className="msb-action-pill-icon" style={{ color: "#8b5cf6" }}>
+                    {theme === "dark" ? <IconSun size={14} /> : <IconMoon size={14} />}
+                  </span>
+                  <span>{theme === "dark" ? "Acik" : "Koyu"}</span>
                 </button>
-
-                <button className="msb-quick-btn" onClick={() => { setMobileBottomSheet("pomodoro"); setLeftOpen(false); }}>
-                  <div className="msb-quick-btn-icon" style={{ background: "rgba(204,61,0,0.1)", color: "var(--accent-primary)", position: "relative" }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <button className="msb-action-pill" onClick={() => { setMobileBottomSheet("pomodoro"); setLeftOpen(false); }}>
+                  <span className="msb-action-pill-icon" style={{ color: "var(--accent-primary)", position: "relative" }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="13" r="8" /><path d="M12 9v4l2 2" /><path d="M5 3L2 6" /><path d="M22 6l-3-3" />
                     </svg>
                     {pomodoroRunning && <span className="msb-pulse-dot" />}
-                  </div>
+                  </span>
                   <span>Pomodoro</span>
                 </button>
-
-                <button className="msb-quick-btn" onClick={() => { setMobileBottomSheet("sound"); setLeftOpen(false); }}>
-                  <div className="msb-quick-btn-icon" style={{ background: "rgba(6,182,212,0.1)", color: "var(--accent-cyan, #06b6d4)" }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <button className="msb-action-pill" onClick={() => { setMobileBottomSheet("sound"); setLeftOpen(false); }}>
+                  <span className="msb-action-pill-icon" style={{ color: "#06b6d4" }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
                       <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
                     </svg>
-                  </div>
-                  <span>Ortam Sesi</span>
+                  </span>
+                  <span>Ses</span>
                 </button>
               </div>
 
-              {/* Conversations (only on focus page) */}
+              {/* Conversations */}
               {activePage === "focus" && (
-                <>
-                  <div className="msb-section-label">Sohbetler</div>
+                <div className="msb-chats-section">
+                  <div className="msb-chats-header">
+                    <span>Sohbetler</span>
+                  </div>
                   <div className="flex-1 overflow-y-auto px-3 pb-3">
                     <ChatHistorySidebar onOpenConversation={handleOpenConversation} />
                   </div>
-                </>
+                </div>
               )}
 
-              {/* Bottom actions */}
+              {/* Spacer to push logout down */}
+              {activePage !== "focus" && <div className="flex-1" />}
+
+              {/* Bottom logout */}
               <div className="msb-bottom">
-                <button className="msb-bottom-btn" onClick={() => { setLeftOpen(false); onLogout(); }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <button className="msb-logout-btn" onClick={() => { setLeftOpen(false); onLogout(); }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                     <polyline points="16 17 21 12 16 7" />
                     <line x1="21" y1="12" x2="9" y2="12" />
