@@ -16,12 +16,23 @@ interface HeaderProps {
   onLogout?: () => void;
 }
 
-const pages: { id: PageType; label: string; icon: React.ReactNode }[] = [
+const pages: { id: PageType; label: string; description: string; icon: React.ReactNode }[] = [
+  {
+    id: "focus",
+    label: "Odak",
+    description: "AI ile sohbet et",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+  },
   {
     id: "history",
     label: "Gecmis",
+    description: "Sohbet gecmisini gor",
     icon: (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
         <polyline points="12 6 12 12 16 14" />
       </svg>
@@ -30,8 +41,9 @@ const pages: { id: PageType; label: string; icon: React.ReactNode }[] = [
   {
     id: "tools",
     label: "Araclar",
+    description: "Uretkenlik araclari",
     icon: (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="7" height="7" rx="1.5" />
         <rect x="14" y="3" width="7" height="7" rx="1.5" />
         <rect x="3" y="14" width="7" height="7" rx="1.5" />
@@ -40,19 +52,11 @@ const pages: { id: PageType; label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
-    id: "focus",
-    label: "Odak",
-    icon: (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      </svg>
-    ),
-  },
-  {
     id: "mentor",
     label: "Mentor",
+    description: "Kisisel rehberlik",
     icon: (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
         <circle cx="9" cy="7" r="4" />
         <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -63,8 +67,9 @@ const pages: { id: PageType; label: string; icon: React.ReactNode }[] = [
   {
     id: "analysis",
     label: "Analiz",
+    description: "Ilerleme ve istatistik",
     icon: (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
         <polyline points="17 6 23 6 23 12" />
       </svg>
@@ -118,35 +123,52 @@ export default function Header({
         borderBottom: "none",
       }}
     >
-      {/* Left - Hamburger menu */}
+      {/* Left - Navigation menu */}
       <div className="relative flex-shrink-0" ref={navRef}>
         <button
           onClick={() => setNavOpen((v) => !v)}
-          className="header-icon-btn"
-          title="Menü"
-          style={{ width: 36, height: 36 }}
+          className={`nav-menu-trigger${navOpen ? " nav-menu-trigger--active" : ""}`}
+          title="Menu"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
+          <div className="nav-menu-trigger-bars">
+            <span /><span /><span />
+          </div>
         </button>
 
         {navOpen && (
-          <div className="profile-dropdown" style={{ left: 0, right: "auto", minWidth: 200 }}>
-            {pages.map((page) => (
-              <Link
-                key={page.id}
-                href={PAGE_ROUTES[page.id]}
-                onClick={() => { onPageChange(page.id); setNavOpen(false); }}
-                className={`profile-dropdown-item ${activePage === page.id ? "nav-dropdown-active" : ""}`}
-              >
-                <span className="flex-shrink-0">{page.icon}</span>
-                {page.label}
-              </Link>
-            ))}
-          </div>
+          <>
+            <div className="nav-dropdown-backdrop" onClick={() => setNavOpen(false)} />
+            <div className="nav-dropdown-panel">
+              <div className="nav-dropdown-header">
+                <span className="nav-dropdown-title">Gezinme</span>
+              </div>
+              <div className="nav-dropdown-grid">
+                {pages.map((page) => (
+                  <Link
+                    key={page.id}
+                    href={PAGE_ROUTES[page.id]}
+                    onClick={() => { onPageChange(page.id); setNavOpen(false); }}
+                    className={`nav-dropdown-card${activePage === page.id ? " nav-dropdown-card--active" : ""}`}
+                  >
+                    <div className="nav-dropdown-card-icon">
+                      {page.icon}
+                    </div>
+                    <div className="nav-dropdown-card-text">
+                      <span className="nav-dropdown-card-label">{page.label}</span>
+                      <span className="nav-dropdown-card-desc">{page.description}</span>
+                    </div>
+                    {activePage === page.id && (
+                      <div className="nav-dropdown-card-indicator">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </div>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </>
         )}
       </div>
 
