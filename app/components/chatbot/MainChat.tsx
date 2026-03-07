@@ -787,8 +787,8 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
       <div
         className="flex flex-col h-full relative"
         ref={chatAreaRef}
-        onDragEnter={(e) => { e.preventDefault(); dragCounterRef.current++; setIsDragOver(true); }}
-        onDragLeave={(e) => { e.preventDefault(); dragCounterRef.current--; if (dragCounterRef.current === 0) setIsDragOver(false); }}
+        onDragEnter={(e) => { e.preventDefault(); if (!e.dataTransfer.types.includes('Files')) return; dragCounterRef.current++; setIsDragOver(true); }}
+        onDragLeave={(e) => { e.preventDefault(); if (!e.dataTransfer.types.includes('Files')) return; dragCounterRef.current--; if (dragCounterRef.current === 0) setIsDragOver(false); }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
