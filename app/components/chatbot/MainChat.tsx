@@ -857,7 +857,6 @@ export default function MainChat({ isMobile = false, onModeSwitch }: MainChatPro
                   src="/odaklio-logo.svg"
                   alt="Odaklio"
                   className="w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0"
-                  style={{ animation: "logo-spin 12s linear infinite" }}
                 />
                 <h1 className="text-xl sm:text-2xl font-bold text-center select-none" style={{ color: "var(--text-primary)" }}>
                   {firstName ? (
