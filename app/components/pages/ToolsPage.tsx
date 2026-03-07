@@ -1467,7 +1467,7 @@ export default function ToolsPage({ onOpenConversation }: ToolsPageProps = {}) {
   if (activeTool === "roadmaps") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><RoadmapDetail onBack={() => setActiveTool(null)} onOpenConversation={onOpenConversation} /></div></div>;
   if (activeTool === "pomodoro") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><PomodoroDetail onBack={() => setActiveTool(null)} /></div></div>;
   if (activeTool === "speedread") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><SpeedReadDetail onBack={() => setActiveTool(null)} /></div></div>;
-  if (activeTool === "ai-debate") return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><AIDebateDetail onBack={() => setActiveTool(null)} /></div></div>;
+  if (activeTool === "ai-debate") return <div className="h-full overflow-y-auto"><div className="max-w-4xl mx-auto p-4 sm:p-6"><AIDebateDetail onBack={() => setActiveTool(null)} /></div></div>;
 
   return (
     <div className="h-full overflow-y-auto">
