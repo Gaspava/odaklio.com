@@ -23,12 +23,11 @@ import {
 import ChatHistorySidebar from "./ChatHistorySidebar";
 import { PAGE_ROUTES } from "@/lib/routes";
 
-export type PageType = "history" | "tools" | "focus" | "mentor" | "analysis";
+export type PageType = "history" | "focus" | "mentor" | "analysis" | "notes" | "flashcards" | "roadmaps" | "pomodoro-tool" | "speedread";
 
 interface SidebarProps {
   activePage: PageType;
   onPageChange: (page: PageType) => void;
-  onToolOpen: (toolId: string) => void;
   onNewChat: () => void;
   onOpenConversation: (id: string) => void;
   onLogout?: () => void;
@@ -44,13 +43,12 @@ const navItems: { id: PageType; label: string; iconId: string }[] = [
   { id: "history", label: "Gecmis", iconId: "clock" },
 ];
 
-const toolItems = [
+const toolItems: { id: PageType; label: string; iconId: string; color: string }[] = [
   { id: "notes", label: "Notlarim", iconId: "bookmark", color: "#10b981" },
-  { id: "flashcard", label: "Flash Kartlar", iconId: "flashcard", color: "#f59e0b" },
-  { id: "roadmap", label: "Yol Haritalari", iconId: "roadmap", color: "#ef4444" },
-  { id: "pomodoro", label: "Pomodoro", iconId: "pomodoro", color: "#e04d08" },
+  { id: "flashcards", label: "Flash Kartlar", iconId: "flashcard", color: "#f59e0b" },
+  { id: "roadmaps", label: "Yol Haritalari", iconId: "roadmap", color: "#ef4444" },
+  { id: "pomodoro-tool", label: "Pomodoro", iconId: "pomodoro", color: "#e04d08" },
   { id: "speedread", label: "Hizli Okuma", iconId: "speedread", color: "#06b6d4" },
-  { id: "sound", label: "Ortam Sesi", iconId: "headphones", color: "#6366f1" },
 ];
 
 function NavIcon({ iconId, size = 18 }: { iconId: string; size?: number }) {
@@ -73,7 +71,6 @@ function NavIcon({ iconId, size = 18 }: { iconId: string; size?: number }) {
 export default function Sidebar({
   activePage,
   onPageChange,
-  onToolOpen,
   onNewChat,
   onOpenConversation,
   onLogout,
@@ -108,10 +105,10 @@ export default function Sidebar({
     onToggle();
   }, [onPageChange, onToggle]);
 
-  const handleToolClick = useCallback((toolId: string) => {
-    onToolOpen(toolId);
+  const handleToolClick = useCallback((page: PageType) => {
+    onPageChange(page);
     onToggle();
-  }, [onToolOpen, onToggle]);
+  }, [onPageChange, onToggle]);
 
   const handleNewChat = useCallback(() => {
     onNewChat();

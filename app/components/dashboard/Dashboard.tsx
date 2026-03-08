@@ -9,7 +9,7 @@ import MindmapChat from "../chatbot/MindmapChat";
 import FlashcardChat from "../chatbot/FlashcardChat";
 import RoadmapChat from "../chatbot/RoadmapChat";
 import ChatHistoryPage from "../pages/ChatHistoryPage";
-import ToolsPage from "../pages/ToolsPage";
+import { NotlarimDetail, FlashcardDetail, RoadmapDetail, PomodoroDetail, SpeedReadDetail } from "../pages/ToolsPage";
 import MentorPage from "../pages/MentorPage";
 import AnalysisPage from "../pages/AnalysisPage";
 import PomodoroPopup from "../tools/PomodoroPopup";
@@ -46,7 +46,6 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
   const [activeSpecialMode, setActiveSpecialMode] = useState<"flashcard" | "roadmap" | "mindmap" | null>(null);
   const [pendingInitialMessage, setPendingInitialMessage] = useState<string | null>(null);
   const [activePage, setActivePage] = useState<PageType>(initialPage || "focus");
-  const [initialTool, setInitialTool] = useState<string | null>(null);
   const [mobileBottomSheet, setMobileBottomSheet] = useState<"pomodoro" | "sound" | "new-chat" | "notes" | null>(null);
   const [pomodoroRunning, setPomodoroRunning] = useState(false);
   const [pomodoroTime, setPomodoroTime] = useState({ minutes: 25, seconds: 0 });
@@ -141,14 +140,7 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
 
   const handlePageChange = useCallback((page: PageType) => {
     setActivePage(page);
-    setInitialTool(null);
     router.push(PAGE_ROUTES[page]);
-  }, [router]);
-
-  const handleToolOpen = useCallback((toolId: string) => {
-    setActivePage("tools");
-    setInitialTool(toolId);
-    router.push(PAGE_ROUTES.tools);
   }, [router]);
 
   const handleOpenConversation = useCallback((id: string) => {
@@ -173,12 +165,14 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
     }
   }, [loadConversation, startNewConversation, isMobile, router]);
 
+  const handleToolBack = useCallback(() => {
+    handlePageChange("focus");
+  }, [handlePageChange]);
+
   const renderPageContent = () => {
     switch (activePage) {
       case "history":
         return <ChatHistoryPage onOpenConversation={handleOpenConversation} />;
-      case "tools":
-        return <ToolsPage onOpenConversation={handleOpenConversation} initialTool={initialTool} />;
       case "focus":
         if (activeSpecialMode === "flashcard") return <FlashcardChat key={chatKey} isMobile={isMobile} initialMessage={pendingInitialMessage || undefined} />;
         if (activeSpecialMode === "roadmap") return <RoadmapChat key={chatKey} isMobile={isMobile} onOpenConversation={handleOpenConversation} initialMessage={pendingInitialMessage || undefined} />;
@@ -188,6 +182,16 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
         return <MentorPage />;
       case "analysis":
         return <AnalysisPage />;
+      case "notes":
+        return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><NotlarimDetail onBack={handleToolBack} /></div></div>;
+      case "flashcards":
+        return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><FlashcardDetail onBack={handleToolBack} /></div></div>;
+      case "roadmaps":
+        return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><RoadmapDetail onBack={handleToolBack} onOpenConversation={handleOpenConversation} /></div></div>;
+      case "pomodoro-tool":
+        return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><PomodoroDetail onBack={handleToolBack} /></div></div>;
+      case "speedread":
+        return <div className="h-full overflow-y-auto"><div className="max-w-2xl mx-auto p-4 sm:p-6"><SpeedReadDetail onBack={handleToolBack} /></div></div>;
       default:
         return <MainChat key={chatKey} isMobile={isMobile} />;
     }
@@ -234,7 +238,6 @@ export default function Dashboard({ onLogout, initialPage }: DashboardProps) {
       <Sidebar
         activePage={activePage}
         onPageChange={handlePageChange}
-        onToolOpen={handleToolOpen}
         onNewChat={handleNewChat}
         onOpenConversation={handleOpenConversation}
         onLogout={onLogout}

@@ -7,8 +7,7 @@ import { useTheme } from "@/app/providers/ThemeProvider";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { IconSun, IconMoon } from "../icons/Icons";
 import { PAGE_ROUTES } from "@/lib/routes";
-
-export type PageType = "history" | "tools" | "focus" | "mentor" | "analysis";
+import type { PageType } from "./Sidebar";
 
 interface HeaderProps {
   activePage: PageType;
@@ -28,14 +27,11 @@ const pages: { id: PageType; label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
-    id: "tools",
-    label: "Araclar",
+    id: "notes" as PageType,
+    label: "Notlarim",
     icon: (
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="7" height="7" rx="1.5" />
-        <rect x="14" y="3" width="7" height="7" rx="1.5" />
-        <rect x="3" y="14" width="7" height="7" rx="1.5" />
-        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
       </svg>
     ),
   },

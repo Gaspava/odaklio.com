@@ -3,17 +3,25 @@ import type { PageType } from "@/app/components/layout/Sidebar";
 export const PAGE_ROUTES: Record<PageType, string> = {
   focus: "/",
   history: "/gecmis",
-  tools: "/araclar",
   mentor: "/mentor",
   analysis: "/analiz",
+  notes: "/notlarim",
+  flashcards: "/flash-kartlar",
+  roadmaps: "/yol-haritalari",
+  "pomodoro-tool": "/pomodoro-arac",
+  speedread: "/hizli-okuma",
 };
 
 export const ROUTE_TO_PAGE: Record<string, PageType> = {
   "/": "focus",
   "/gecmis": "history",
-  "/araclar": "tools",
   "/mentor": "mentor",
   "/analiz": "analysis",
+  "/notlarim": "notes",
+  "/flash-kartlar": "flashcards",
+  "/yol-haritalari": "roadmaps",
+  "/pomodoro-arac": "pomodoro-tool",
+  "/hizli-okuma": "speedread",
 };
 
 export function getPageFromPathname(pathname: string): PageType {

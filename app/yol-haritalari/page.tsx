@@ -4,12 +4,12 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import AuthGuard from "@/app/components/auth/AuthGuard";
 import Dashboard from "@/app/components/dashboard/Dashboard";
 
-export default function AraclarPage() {
+export default function YolHaritalariPage() {
   const { logout } = useAuth();
 
   return (
     <AuthGuard>
-      <Dashboard onLogout={logout} initialPage="tools" />
+      <Dashboard onLogout={logout} initialPage="roadmaps" />
     </AuthGuard>
   );
 }

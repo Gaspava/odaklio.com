@@ -95,7 +95,7 @@ function ToolCard({ name, description, icon, color, tag, count, onClick }: ToolC
 }
 
 /* ===== NOTLARIM (MY NOTES) DETAIL ===== */
-function NotlarimDetail({ onBack }: { onBack: () => void }) {
+export function NotlarimDetail({ onBack }: { onBack: () => void }) {
   const { user } = useAuth();
   const [notes, setNotes] = useState<UserNote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -312,7 +312,7 @@ interface Deck {
   lastDate: string;
 }
 
-function FlashcardDetail({ onBack }: { onBack: () => void }) {
+export function FlashcardDetail({ onBack }: { onBack: () => void }) {
   const { user } = useAuth();
   const [decks, setDecks] = useState<Deck[]>([]);
   const [loading, setLoading] = useState(true);
@@ -564,7 +564,7 @@ function FlashcardDetail({ onBack }: { onBack: () => void }) {
 }
 
 /* ===== POMODORO DETAIL ===== */
-function PomodoroDetail({ onBack }: { onBack: () => void }) {
+export function PomodoroDetail({ onBack }: { onBack: () => void }) {
   const { user } = useAuth();
   const {
     isRunning,
@@ -1100,7 +1100,7 @@ function PomodoroDetail({ onBack }: { onBack: () => void }) {
 }
 
 /* ===== HIZLI OKUMA (SPEED READ) DETAIL ===== */
-function SpeedReadDetail({ onBack }: { onBack: () => void }) {
+export function SpeedReadDetail({ onBack }: { onBack: () => void }) {
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center gap-3">
@@ -1178,7 +1178,7 @@ function SpeedReadDetail({ onBack }: { onBack: () => void }) {
 }
 
 /* ===== YOL HARITALARI (ROADMAPS) DETAIL ===== */
-function RoadmapDetail({ onBack, onOpenConversation }: { onBack: () => void; onOpenConversation?: (id: string, type?: string) => void }) {
+export function RoadmapDetail({ onBack, onOpenConversation }: { onBack: () => void; onOpenConversation?: (id: string, type?: string) => void }) {
   const { user } = useAuth();
   const [roadmaps, setRoadmaps] = useState<RoadmapWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
