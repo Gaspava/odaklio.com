@@ -293,14 +293,19 @@ export async function POST(request: Request) {
 
     let systemPrompt = MODE_PROMPTS[mode] || SYSTEM_INSTRUCTION;
 
-    // Load user profile for personalization (non-blocking, best-effort)
+    // Load user profile for personalization (non-blocking, best-effort, 400ms timeout)
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const profile = await getUserProfile(session.user.id);
-        if (profile) {
-          systemPrompt += buildPersonalizationContext(profile);
+      const profileLoadPromise = (async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          return await getUserProfile(session.user.id);
         }
+        return null;
+      })();
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 400));
+      const profile = await Promise.race([profileLoadPromise, timeoutPromise]);
+      if (profile) {
+        systemPrompt += buildPersonalizationContext(profile);
       }
     } catch {
       // Profile loading failed - continue without personalization

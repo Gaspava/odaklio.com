@@ -13,7 +13,10 @@ export async function POST(request: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+    const model = genAI.getGenerativeModel({
+      model: "gemini-3.1-flash-lite-preview",
+      generationConfig: { maxOutputTokens: 20, temperature: 0.1 },
+    });
 
     const result = await model.generateContent(
       `Bu sohbet başlığının ana ders/konu kategorisini belirle. Sadece kategori adını yaz, başka hiçbir şey yazma. Tek veya iki kelime olsun. Örnekler: "Matematik", "Fizik", "Türkçe", "Tarih", "Biyoloji", "İngilizce", "Kimya", "Programlama", "Genel Kültür".\n\nBaşlık: "${title.slice(0, 200)}"`

@@ -13,7 +13,10 @@ export async function POST(request: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+    const model = genAI.getGenerativeModel({
+      model: "gemini-3.1-flash-lite-preview",
+      generationConfig: { maxOutputTokens: 50, temperature: 0.3 },
+    });
 
     const result = await model.generateContent(
       `Bu mesaj için çok kısa bir Türkçe başlık üret (maksimum 5 kelime, emoji yok, tırnak işareti yok). Sadece başlığı yaz, başka bir şey yazma.\n\nMesaj: "${message.slice(0, 200)}"`
